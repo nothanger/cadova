@@ -1,4 +1,15 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "upgrade-insecure-requests; block-all-mixed-content"
+        }
+      ]
+    }
+  ],
   "redirects": [
     {
       "source": "(.*)",
