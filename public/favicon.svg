@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Fond avec dégradé Cadova -->
+  <rect width="512" height="512" rx="110" fill="url(#bgGradient)"/>
+
+  <!-- Glow violet -->
+  <circle cx="256" cy="240" r="160" fill="url(#glow)" opacity="0.35"/>
+
+  <!-- Cerveau - Hémisphère gauche -->
+  <path d="M196 175 C165 175 138 198 138 232 C138 248 144 262 155 272 C148 278 144 288 144 300 C144 325 163 344 188 348 C188 350 188 352 188 354 C188 368 199 380 213 380 L213 172 C207 173 201 174 196 175Z" fill="url(#brainGrad1)" opacity="0.95"/>
+  <!-- Circonvolutions gauche -->
+  <path d="M160 220 C170 215 180 218 188 225" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+  <path d="M148 268 C162 260 178 262 188 272" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+  <path d="M150 310 C164 304 180 306 188 316" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Cerveau - Hémisphère droit -->
+  <path d="M316 175 C347 175 374 198 374 232 C374 248 368 262 357 272 C364 278 368 288 368 300 C368 325 349 344 324 348 C324 350 324 352 324 354 C324 368 313 380 299 380 L299 172 C305 173 311 174 316 175Z" fill="url(#brainGrad2)" opacity="0.95"/>
+  <!-- Circonvolutions droite -->
+  <path d="M352 220 C342 215 332 218 324 225" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+  <path d="M364 268 C350 260 334 262 324 272" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+  <path d="M362 310 C348 304 332 306 324 316" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Ligne centrale (corpus callosum) -->
+  <path d="M213 190 C226 200 232 220 232 256 C232 292 226 312 213 322" stroke="url(#lineGrad)" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.5"/>
+  <path d="M299 190 C286 200 280 220 280 256 C280 292 286 312 299 322" stroke="url(#lineGrad)" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.5"/>
+
+  <!-- Base cerveau -->
+  <rect x="240" y="375" width="32" height="28" rx="8" fill="url(#brainGrad1)" opacity="0.8"/>
+  <rect x="210" y="396" width="92" height="14" rx="7" fill="url(#brainGrad1)" opacity="0.7"/>
+
+  <!-- Accents brillants -->
+  <circle cx="256" cy="145" r="8" fill="#B84DCE" opacity="0.9"/>
+  <circle cx="226" cy="152" r="5" fill="#A044B3" opacity="0.7"/>
+  <circle cx="286" cy="152" r="5" fill="#A044B3" opacity="0.7"/>
+
+  <defs>
+    <!-- Fond dégradé -->
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2B1430"/>
+      <stop offset="50%" stop-color="#4E1D58"/>
+      <stop offset="100%" stop-color="#34163A"/>
+    </linearGradient>
+
+    <!-- Glow -->
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#B84DCE"/>
+      <stop offset="100%" stop-color="#9540A7" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Dégradé cerveau gauche -->
+    <linearGradient id="brainGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#B84DCE"/>
+      <stop offset="30%" stop-color="#AD49C2"/>
+      <stop offset="70%" stop-color="#9540A7"/>
+      <stop offset="100%" stop-color="#843E92"/>
+    </linearGradient>
+
+    <!-- Dégradé cerveau droit -->
+    <linearGradient id="brainGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#B84DCE"/>
+      <stop offset="30%" stop-color="#A044B3"/>
+      <stop offset="70%" stop-color="#8C3C9D"/>
+      <stop offset="100%" stop-color="#672374"/>
+    </linearGradient>
+
+    <!-- Ligne centrale -->
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#B74DCD"/>
+      <stop offset="100%" stop-color="#9540A7"/>
+    </linearGradient>
+  </defs>
+</svg>

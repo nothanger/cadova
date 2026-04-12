@@ -1,0 +1,103 @@
+
+╔══════════════════════════════════════════════════════════════════╗
+║            🎨 APERÇU DU LOGO CADOVA - ÉCRAN D'ACCUEIL            ║
+╚══════════════════════════════════════════════════════════════════╝
+
+
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                   │
+│                        VOICI LE DESIGN :                          │
+│                                                                   │
+│         ╔══════════════════════════════════════╗                 │
+│         ║                                      ║                 │
+│         ║          Fond dégradé sombre         ║                 │
+│         ║          (#2B1430 → #4E1D58)        ║                 │
+│         ║                                      ║                 │
+│         ║         ╱▔▔▔▔▔▔▔▔▔▔▔╲               ║                 │
+│         ║       ╱   🧠 Cerveau  ╲             ║                 │
+│         ║      ╱   ╱▔╲  ╱▔╲    ╲            ║                 │
+│         ║     │   │ ● ││ ● │    │           ║                 │
+│         ║     │    ╲  ╱  ╲  ╱    │           ║                 │
+│         ║      ╲    ╲───╱     ╱             ║                 │
+│         ║       ╲───────────╱                ║                 │
+│         ║                                      ║                 │
+│         ║            Dégradés :                ║                 │
+│         ║        #B84DCE (violet clair)        ║                 │
+│         ║            ↓                         ║                 │
+│         ║        #9540A7 (violet foncé)        ║                 │
+│         ║                                      ║                 │
+│         ║              ▄▄▄                     ║                 │
+│         ║             █   █                    ║                 │
+│         ║             █       Lettre "C"       ║                 │
+│         ║             █   █   (#B74DCD)        ║                 │
+│         ║              ▀▀▀                     ║                 │
+│         ║                                      ║                 │
+│         ╚══════════════════════════════════════╝                 │
+│                                                                   │
+│   Accents lumineux : Circonvolutions blanches semi-transparentes │
+│   Effet de brillance : Ellipse radiale au centre du cerveau     │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────┘
+
+
+🎨 PALETTE DE COULEURS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ███████  #B84DCE  ← Violet clair (principal)
+  ███████  #AD49C2  ← Violet moyen
+  ███████  #9540A7  ← Violet standard (brand)
+  ███████  #843E92  ← Violet sombre
+  ███████  #672374  ← Violet très sombre
+  ███████  #4E1D58  ← Fond moyen
+  ███████  #2B1430  ← Fond très sombre
+
+
+📐 SPÉCIFICATIONS TECHNIQUES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ViewBox     : 0 0 512 512
+  Arrondi     : 115px (coins arrondis)
+  Format      : SVG → PNG
+  Qualité     : Haute définition (512×512px max)
+
+  Tailles générées :
+    • 180×180px  → iOS (Apple Touch Icon)
+    • 192×192px  → Android (standard)
+    • 512×512px  → Haute résolution (splash screen)
+
+
+📱 RENDU SUR L'ÉCRAN D'ACCUEIL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+iOS (iPhone) :
+┌──────┐
+│ 🧠  │  ← Icône carrée avec coins arrondis (auto)
+│  C   │
+└──────┘
+ Cadova
+
+Android :
+┌──────┐
+│ 🧠  │  ← Icône adaptative (maskable)
+│  C   │     S'adapte selon le launcher
+└──────┘
+ Cadova
+
+
+✨ POINTS FORTS DU DESIGN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✅ Professionnel et moderne
+  ✅ Reconnaissable instantanément
+  ✅ Couleurs cohérentes avec la marque Cadova
+  ✅ Lisible à toutes les tailles (180px → 512px)
+  ✅ Fonctionne sur fond clair ET fond sombre
+  ✅ Optimisé pour les écrans Retina
+  ✅ Symbolisme fort : cerveau (IA) + "C" (Cadova)
+
+
+🚀 PRÊT À UTILISER !
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rendez-vous sur /generate-icons pour télécharger les icônes ! 🎉
+

@@ -1,0 +1,69 @@
+{
+  "name": "Cadova - IA pour l'emploi",
+  "short_name": "Cadova",
+  "description": "Écosystème IA pour l'emploi destiné aux jeunes : CV, lettres, simulation entretien, suivi candidatures, optimisation LinkedIn",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#2B1430",
+  "theme_color": "#B84DCE",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["productivity", "business", "education"],
+  "shortcuts": [
+    {
+      "name": "Générateur CV",
+      "short_name": "CV",
+      "description": "Créer un CV avec IA",
+      "url": "/app/reussia/cv-generator",
+      "icons": [
+        {
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Simulation entretien",
+      "short_name": "Entretien",
+      "description": "Pratiquer avec OralIA",
+      "url": "/app/oralia",
+      "icons": [
+        {
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Suivi candidatures",
+      "short_name": "Suivi",
+      "description": "Tableau de bord TrackIA",
+      "url": "/app/trackia",
+      "icons": [
+        {
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
