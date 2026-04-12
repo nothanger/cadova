@@ -9,19 +9,19 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/android-chrome-192x192.png",
+      "src": "/cadova-android-chrome-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/android-chrome-512x512.png",
+      "src": "/cadova-android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/android-chrome-512x512.png",
+      "src": "/cadova-android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -36,7 +36,7 @@
       "url": "/app/reussia/cv-generator",
       "icons": [
         {
-          "src": "/android-chrome-192x192.png",
+          "src": "/cadova-android-chrome-192x192.png",
           "sizes": "192x192"
         }
       ]
@@ -48,7 +48,7 @@
       "url": "/app/oralia",
       "icons": [
         {
-          "src": "/android-chrome-192x192.png",
+          "src": "/cadova-android-chrome-192x192.png",
           "sizes": "192x192"
         }
       ]
@@ -60,7 +60,7 @@
       "url": "/app/trackia",
       "icons": [
         {
-          "src": "/android-chrome-192x192.png",
+          "src": "/cadova-android-chrome-192x192.png",
           "sizes": "192x192"
         }
       ]

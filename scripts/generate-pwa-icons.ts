@@ -1,6 +1,6 @@
 /**
  * Script de génération automatique des icônes PWA
- * Convertit le favicon.svg en PNG pour iOS et Android
+ * Convertit l'icône Cadova SVG en PNG pour iOS et Android
  */
 
 import sharp from 'sharp';
@@ -13,13 +13,13 @@ const __dirname = dirname(__filename);
 const rootDir = join(__dirname, '..');
 
 // Lire le SVG source
-const svgBuffer = readFileSync(join(rootDir, 'public', 'favicon.svg'));
+const svgBuffer = readFileSync(join(rootDir, 'public', 'cadova-app-icon.svg'));
 
 // Tailles requises pour PWA
 const sizes = [
-  { size: 180, filename: 'apple-touch-icon.png', desc: 'Apple Touch Icon (iOS)' },
-  { size: 192, filename: 'android-chrome-192x192.png', desc: 'Android Chrome 192' },
-  { size: 512, filename: 'android-chrome-512x512.png', desc: 'Android Chrome 512 (Maskable)' }
+  { size: 180, filename: 'cadova-apple-touch-icon.png', desc: 'Apple Touch Icon (iOS)' },
+  { size: 192, filename: 'cadova-android-chrome-192x192.png', desc: 'Android Chrome 192' },
+  { size: 512, filename: 'cadova-android-chrome-512x512.png', desc: 'Android Chrome 512 (Maskable)' }
 ];
 
 console.log('🎨 Génération des icônes PWA Cadova...\n');

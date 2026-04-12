@@ -1,4 +1,4 @@
-import Image1 from "../../imports/Image1-109-21";
+import Image1 from "../../imports/Image1";
 
 interface CadovaLogoProps {
   /** Largeur d'affichage en pixels */
