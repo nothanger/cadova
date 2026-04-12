@@ -275,7 +275,13 @@ export function Landing() {
   }, [scrolled]);
 
   return (
-    <div style={{ fontFamily: "DM Sans, system-ui, sans-serif", background: "#F6F5FF" }}>
+    <div
+      style={{
+        fontFamily: "DM Sans, system-ui, sans-serif",
+        background: "#F6F5FF",
+        overflowX: "hidden",
+      }}
+    >
 
       {/* CSS global pour marquee + responsive */}
       <style>{`
@@ -291,17 +297,47 @@ export function Landing() {
         .hero-terminal-mobile {
           display: none;
         }
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
           .hero-grid {
             grid-template-columns: 1fr !important;
             min-height: auto !important;
             gap: 28px !important;
-            padding-top: 18px !important;
-            padding-bottom: 42px !important;
+            padding-left: 16px !important;
+            padding-right: 16px !important;
           }
           .hero-copy {
             padding-top: 20px !important;
             padding-bottom: 28px !important;
+            max-width: 100% !important;
+          }
+          .hero-title {
+            font-size: clamp(2.6rem, 15vw, 4.2rem) !important;
+            line-height: 0.98 !important;
+            margin-bottom: 22px !important;
+            max-width: 100% !important;
+            overflow-wrap: break-word !important;
+            word-break: break-word !important;
+            white-space: normal !important;
+          }
+          .hero-title span {
+            max-width: 100% !important;
+            overflow-wrap: break-word !important;
+            word-break: break-word !important;
+            white-space: normal !important;
+          }
+          .hero-body {
+            max-width: 100% !important;
+          }
+          .hero-ctas {
+            margin-bottom: 30px !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .hero-grid {
+            padding-top: 18px !important;
+            padding-bottom: 42px !important;
+          }
+          .hero-copy {
           }
           .hero-overline {
             margin-bottom: 24px !important;
@@ -313,21 +349,17 @@ export function Landing() {
             line-height: 1.5 !important;
           }
           .hero-title {
-            font-size: clamp(3.3rem, 18vw, 4.8rem) !important;
-            line-height: 0.98 !important;
-            margin-bottom: 22px !important;
+            font-size: clamp(2.35rem, 14vw, 3.8rem) !important;
           }
           .hero-body {
             font-size: 15px !important;
             line-height: 1.7 !important;
-            max-width: none !important;
             margin-bottom: 28px !important;
           }
           .hero-ctas {
             flex-direction: column !important;
             align-items: stretch !important;
             gap: 14px !important;
-            margin-bottom: 30px !important;
           }
           .hero-primary-cta {
             width: 100% !important;
