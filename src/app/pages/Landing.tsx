@@ -288,16 +288,162 @@ export function Landing() {
           animation: cadova-marquee 22s linear infinite;
           width: max-content;
         }
+        .hero-terminal-mobile {
+          display: none;
+        }
         @media (max-width: 640px) {
-          .footer-cols { grid-template-columns: 1fr 1fr !important; }
-          .footer-brand { grid-column: 1 / -1 !important; }
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+            min-height: auto !important;
+            gap: 28px !important;
+            padding-top: 18px !important;
+            padding-bottom: 42px !important;
+          }
+          .hero-copy {
+            padding-top: 20px !important;
+            padding-bottom: 28px !important;
+          }
+          .hero-overline {
+            margin-bottom: 24px !important;
+            gap: 10px !important;
+            flex-wrap: wrap !important;
+          }
+          .hero-overline-text {
+            font-size: 10px !important;
+            line-height: 1.5 !important;
+          }
+          .hero-title {
+            font-size: clamp(3.3rem, 18vw, 4.8rem) !important;
+            line-height: 0.98 !important;
+            margin-bottom: 22px !important;
+          }
+          .hero-body {
+            font-size: 15px !important;
+            line-height: 1.7 !important;
+            max-width: none !important;
+            margin-bottom: 28px !important;
+          }
+          .hero-ctas {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 14px !important;
+            margin-bottom: 30px !important;
+          }
+          .hero-primary-cta {
+            width: 100% !important;
+            justify-content: center !important;
+            padding: 15px 18px !important;
+            font-size: 15px !important;
+          }
+          .hero-secondary-cta {
+            display: block !important;
+            width: 100% !important;
+            text-align: center !important;
+          }
+          .hero-terminal-mobile {
+            display: block !important;
+            margin-bottom: 28px !important;
+          }
+          .hero-terminal-mobile > div {
+            max-width: 100% !important;
+          }
+          .hero-terminal-proof {
+            margin-top: 12px !important;
+          }
+          .hero-stats {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 16px 12px !important;
+            padding-top: 20px !important;
+          }
+          .hero-stat {
+            min-width: 0 !important;
+          }
+          .modules-header {
+            display: block !important;
+          }
+          .modules-header-cta {
+            display: inline-flex !important;
+            margin-top: 20px !important;
+          }
+          .modules-row {
+            grid-template-columns: 1fr auto !important;
+            gap: 12px !important;
+            align-items: flex-start !important;
+            padding: 22px 0 !important;
+          }
+          .modules-index {
+            display: none !important;
+          }
+          .modules-main {
+            grid-column: 1 / 2 !important;
+          }
+          .modules-tagline {
+            display: block !important;
+            margin-top: 6px !important;
+          }
+          .modules-features {
+            max-height: none !important;
+            overflow: visible !important;
+            margin-top: 10px !important;
+          }
+          .modules-price {
+            display: block !important;
+            text-align: left !important;
+            white-space: normal !important;
+            margin-top: 10px !important;
+          }
+          .modules-arrow {
+            width: 34px !important;
+            height: 34px !important;
+          }
+          .pro-strip {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+          }
+          .pro-strip-meta {
+            width: 100% !important;
+            justify-content: space-between !important;
+            gap: 18px !important;
+            flex-wrap: wrap !important;
+          }
+          .featured-testimonial-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+          .featured-testimonial-stars {
+            flex-direction: row !important;
+            align-self: flex-start !important;
+          }
           .testi-grid { grid-template-columns: 1fr !important; }
           .steps-grid { grid-template-columns: 1fr !important; }
-          .hero-grid { grid-template-columns: 1fr !important; }
+          .step-card {
+            border-left: none !important;
+            border-top: 1px solid rgba(0,0,0,0.07) !important;
+            padding: 24px 0 0 !important;
+            margin-top: 24px !important;
+          }
+          .step-card:first-child {
+            border-top: none !important;
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+          }
+          .footer-cols { grid-template-columns: 1fr !important; }
+          .footer-brand { grid-column: auto !important; }
+          .footer-bottom {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+          }
         }
         @media (max-width: 900px) {
-          .modules-row { grid-template-columns: 40px 1fr auto !important; }
-          .modules-price { display: none !important; }
+          .modules-features {
+            max-height: none !important;
+            overflow: visible !important;
+            margin-top: 10px !important;
+          }
+          .modules-price {
+            display: block !important;
+          }
         }
       `}</style>
 
@@ -516,13 +662,14 @@ export function Landing() {
           }}
         >
           {/* ── Left : texte principal ── */}
-          <div style={{ paddingTop: "48px", paddingBottom: "80px" }}>
+          <div className="hero-copy" style={{ paddingTop: "48px", paddingBottom: "80px" }}>
 
             {/* Overline — comme un debug log */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
+              className="hero-overline"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -532,6 +679,7 @@ export function Landing() {
             >
               <div style={{ width: "18px", height: "1px", background: "#5548F5" }} />
               <span
+                className="hero-overline-text"
                 style={{
                   color: "rgba(255,255,255,0.3)",
                   fontSize: "11px",
@@ -549,6 +697,7 @@ export function Landing() {
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.7 }}
+              className="hero-title"
               style={{
                 fontFamily: "Syne, sans-serif",
                 fontSize: "clamp(2.9rem, 7.5vw, 6rem)",
@@ -590,6 +739,7 @@ export function Landing() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.6 }}
+              className="hero-body"
               style={{
                 color: "rgba(255,255,255,0.36)",
                 fontSize: "16px",
@@ -607,6 +757,7 @@ export function Landing() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.65 }}
+              className="hero-ctas"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -617,6 +768,7 @@ export function Landing() {
             >
               <Link to="/signup" style={{ textDecoration: "none" }}>
                 <button
+                  className="hero-primary-cta"
                   style={{
                     background: "#5548F5",
                     color: "white",
@@ -652,6 +804,7 @@ export function Landing() {
                 </button>
               </Link>
               <Link
+                className="hero-secondary-cta"
                 to="/login"
                 style={{
                   color: "rgba(255,255,255,0.32)",
@@ -674,10 +827,48 @@ export function Landing() {
             </motion.div>
 
             {/* Stats inline �� pas un strip séparé */}
+            <div className="hero-terminal-mobile lg:hidden">
+              <TerminalMock />
+              <div
+                className="hero-terminal-proof"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "10px 14px",
+                  background: "rgba(16,185,129,0.08)",
+                  border: "1px solid rgba(16,185,129,0.15)",
+                  borderRadius: "8px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "7px",
+                    height: "7px",
+                    borderRadius: "50%",
+                    background: "#10B981",
+                    flexShrink: 0,
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: "11px",
+                    color: "rgba(255,255,255,0.45)",
+                    fontFamily: "ui-monospace, monospace",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <span style={{ color: "#10B981", fontWeight: 600 }}>3 247 étudiants</span>{" "}
+                  ont analysé leur CV cette semaine
+                </span>
+              </div>
+            </div>
+
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9 }}
+              className="hero-stats"
               style={{
                 display: "flex",
                 gap: "clamp(24px, 5vw, 48px)",
@@ -691,7 +882,7 @@ export function Landing() {
                 { value: "50K+", label: "CVs générés" },
                 { value: "4.8★", label: "note" },
               ].map((s) => (
-                <div key={s.label}>
+                <div key={s.label} className="hero-stat">
                   <div
                     style={{
                       fontFamily: "Syne, sans-serif",
@@ -829,6 +1020,7 @@ export function Landing() {
 
           {/* Header — pas centré, asymétrique */}
           <div
+            className="modules-header"
             style={{
               display: "flex",
               alignItems: "flex-end",
@@ -867,7 +1059,11 @@ export function Landing() {
                 <span style={{ color: "#5548F5" }}>pas juste un outil.</span>
               </h2>
             </div>
-            <Link to="/signup" style={{ textDecoration: "none", flexShrink: 0 }}>
+            <Link
+              to="/signup"
+              className="modules-header-cta"
+              style={{ textDecoration: "none", flexShrink: 0 }}
+            >
               <button
                 style={{
                   border: "1.5px solid rgba(85,72,245,0.28)",
@@ -922,6 +1118,7 @@ export function Landing() {
                   >
                     {/* Index monospace */}
                     <span
+                      className="modules-index"
                       style={{
                         fontFamily: "ui-monospace, monospace",
                         fontSize: "12px",
@@ -937,7 +1134,7 @@ export function Landing() {
                     </span>
 
                     {/* Nom + description révélée au hover */}
-                    <div>
+                    <div className="modules-main">
                       <div
                         style={{
                           display: "flex",
@@ -960,6 +1157,7 @@ export function Landing() {
                           {m.name}
                         </span>
                         <span
+                          className="modules-tagline"
                           style={{
                             fontSize: "13px",
                             color: "#9B9BBF",
@@ -972,6 +1170,7 @@ export function Landing() {
 
                       {/* Features révélées au hover */}
                       <div
+                        className="modules-features"
                         style={{
                           maxHeight: hoveredModule === m.id ? "36px" : "0",
                           overflow: "hidden",
@@ -1013,6 +1212,7 @@ export function Landing() {
 
                     {/* Flèche ronde */}
                     <div
+                      className="modules-arrow"
                       style={{
                         width: "38px",
                         height: "38px",
@@ -1045,6 +1245,7 @@ export function Landing() {
 
           {/* Pack Pro — bande dark inline, pas une card de plus */}
           <motion.div
+            className="pro-strip"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -1095,6 +1296,7 @@ export function Landing() {
               </div>
             </div>
             <div
+              className="pro-strip-meta"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -1235,6 +1437,7 @@ export function Landing() {
             </div>
 
             <div
+              className="featured-testimonial-grid"
               style={{
                 position: "relative",
                 display: "grid",
@@ -1307,6 +1510,7 @@ export function Landing() {
 
               {/* Étoiles verticales */}
               <div
+                className="featured-testimonial-stars"
                 style={{
                   display: "flex",
                   flexDirection: "column",
@@ -1505,6 +1709,7 @@ export function Landing() {
               },
             ].map((step, i) => (
               <motion.div
+                className="step-card"
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -1857,6 +2062,7 @@ export function Landing() {
 
           {/* Bottom bar */}
           <div
+            className="footer-bottom"
             style={{
               borderTop: "1px solid rgba(255,255,255,0.04)",
               paddingTop: "24px",
