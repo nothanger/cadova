@@ -9,7 +9,7 @@ export default function App() {
     const favicon = existingFavicon ?? document.createElement("link");
     favicon.setAttribute("rel", "icon");
     favicon.setAttribute("type", "image/svg+xml");
-    favicon.setAttribute("href", "/cadova-app-icon.svg?v=2");
+    favicon.setAttribute("href", "/cadova-app-icon.svg?v=3");
     if (!existingFavicon) document.head.appendChild(favicon);
 
     // ── Apple touch icon (pour iOS "Ajouter à l'écran d'accueil") ──
