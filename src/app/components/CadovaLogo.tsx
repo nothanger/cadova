@@ -1,42 +1,44 @@
-import Image1 from "../../imports/Image1-109-21";
-
 interface CadovaLogoProps {
   width?: number;
+  size?: "sm" | "md" | "lg" | number;
   white?: boolean;
 }
 
-const CANVAS = { w: 1441, h: 1424 };
-const CROP = { x: 418, y: 486, w: 488, h: 538 };
+const LOGO_SRC = "/cadova-logo.svg?v=20260413";
+const LOGO_DIMENSIONS = { width: 307, height: 211 };
+const SIZE_WIDTHS = {
+  sm: 56,
+  md: 80,
+  lg: 120,
+} as const;
 
-export function CadovaLogo({ width = 100, white = false }: CadovaLogoProps) {
-  const scale = width / CROP.w;
-  const height = Math.round(CROP.h * scale);
+function resolveWidth(width?: number, size?: CadovaLogoProps["size"]) {
+  if (typeof width === "number") return width;
+  if (typeof size === "number") return size;
+  if (size) return SIZE_WIDTHS[size];
+  return 100;
+}
+
+export function CadovaLogo({ width, size, white = false }: CadovaLogoProps) {
+  const resolvedWidth = resolveWidth(width, size);
+  const resolvedHeight = Math.round(
+    (resolvedWidth * LOGO_DIMENSIONS.height) / LOGO_DIMENSIONS.width,
+  );
 
   return (
-    <div
+    <img
+      src={LOGO_SRC}
+      alt="Cadova"
+      width={resolvedWidth}
+      height={resolvedHeight}
+      draggable={false}
       style={{
-        width,
-        height,
-        overflow: "hidden",
-        position: "relative",
+        display: "block",
+        width: resolvedWidth,
+        height: resolvedHeight,
         flexShrink: 0,
         filter: white ? "brightness(0) invert(1)" : undefined,
       }}
-      aria-label="Cadova"
-    >
-      <div
-        style={{
-          width: CANVAS.w,
-          height: CANVAS.h,
-          transform: `scale(${scale})`,
-          transformOrigin: "0 0",
-          position: "absolute",
-          left: -Math.round(CROP.x * scale),
-          top: -Math.round(CROP.y * scale),
-        }}
-      >
-        <Image1 />
-      </div>
-    </div>
+    />
   );
 }
