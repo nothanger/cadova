@@ -517,7 +517,7 @@ export function Landing() {
             }}
           >
             <Link to="/">
-              <CadovaLogo width={52} white />
+              <CadovaLogo width={66} white />
             </Link>
 
             {/* Desktop */}
@@ -1892,7 +1892,7 @@ export function Landing() {
           >
             {/* Logo */}
             <div style={{ marginBottom: "32px" }}>
-              <CadovaLogo width={50} white />
+              <CadovaLogo width={68} white />
             </div>
 
             <h2
@@ -2007,7 +2007,7 @@ export function Landing() {
           >
             {/* Brand */}
             <div className="footer-brand">
-              <CadovaLogo width={50} white />
+              <CadovaLogo width={64} white />
               <p
                 style={{
                   marginTop: "16px",
