@@ -40,7 +40,10 @@ console.log('🎨 Génération des icônes PWA Cadova...\n');
 for (const { size, filenames, desc } of sizes) {
   try {
     const output = await sharp(svgBuffer)
-      .resize(size, size)
+      .resize(size, size, {
+        fit: 'contain',
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
       .png()
       .toBuffer();
 

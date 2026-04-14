@@ -4,12 +4,12 @@ interface CadovaLogoProps {
   white?: boolean;
 }
 
-const LOGO_SRC = "/cadova-logo.svg?v=20260413";
-const LOGO_DIMENSIONS = { width: 307, height: 211 };
+const LOGO_SRC = "/cadova-logo.svg?v=20260414";
+const LOGO_DIMENSIONS = { width: 392, height: 416 };
 const SIZE_WIDTHS = {
-  sm: 56,
-  md: 80,
-  lg: 120,
+  sm: 52,
+  md: 76,
+  lg: 112,
 } as const;
 
 function resolveWidth(width?: number, size?: CadovaLogoProps["size"]) {
@@ -19,7 +19,7 @@ function resolveWidth(width?: number, size?: CadovaLogoProps["size"]) {
   return 100;
 }
 
-export function CadovaLogo({ width, size, white = false }: CadovaLogoProps) {
+export function CadovaLogo({ width, size, white: _white = false }: CadovaLogoProps) {
   const resolvedWidth = resolveWidth(width, size);
   const resolvedHeight = Math.round(
     (resolvedWidth * LOGO_DIMENSIONS.height) / LOGO_DIMENSIONS.width,
@@ -37,7 +37,6 @@ export function CadovaLogo({ width, size, white = false }: CadovaLogoProps) {
         width: resolvedWidth,
         height: resolvedHeight,
         flexShrink: 0,
-        filter: white ? "brightness(0) invert(1)" : undefined,
       }}
     />
   );

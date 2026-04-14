@@ -8,13 +8,13 @@ export default function App() {
     const favicon = existingFavicon ?? document.createElement("link");
     favicon.setAttribute("rel", "icon");
     favicon.setAttribute("type", "image/svg+xml");
-    favicon.setAttribute("href", "/favicon.svg?v=20260413");
+    favicon.setAttribute("href", "/favicon.svg?v=20260414");
     if (!existingFavicon) document.head.appendChild(favicon);
 
     const existingApple = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement | null;
     const apple = existingApple ?? document.createElement("link");
     apple.setAttribute("rel", "apple-touch-icon");
-    apple.setAttribute("href", "/cadova-apple-touch-icon.png?v=20260413");
+    apple.setAttribute("href", "/cadova-apple-touch-icon.png?v=20260414");
     if (!existingApple) document.head.appendChild(apple);
 
     const existingTheme = document.querySelector("meta[name='theme-color']") as HTMLMetaElement | null;
