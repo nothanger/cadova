@@ -690,11 +690,17 @@ export function CVGenerator() {
                 {/* Toggle no experience */}
                 <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                   <button
+                    type="button"
                     onClick={() => setNoExperience(!noExperience)}
-                    className={`relative w-10 h-6 rounded-full transition-colors ${noExperience ? "bg-indigo-600" : "bg-slate-300"}`}
+                    aria-pressed={noExperience}
+                    className={`relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30 ${
+                      noExperience ? "bg-indigo-600" : "bg-slate-300"
+                    }`}
                   >
                     <span
-                      className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${noExperience ? "translate-x-5" : "translate-x-1"}`}
+                      className={`block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out will-change-transform ${
+                        noExperience ? "translate-x-5" : "translate-x-1"
+                      }`}
                     />
                   </button>
                   <div>
