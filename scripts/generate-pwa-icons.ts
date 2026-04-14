@@ -21,29 +21,49 @@ const sizes = [
     size: 180,
     filenames: ['cadova-apple-touch-icon.png', 'apple-touch-icon.png'],
     desc: 'Apple Touch Icon (iOS)',
+    iconScale: 0.8,
+    background: { r: 255, g: 255, b: 255, alpha: 1 },
   },
   {
     size: 192,
     filenames: ['cadova-android-chrome-192x192.png', 'android-chrome-192x192.png'],
     desc: 'Android Chrome 192',
+    iconScale: 1,
+    background: { r: 0, g: 0, b: 0, alpha: 0 },
   },
   {
     size: 512,
     filenames: ['cadova-android-chrome-512x512.png', 'android-chrome-512x512.png'],
     desc: 'Android Chrome 512 (Maskable)',
+    iconScale: 1,
+    background: { r: 0, g: 0, b: 0, alpha: 0 },
   }
 ];
 
 console.log('🎨 Génération des icônes PWA Cadova...\n');
 
 // Generer chaque taille
-for (const { size, filenames, desc } of sizes) {
+for (const { size, filenames, desc, iconScale, background } of sizes) {
   try {
-    const output = await sharp(svgBuffer)
-      .resize(size, size, {
+    const iconSize = Math.round(size * iconScale);
+
+    const icon = await sharp(svgBuffer)
+      .resize(iconSize, iconSize, {
         fit: 'contain',
         background: { r: 0, g: 0, b: 0, alpha: 0 },
       })
+      .png()
+      .toBuffer();
+
+    const output = await sharp({
+      create: {
+        width: size,
+        height: size,
+        channels: 4,
+        background,
+      },
+    })
+      .composite([{ input: icon, gravity: 'center' }])
       .png()
       .toBuffer();
 

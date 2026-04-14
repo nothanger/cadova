@@ -513,11 +513,18 @@ export function Landing() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              height: "62px",
+              minHeight: "80px",
             }}
           >
-            <Link to="/">
-              <CadovaLogo width={66} white />
+            <Link
+              to="/"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                minHeight: "80px",
+              }}
+            >
+              <CadovaLogo width={66} maxHeight={62} white />
             </Link>
 
             {/* Desktop */}

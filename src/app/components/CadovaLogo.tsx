@@ -1,5 +1,6 @@
 interface CadovaLogoProps {
   width?: number;
+  maxHeight?: number;
   size?: "sm" | "md" | "lg" | number;
   white?: boolean;
 }
@@ -19,23 +20,28 @@ function resolveWidth(width?: number, size?: CadovaLogoProps["size"]) {
   return 100;
 }
 
-export function CadovaLogo({ width, size, white = false }: CadovaLogoProps) {
+export function CadovaLogo({ width, maxHeight, size, white = false }: CadovaLogoProps) {
   const resolvedWidth = resolveWidth(width, size);
   const resolvedHeight = Math.round(
     (resolvedWidth * LOGO_DIMENSIONS.height) / LOGO_DIMENSIONS.width,
   );
+  const constrainedHeight = maxHeight
+    ? Math.min(resolvedHeight, maxHeight)
+    : resolvedHeight;
 
   return (
     <img
       src={LOGO_SRC}
       alt="Cadova"
       width={resolvedWidth}
-      height={resolvedHeight}
+      height={constrainedHeight}
       draggable={false}
       style={{
         display: "block",
-        width: resolvedWidth,
-        height: resolvedHeight,
+        width: "auto",
+        height: constrainedHeight,
+        maxWidth: resolvedWidth,
+        maxHeight: constrainedHeight,
         flexShrink: 0,
         filter: white ? "brightness(0) invert(1)" : undefined,
       }}
