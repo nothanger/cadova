@@ -88,6 +88,24 @@ const TYPE_OPTIONS = [
   { value: "parcoursup", label: "Parcoursup", icon: ClipboardList },
 ];
 
+const BEGINNER_BULLET_DENYLIST = [
+  "linkedin",
+  "crm",
+  "portefeuille",
+  "devis",
+  "audit",
+  "ifrs",
+  "pipeline",
+  "ci/cd",
+  "pull requests",
+  "lexisnexis",
+  "reporting strategique",
+  "consolidation",
+  "cycles de vente longs",
+  "management d'equipe",
+  "budget significatif",
+];
+
 /* ──���──────────────────────────────────────────────────── composant */
 export function CVGenerator() {
  useSEO({ title: "Générateur de CV — Cadova", noindex: false });
@@ -156,6 +174,16 @@ export function CVGenerator() {
   }, [summaryVariantIdx, firstName, sector, level, candidatureType, education]);
 
   const summary = editedSummary ?? autoSummary;
+  const beginner = level === "lyceen" || level === "etudiant";
+  const filteredBullets = useMemo(() => {
+    const sectorBullets = BULLETS[sector];
+    if (!beginner) return sectorBullets;
+
+    return sectorBullets.filter((bullet) => {
+      const normalizedBullet = bullet.toLowerCase();
+      return !BEGINNER_BULLET_DENYLIST.some((keyword) => normalizedBullet.includes(keyword));
+    });
+  }, [beginner, sector]);
     /* ── helpers formation ── */
   const addEducation = () => {
     setEducation((prev) => [
@@ -797,7 +825,7 @@ export function CVGenerator() {
                           </CardHeader>
                           <CardContent>
                             <div className="space-y-2 max-h-96 overflow-y-auto">
-                              {BULLETS[sector].map((bullet, i) => (
+                              {filteredBullets.map((bullet, i) => (
                                 <button
                                   key={i}
                                   onClick={() => appendBullet(activeBulletExp, bullet)}
