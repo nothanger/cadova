@@ -19,7 +19,7 @@ function resolveWidth(width?: number, size?: CadovaLogoProps["size"]) {
   return 100;
 }
 
-export function CadovaLogo({ width, size, white: _white = false }: CadovaLogoProps) {
+export function CadovaLogo({ width, size, white = false }: CadovaLogoProps) {
   const resolvedWidth = resolveWidth(width, size);
   const resolvedHeight = Math.round(
     (resolvedWidth * LOGO_DIMENSIONS.height) / LOGO_DIMENSIONS.width,
@@ -37,6 +37,7 @@ export function CadovaLogo({ width, size, white: _white = false }: CadovaLogoPro
         width: resolvedWidth,
         height: resolvedHeight,
         flexShrink: 0,
+        filter: white ? "brightness(0) invert(1)" : undefined,
       }}
     />
   );
