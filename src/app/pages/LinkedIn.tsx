@@ -8,6 +8,7 @@ import { Badge } from "../components/ui/badge";
 import { apiCall } from "@/lib/supabase";
 import { toast } from "sonner";
 import {
+  Lightbulb,
   Linkedin,
   Loader2,
   TrendingUp,
@@ -89,9 +90,12 @@ export function LinkedIn() {
                 rows={8}
                 className="resize-none"
               />
-              <p className="text-xs text-slate-500 mt-2">
-                💡 Astuce : Allez sur votre profil LinkedIn, copiez tout le
-                texte (résumé, expériences, formations) et collez-le ici.
+              <p className="text-xs text-slate-500 mt-2 flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                <span>
+                  Astuce : Allez sur votre profil LinkedIn, copiez tout le
+                  texte (résumé, expériences, formations) et collez-le ici.
+                </span>
               </p>
             </div>
 
@@ -156,7 +160,7 @@ export function LinkedIn() {
                         key={idx}
                         className="flex items-start gap-2 text-sm text-slate-700"
                       >
-                        <span className="text-green-600 mt-0.5">✓</span>
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                         {strength}
                       </li>
                     ))}
@@ -179,7 +183,7 @@ export function LinkedIn() {
                           key={idx}
                           className="flex items-start gap-2 text-sm text-slate-700"
                         >
-                          <span className="text-orange-600 mt-0.5">!</span>
+                          <AlertCircle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
                           {improvement}
                         </li>
                       )

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge";
 import { apiCall } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Lightbulb, Loader2, Target, TrendingUp, Zap } from "lucide-react";
+import { Award, BookOpen, Briefcase, Handshake, Lightbulb, Loader2, Target, TrendingUp, Zap } from "lucide-react";
 
 export function Skills() {
   useSEO({ title: "Compétences SkillIA — Cadova", noindex: true });
@@ -118,8 +118,9 @@ export function Skills() {
 
             {/* Popular Jobs */}
             <div>
-              <p className="text-sm text-slate-600 mb-2">
-                💡 Métiers populaires :
+              <p className="text-sm text-slate-600 mb-2 flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-gray-500" />
+                Métiers populaires :
               </p>
               <div className="flex flex-wrap gap-2">
                 {popularJobs.map((job) => (
@@ -232,7 +233,7 @@ export function Skills() {
               <CardContent>
                 <div className="space-y-3 text-sm text-slate-700">
                   <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
-                    <span className="text-2xl">📚</span>
+                    <BookOpen className="w-5 h-5 text-gray-500 flex-shrink-0" />
                     <div>
                       <h4 className="font-semibold mb-1">Formations en ligne</h4>
                       <p className="text-slate-600">
@@ -241,7 +242,7 @@ export function Skills() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
-                    <span className="text-2xl">💼</span>
+                    <Briefcase className="w-5 h-5 text-gray-500 flex-shrink-0" />
                     <div>
                       <h4 className="font-semibold mb-1">Projets personnels</h4>
                       <p className="text-slate-600">
@@ -250,7 +251,7 @@ export function Skills() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
-                    <span className="text-2xl">🏆</span>
+                    <Award className="w-5 h-5 text-gray-500 flex-shrink-0" />
                     <div>
                       <h4 className="font-semibold mb-1">Certifications</h4>
                       <p className="text-slate-600">
@@ -259,7 +260,7 @@ export function Skills() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
-                    <span className="text-2xl">🤝</span>
+                    <Handshake className="w-5 h-5 text-gray-500 flex-shrink-0" />
                     <div>
                       <h4 className="font-semibold mb-1">Networking</h4>
                       <p className="text-slate-600">

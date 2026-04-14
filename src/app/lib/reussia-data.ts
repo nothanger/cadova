@@ -6,6 +6,24 @@
    mots-clés stop list pour l'analyse ATS.
 ───────────────────────────────────────────────────────────────────────────── */
 
+import type { LucideIcon } from "lucide-react";
+import {
+  BookOpen,
+  Briefcase,
+  Calculator,
+  Cpu,
+  GraduationCap,
+  Hammer,
+  Heart,
+  Megaphone,
+  Palette,
+  Scale,
+  School,
+  Users,
+  UtensilsCrossed,
+  Wrench,
+} from "lucide-react";
+
 export type SectorId =
   | "marketing"
   | "commerce"
@@ -26,19 +44,19 @@ export type LetterTone = "professionnel" | "dynamique" | "formel" | "creatif";
 
 /* ─── SECTEURS ───────────────────────────────────────���──────────────────────── */
 
-export const SECTORS: { id: SectorId; label: string; emoji: string }[] = [
-  { id: "marketing",    label: "Marketing / Communication", emoji: "📣" },
-  { id: "commerce",     label: "Commerce / Vente",           emoji: "💼" },
-  { id: "rh",           label: "RH / Administration",        emoji: "👥" },
-  { id: "finance",      label: "Finance / Comptabilite",     emoji: "📊" },
-  { id: "droit",        label: "Droit / Juridique",           emoji: "⚖️" },
-  { id: "sante",        label: "Sante / Social",              emoji: "🏥" },
-  { id: "informatique", label: "Informatique / Tech",         emoji: "💻" },
-  { id: "hotellerie",   label: "Hotellerie / Restauration",   emoji: "🍽️" },
-  { id: "design",       label: "Design / Creatif",            emoji: "🎨" },
-  { id: "btp",          label: "BTP / Ingenierie",            emoji: "🏗️" },
-  { id: "education",    label: "Education / Formation",       emoji: "📚" },
-  { id: "autre",        label: "Autre / General",             emoji: "🔧" },
+export const SECTORS: { id: SectorId; label: string; icon: LucideIcon }[] = [
+  { id: "marketing",    label: "Marketing / Communication", icon: Megaphone },
+  { id: "commerce",     label: "Commerce / Vente",           icon: Briefcase },
+  { id: "rh",           label: "RH / Administration",        icon: Users },
+  { id: "finance",      label: "Finance / Comptabilite",     icon: Calculator },
+  { id: "droit",        label: "Droit / Juridique",          icon: Scale },
+  { id: "sante",        label: "Sante / Social",             icon: Heart },
+  { id: "informatique", label: "Informatique / Tech",        icon: Cpu },
+  { id: "hotellerie",   label: "Hotellerie / Restauration",  icon: UtensilsCrossed },
+  { id: "design",       label: "Design / Creatif",           icon: Palette },
+  { id: "btp",          label: "BTP / Ingenierie",           icon: Hammer },
+  { id: "education",    label: "Education / Formation",      icon: BookOpen },
+  { id: "autre",        label: "Autre / General",            icon: Wrench },
 ];
 
 /* ─── BULLETS PAR SECTEUR ───────────────────────────────────────────────────── */
@@ -546,23 +564,23 @@ function tokenize(text: string): string[] {
 
 export type ATSMode = "pro" | "stage" | "observation";
 
-export const ATS_MODES: { value: ATSMode; label: string; emoji: string; desc: string }[] = [
+export const ATS_MODES: { value: ATSMode; label: string; icon: LucideIcon; desc: string }[] = [
   {
     value: "observation",
     label: "Stage d'observation",
-    emoji: "🏫",
+    icon: School,
     desc: "3eme / Seconde — premier contact avec le monde professionnel",
   },
   {
     value: "stage",
     label: "Stage / Alternance",
-    emoji: "🎓",
+    icon: GraduationCap,
     desc: "Lycee, BTS, Licence, Master — recherche de stage ou alternance",
   },
   {
     value: "pro",
     label: "Emploi / CDI",
-    emoji: "💼",
+    icon: Briefcase,
     desc: "Jeune diplome ou experience — recherche d'un poste",
   },
 ];

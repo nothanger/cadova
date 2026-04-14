@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CheckCircle2, XCircle, Loader2, AlertCircle, Database, Server, Lock, Zap } from "lucide-react";
+import { Check, CheckCircle2, X, XCircle, Loader2, AlertCircle, Database, Server, Lock, TriangleAlert, Lightbulb, Zap } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -62,7 +62,7 @@ export function HealthCheck() {
           details: {
             projectId: projectId.substring(0, 8) + "...",
             url: `https://${projectId}.supabase.co`,
-            keyPresent: "✓",
+            keyPresent: "present",
           },
           duration: Date.now() - start,
         });
@@ -328,11 +328,11 @@ export function HealthCheck() {
                 </span>
               </div>
               <div className="flex gap-4 text-sm">
-                <span className="text-green-700 font-medium">✓ {successCount} réussis</span>
+                <span className="text-green-700 font-medium flex items-center gap-2"><Check className="w-5 h-5 text-current" />{successCount} réussis</span>
                 {warningCount > 0 && (
-                  <span className="text-yellow-700 font-medium">⚠ {warningCount} avertissements</span>
+                  <span className="text-yellow-700 font-medium flex items-center gap-2"><TriangleAlert className="w-5 h-5 text-current" />{warningCount} avertissements</span>
                 )}
-                {errorCount > 0 && <span className="text-red-700 font-medium">✗ {errorCount} erreurs</span>}
+                {errorCount > 0 && <span className="text-red-700 font-medium flex items-center gap-2"><X className="w-5 h-5 text-current" />{errorCount} erreurs</span>}
               </div>
             </AlertDescription>
           </Alert>
@@ -457,19 +457,19 @@ export function HealthCheck() {
         {/* Help Section */}
         <Card className="border-indigo-200 bg-indigo-50/50">
           <CardHeader>
-            <CardTitle className="text-indigo-900">💡 Aide au diagnostic</CardTitle>
+            <CardTitle className="text-indigo-900 flex items-center gap-2"><Lightbulb className="w-5 h-5 text-current" />Aide au diagnostic</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-indigo-900">
             <div>
-              <strong>✅ Si tous les tests sont verts :</strong>
+              <strong className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-current" />Si tous les tests sont verts :</strong>
               <p className="mt-1">Votre connexion Supabase fonctionne parfaitement ! Vous pouvez utiliser toutes les fonctionnalités de Cadova.</p>
             </div>
             <div>
-              <strong>⚠️ Si vous voyez des avertissements :</strong>
+              <strong className="flex items-center gap-2"><TriangleAlert className="w-5 h-5 text-current" />Si vous voyez des avertissements :</strong>
               <p className="mt-1">Certaines fonctionnalités nécessitent une authentification. Connectez-vous pour les tester.</p>
             </div>
             <div>
-              <strong>❌ Si vous voyez des erreurs :</strong>
+              <strong className="flex items-center gap-2"><XCircle className="w-5 h-5 text-current" />Si vous voyez des erreurs :</strong>
               <ul className="mt-1 ml-4 list-disc space-y-1">
                 <li>Vérifiez que les variables d'environnement Supabase sont configurées</li>
                 <li>Assurez-vous que le serveur backend est démarré</li>

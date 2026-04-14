@@ -5,6 +5,10 @@ import { useSEO } from "../hooks/useSEO";
 import {
   ArrowRight,
   ArrowUpRight,
+  Check,
+  Shield,
+  Sparkles,
+  TriangleAlert,
   FileText,
   MessageSquare,
   Linkedin,
@@ -116,9 +120,9 @@ function TerminalMock() {
   const lines = [
     { delay: 0,   text: "$ cadova analyse --cv=\"profil.pdf\" --poste=\"charge-marketing\"", color: "rgba(255,255,255,0.4)" },
     { delay: 0.5, text: "→  Lecture du CV en cours...", color: "rgba(255,255,255,0.2)" },
-    { delay: 1.0, text: "✓  Score ATS : 94 / 100", color: "#10B981" },
-    { delay: 1.3, text: "✓  Competences-cles : 12 / 15 trouvees", color: "#10B981" },
-    { delay: 1.6, text: "⚠  3 points a ameliorer detectes", color: "#F59E0B" },
+    { delay: 1.0, text: "Score ATS : 94 / 100", color: "#10B981", icon: Check },
+    { delay: 1.3, text: "Competences-cles : 12 / 15 trouvees", color: "#10B981", icon: Check },
+    { delay: 1.6, text: "3 points a ameliorer detectes", color: "#F59E0B", icon: TriangleAlert },
   ];
 
   return (
@@ -199,7 +203,10 @@ function TerminalMock() {
             transition={{ delay: line.delay, duration: 0.25 }}
             style={{ color: line.color }}
           >
-            {line.text}
+            <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {"icon" in line && line.icon ? <line.icon size={18} /> : null}
+              <span>{line.text}</span>
+            </span>
           </motion.div>
         ))}
 
@@ -919,7 +926,7 @@ export function Landing() {
                 { value: "10K+", label: "étudiants" },
                 { value: "89%", label: "réussite" },
                 { value: "50K+", label: "CVs générés" },
-                { value: "4.8★", label: "note" },
+                { value: "4.8", label: "note", icon: Star },
               ].map((s) => (
                 <div key={s.label} className="hero-stat">
                   <div
@@ -932,7 +939,10 @@ export function Landing() {
                       lineHeight: 1,
                     }}
                   >
-                    {s.value}
+                    <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      {"icon" in s && s.icon ? <s.icon size={18} /> : null}
+                      <span>{s.value}</span>
+                    </span>
                   </div>
                   <div
                     style={{
@@ -1227,7 +1237,10 @@ export function Landing() {
                                 fontWeight: 500,
                               }}
                             >
-                              ✓ {f}
+                              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <Check size={18} />
+                                <span>{f}</span>
+                              </span>
                             </span>
                           ))}
                         </div>
@@ -1311,7 +1324,10 @@ export function Landing() {
                   fontFamily: "ui-monospace, monospace",
                 }}
               >
-                ★ Meilleure offre
+                <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Star size={18} />
+                  <span>Meilleure offre</span>
+                </span>
               </div>
               <div
                 style={{
@@ -1986,7 +2002,13 @@ export function Landing() {
                 fontFamily: "ui-monospace, monospace",
               }}
             >
-              ✓ Sans CB · ✓ Annulation facile · ✓ Données sécurisées
+              <span style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "8px" }}><Check size={18} /><span>Sans CB</span></span>
+                <span>·</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "8px" }}><Sparkles size={18} /><span>Annulation facile</span></span>
+                <span>·</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "8px" }}><Shield size={18} /><span>Données sécurisées</span></span>
+              </span>
             </p>
           </motion.div>
         </div>

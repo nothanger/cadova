@@ -9,6 +9,8 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import {
+  Briefcase,
+  ClipboardList,
   FileText,
   Plus,
   Trash2,
@@ -25,6 +27,7 @@ import {
   CheckCircle,
   RefreshCw,
   Globe,
+  GraduationCap,
 } from "lucide-react";
 import { AppLayout } from "../components/AppLayout";
 import { motion, AnimatePresence } from "motion/react";
@@ -78,11 +81,11 @@ const LEVEL_OPTIONS: { value: ExperienceLevel; label: string; desc: string }[] =
   { value: "intermediaire",label: "Experience",      desc: "3 ans et plus" },
 ];
 
-const TYPE_OPTIONS: { value: CandidatureType; label: string; emoji: string }[] = [
-  { value: "stage",      label: "Stage",            emoji: "🎓" },
-  { value: "alternance", label: "Alternance",       emoji: "🔄" },
-  { value: "emploi",     label: "Emploi",           emoji: "💼" },
-  { value: "parcoursup", label: "Parcoursup",       emoji: "📋" },
+const TYPE_OPTIONS = [
+  { value: "stage",      label: "Stage",      icon: GraduationCap },
+  { value: "alternance", label: "Alternance", icon: RefreshCw },
+  { value: "emploi",     label: "Emploi",     icon: Briefcase },
+  { value: "parcoursup", label: "Parcoursup", icon: ClipboardList },
 ];
 
 /* ──���──────────────────────────────────────────────────── composant */
@@ -389,10 +392,10 @@ export function CVGenerator() {
         <h1>${fullName}</h1>
         <p style="color:#4f46e5;font-size:16px;margin:4px 0">${jobTitle}</p>
         <div class="contact">
-          ${email ? `<span>✉ ${email}</span>` : ""}
-          ${phone ? `<span>📞 ${phone}</span>` : ""}
-          ${city ? `<span>📍 ${city}</span>` : ""}
-          ${linkedin ? `<span>🔗 ${linkedin}</span>` : ""}
+          ${email ? `<span>${email}</span>` : ""}
+          ${phone ? `<span>${phone}</span>` : ""}
+          ${city ? `<span>${city}</span>` : ""}
+          ${linkedin ? `<span>${linkedin}</span>` : ""}
         </div>
       </div>
       ${summary ? `<h2>Profil</h2><p style="font-size:13px;color:#475569">${summary}</p>` : ""}
@@ -496,7 +499,7 @@ export function CVGenerator() {
                               : "border-slate-200 hover:border-indigo-200 hover:bg-slate-50"
                           }`}
                         >
-                          <span className="text-lg">{s.emoji}</span>
+                          <s.icon className="w-5 h-5 text-gray-500 flex-shrink-0" />
                           <span className="text-xs leading-tight">{s.label}</span>
                           {sector === s.id && <Check className="size-3 ml-auto text-indigo-600 flex-shrink-0" />}
                         </button>
@@ -549,7 +552,7 @@ export function CVGenerator() {
                                 : "border-slate-200 hover:border-indigo-200"
                             }`}
                           >
-                            <span className="text-2xl">{t.emoji}</span>
+                            <t.icon className="w-5 h-5 text-gray-500 flex-shrink-0" />
                             <span className="text-sm font-medium">{t.label}</span>
                             {candidatureType === t.value && <Check className="size-3 text-indigo-600" />}
                           </button>

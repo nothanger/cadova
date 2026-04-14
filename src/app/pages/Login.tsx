@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router";
 import { Input } from "../components/ui/input";
-import { Loader2, ArrowRight, Lock, Mail } from "lucide-react";
+import { Loader2, ArrowRight, Lock, Mail, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -116,13 +116,14 @@ export function Login() {
           {[
             { value: "10K+", label: "Étudiants" },
             { value: "89%", label: "Réussite" },
-            { value: "4.8★", label: "Note" },
+            { value: "4.8", label: "Note", icon: Star },
           ].map((s) => (
             <div key={s.label}>
               <div
-                className="text-xl font-extrabold text-white"
+                className="text-xl font-extrabold text-white flex items-center gap-2"
                 style={{ fontFamily: "Syne, sans-serif" }}
               >
+                {"icon" in s && s.icon ? <s.icon className="w-5 h-5 text-current" /> : null}
                 {s.value}
               </div>
               <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>

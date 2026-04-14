@@ -294,9 +294,12 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {SECTORS.map((s) => (
+                        {SECTORS.map((s) => (
                         <SelectItem key={s.id} value={s.id}>
-                          {s.emoji} {s.label}
+                          <span className="flex items-center gap-2">
+                            <s.icon className="w-5 h-5 text-gray-500" />
+                            <span>{s.label}</span>
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>

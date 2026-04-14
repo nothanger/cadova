@@ -124,7 +124,7 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-xl">{m.emoji}</span>
+                        <m.icon className="w-5 h-5 text-gray-500" />
                         <span className={`text-sm font-semibold ${mode === m.value ? "text-cyan-700" : "text-slate-800"}`}>
                           {m.label}
                         </span>
@@ -236,7 +236,11 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                     ) : (
                       <>
                         <Search className="size-5" />
-                        Analyser mon {mode === "observation" ? "dossier" : "CV"} ({selectedMode.emoji} {selectedMode.label})
+                        <span className="flex items-center gap-2">
+                          <span>Analyser mon {mode === "observation" ? "dossier" : "CV"}</span>
+                          <selectedMode.icon className="w-5 h-5 text-current" />
+                          <span>{selectedMode.label}</span>
+                        </span>
                       </>
                     )}
                   </Button>
@@ -258,8 +262,17 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
               {/* Badge mode */}
               <div className="flex items-center gap-2">
                 <Badge className="bg-cyan-100 text-cyan-800 border-cyan-200 gap-1.5">
-                  {ATS_MODES.find((m) => m.value === result.mode)?.emoji}{" "}
-                  {ATS_MODES.find((m) => m.value === result.mode)?.label}
+                  {(() => {
+                    const currentMode = ATS_MODES.find((m) => m.value === result.mode);
+                    if (!currentMode) return null;
+                    const Icon = currentMode.icon;
+                    return (
+                      <>
+                        <Icon className="w-5 h-5 text-current" />
+                        {currentMode.label}
+                      </>
+                    );
+                  })()}
                 </Badge>
                 {!result.hasJobDesc && (
                   <Badge variant="secondary" className="text-xs text-slate-500">

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router";
-import { Loader2, ArrowRight, Lock, Mail, User, CheckCircle, AlertCircle } from "lucide-react";
+import { Loader2, ArrowRight, Lock, Mail, User, CheckCircle, AlertCircle, Star } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -55,7 +55,7 @@ export function Signup() {
         toast.error(error.message || "Erreur lors de la création du compte");
         setLoading(false);
       } else {
-        toast.success("Compte créé ! Bienvenue sur Cadova 🎉");
+        toast.success("Compte créé ! Bienvenue sur Cadova");
         navigate("/dashboard", { replace: true });
       }
     } catch {
@@ -115,7 +115,10 @@ export function Signup() {
             </div>
             <div>
               <p className="text-sm font-semibold text-white">10 000+ étudiants</p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>Note moyenne 4.8/5 ★</p>
+              <p className="text-xs flex items-center gap-2" style={{ color: "rgba(255,255,255,0.35)" }}>
+                <Star className="w-5 h-5 text-current" />
+                <span>Note moyenne 4.8/5</span>
+              </p>
             </div>
           </div>
         </div>

@@ -6,7 +6,7 @@ import {
   MessageSquare, Play, Send, RotateCcw, Lightbulb,
   Target, Clock, Star, User, Bot, CheckCircle,
   ChevronRight, ThumbsUp, AlertCircle, TrendingUp,
-  Mic, Zap,
+  Mic, Sparkles, Zap,
 } from "lucide-react";
 import {
   buildInterviewSession,
@@ -166,8 +166,9 @@ function FeedbackCard({ feedback }: { feedback: AnswerFeedback }) {
 
         {/* Conseil personnalisé */}
         <div className="mt-3 p-2 rounded-lg" style={{ background: "rgba(85,72,245,0.06)" }}>
-          <p className="text-[11px] leading-snug" style={{ color: "#5548F5" }}>
-            💡 {feedback.tip}
+          <p className="text-[11px] leading-snug flex items-center gap-2" style={{ color: "#5548F5" }}>
+            <Sparkles className="w-5 h-5 text-current flex-shrink-0" />
+            <span>{feedback.tip}</span>
           </p>
         </div>
       </div>
