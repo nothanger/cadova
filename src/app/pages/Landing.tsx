@@ -1,56 +1,9 @@
 import { Link } from "react-router";
-import {
-  ArrowRight,
-  Briefcase,
-  CheckCircle2,
-  FileText,
-  Linkedin,
-  MessageSquare,
-  Shield,
-  Sparkles,
-  Target,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2, Shield } from "lucide-react";
 import { CadovaLogo } from "../components/CadovaLogo";
+import { ModuleCard } from "../components/ModuleCard";
 import { useSEO } from "../hooks/useSEO";
-
-const modules = [
-  {
-    name: "ReussIA",
-    description: "CV, lettres de motivation et analyse ATS dans le meme flux.",
-    href: "/signup",
-    icon: FileText,
-    color: "#5548f5",
-    hoverBackground: "rgba(85,72,245,0.05)",
-    hoverBorder: "rgba(85,72,245,0.2)",
-  },
-  {
-    name: "OralIA",
-    description: "Simulation d'entretien avec feedback immediat sur tes reponses.",
-    href: "/signup",
-    icon: MessageSquare,
-    color: "#d946ef",
-    hoverBackground: "rgba(217,70,239,0.05)",
-    hoverBorder: "rgba(217,70,239,0.2)",
-  },
-  {
-    name: "TrackIA",
-    description: "Suivi de candidatures, rappels et entreprises a relancer.",
-    href: "/signup",
-    icon: Briefcase,
-    color: "#14b8a6",
-    hoverBackground: "rgba(20,184,166,0.05)",
-    hoverBorder: "rgba(20,184,166,0.2)",
-  },
-  {
-    name: "SkillIA",
-    description: "Optimisation LinkedIn et competences a travailler pour le poste vise.",
-    href: "/signup",
-    icon: Linkedin,
-    color: "#2563eb",
-    hoverBackground: "rgba(37,99,235,0.05)",
-    hoverBorder: "rgba(37,99,235,0.2)",
-  },
-];
+import { cadovaModules } from "../lib/module-data";
 
 const proofPoints = [
   "Creation de CV en quelques minutes",
@@ -123,7 +76,16 @@ export function Landing() {
           <Link to="/" style={{ display: "inline-flex", alignItems: "center" }}>
             <CadovaLogo width={72} />
           </Link>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <Link to="/modules" style={{ textDecoration: "none", color: "#5b5570", fontSize: 14 }}>
+              Modules
+            </Link>
+            <Link to="/modules/comparaison" style={{ textDecoration: "none", color: "#5b5570", fontSize: 14 }}>
+              Comparer
+            </Link>
+            <Link to="/pricing" style={{ textDecoration: "none", color: "#5b5570", fontSize: 14 }}>
+              Pricing
+            </Link>
             <Link to="/login" style={{ textDecoration: "none", color: "#5b5570", fontSize: 14 }}>
               Connexion
             </Link>
@@ -173,7 +135,6 @@ export function Landing() {
                   marginBottom: 20,
                 }}
               >
-                <Sparkles size={14} style={{ color: "#5548f5" }} />
                 Tout ton process de candidature, au meme endroit
               </div>
 
@@ -205,7 +166,7 @@ export function Landing() {
 
               <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 28 }}>
                 <Link
-                  to="/signup"
+                  to="/modules"
                   style={{
                     textDecoration: "none",
                     display: "inline-flex",
@@ -218,11 +179,11 @@ export function Landing() {
                     fontWeight: 700,
                   }}
                 >
-                  Commencer gratuitement
+                  Explorer les modules
                   <ArrowRight size={18} />
                 </Link>
                 <Link
-                  to="/login"
+                  to="/pricing"
                   style={{
                     textDecoration: "none",
                     display: "inline-flex",
@@ -236,7 +197,7 @@ export function Landing() {
                     background: "white",
                   }}
                 >
-                  Voir mon espace
+                  Voir les formules
                 </Link>
               </div>
 
@@ -314,9 +275,19 @@ export function Landing() {
 
         <section style={{ padding: "0 20px 64px" }}>
           <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-              <Target size={18} style={{ color: "#5548f5" }} />
-              <strong>Les modules</strong>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
+              <div>
+                <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.14em", color: "#827b98" }}>Les modules</div>
+                <strong style={{ display: "block", marginTop: 8 }}>Choisis ton point d'entree</strong>
+              </div>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                <Link to="/modules/comparaison" style={{ textDecoration: "none", color: "#140f26", fontWeight: 700 }}>
+                  Comparer
+                </Link>
+                <Link to="/pricing" style={{ textDecoration: "none", color: "#140f26", fontWeight: 700 }}>
+                  Voir les prix
+                </Link>
+              </div>
             </div>
             <div
               style={{
@@ -325,38 +296,8 @@ export function Landing() {
                 gap: 16,
               }}
             >
-              {modules.map((module) => (
-                <Link
-                  key={module.name}
-                  to={module.href}
-                  style={{
-                    textDecoration: "none",
-                    color: "inherit",
-                    background: "white",
-                    borderRadius: 8,
-                    padding: 20,
-                    border: "1px solid rgba(20,15,38,0.08)",
-                    borderTop: `3px solid ${module.color}`,
-                    cursor: "pointer",
-                    transition: "background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease",
-                  }}
-                  onMouseEnter={(event) => {
-                    event.currentTarget.style.background = module.hoverBackground;
-                    event.currentTarget.style.borderColor = module.hoverBorder;
-                    event.currentTarget.style.boxShadow = "0 12px 28px rgba(20,15,38,0.08)";
-                    event.currentTarget.style.transform = "scale(1.01)";
-                  }}
-                  onMouseLeave={(event) => {
-                    event.currentTarget.style.background = "white";
-                    event.currentTarget.style.borderColor = "rgba(20,15,38,0.08)";
-                    event.currentTarget.style.boxShadow = "none";
-                    event.currentTarget.style.transform = "scale(1)";
-                  }}
-                >
-                  <module.icon size={18} style={{ color: module.color }} />
-                  <h2 style={{ margin: "14px 0 8px", fontSize: 20 }}>{module.name}</h2>
-                  <p style={{ margin: 0, lineHeight: 1.6, color: "#625b76" }}>{module.description}</p>
-                </Link>
+              {cadovaModules.map((module) => (
+                <ModuleCard key={module.slug} module={module} />
               ))}
             </div>
           </div>
@@ -364,7 +305,7 @@ export function Landing() {
 
         <section style={{ background: "white", padding: "64px 20px" }}>
           <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-            <h2 style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(2rem, 4vw, 3rem)", margin: 0 }}>
+            <h2 style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(1.8rem, 4vw, 3rem)", margin: 0 }}>
               Un parcours simple, sans eparpillement.
             </h2>
             <div
@@ -421,15 +362,15 @@ export function Landing() {
               <Shield size={16} />
               Donnees sous controle
             </div>
-            <h2 style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(1.8rem, 4vw, 3rem)", lineHeight: 1.05, margin: 0 }}>
-              Cree ton compte et commence par un vrai livrable.
+            <h2 style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(2rem, 5vw, 3.8rem)", lineHeight: 1.05, margin: 0 }}>
+              Cree ton compte et avance module par module.
             </h2>
             <p style={{ maxWidth: 620, color: "rgba(255,255,255,0.72)", lineHeight: 1.7 }}>
-              L'objectif n'est pas de te faire naviguer dans des promesses. Tu arrives, tu crées, tu enregistres, tu suis.
+              Tu peux commencer par un seul besoin, comparer les usages, ou prendre la formule complete si tu veux un espace unique pour tout ton process candidature.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 24 }}>
               <Link
-                to="/signup"
+                to="/pricing"
                 style={{
                   textDecoration: "none",
                   display: "inline-flex",
@@ -442,11 +383,11 @@ export function Landing() {
                   fontWeight: 700,
                 }}
               >
-                Demarrer l'essai gratuit
+                Voir la formule complete
                 <ArrowRight size={18} />
               </Link>
               <Link
-                to="/login"
+                to="/modules/comparaison"
                 style={{
                   textDecoration: "none",
                   display: "inline-flex",
@@ -459,7 +400,7 @@ export function Landing() {
                   fontWeight: 700,
                 }}
               >
-                J'ai deja un compte
+                Comparer les modules
               </Link>
             </div>
           </div>
