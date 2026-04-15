@@ -19,24 +19,36 @@ const modules = [
     description: "CV, lettres de motivation et analyse ATS dans le meme flux.",
     href: "/signup",
     icon: FileText,
+    color: "#5548f5",
+    hoverBackground: "rgba(85,72,245,0.05)",
+    hoverBorder: "rgba(85,72,245,0.2)",
   },
   {
     name: "OralIA",
     description: "Simulation d'entretien avec feedback immediat sur tes reponses.",
     href: "/signup",
     icon: MessageSquare,
+    color: "#d946ef",
+    hoverBackground: "rgba(217,70,239,0.05)",
+    hoverBorder: "rgba(217,70,239,0.2)",
   },
   {
     name: "TrackIA",
     description: "Suivi de candidatures, rappels et entreprises a relancer.",
     href: "/signup",
     icon: Briefcase,
+    color: "#14b8a6",
+    hoverBackground: "rgba(20,184,166,0.05)",
+    hoverBorder: "rgba(20,184,166,0.2)",
   },
   {
     name: "SkillIA",
     description: "Optimisation LinkedIn et competences a travailler pour le poste vise.",
     href: "/signup",
     icon: Linkedin,
+    color: "#2563eb",
+    hoverBackground: "rgba(37,99,235,0.05)",
+    hoverBorder: "rgba(37,99,235,0.2)",
   },
 ];
 
@@ -151,17 +163,18 @@ export function Landing() {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 8,
-                  padding: "8px 12px",
-                  borderRadius: 999,
-                  background: "rgba(85,72,245,0.08)",
-                  color: "#5548f5",
+                  padding: "6px 10px",
+                  borderRadius: 6,
+                  background: "rgba(85,72,245,0.04)",
+                  border: "1px solid rgba(85,72,245,0.08)",
+                  color: "#5b5570",
                   fontSize: 12,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   marginBottom: 20,
                 }}
               >
-                <Sparkles size={14} />
-                CV, ATS, entretien et suivi au meme endroit
+                <Sparkles size={14} style={{ color: "#5548f5" }} />
+                Tout ton process de candidature, au meme endroit
               </div>
 
               <h1
@@ -239,11 +252,12 @@ export function Landing() {
 
             <div
               style={{
-                background: "#120d23",
+                background: "linear-gradient(160deg, #13152A 0%, #191c34 60%, #211a43 100%)",
                 color: "white",
                 borderRadius: 8,
-                padding: 24,
-                boxShadow: "0 24px 60px rgba(20,15,38,0.22)",
+                padding: 28,
+                border: "1px solid rgba(255,255,255,0.1)",
+                boxShadow: "0 18px 42px rgba(20,15,38,0.18)",
               }}
             >
               <div style={{ display: "grid", gap: 14 }}>
@@ -251,27 +265,27 @@ export function Landing() {
                   style={{
                     padding: 16,
                     borderRadius: 8,
-                    background: "rgba(255,255,255,0.04)",
+                    background: "rgba(255,255,255,0.045)",
                     border: "1px solid rgba(255,255,255,0.08)",
                   }}
                 >
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>Exemple de flux</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.62)", marginBottom: 8 }}>Exemple de flux</div>
                   <div style={{ fontSize: 18, fontWeight: 700 }}>Objectif: alternance marketing</div>
                   <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                      <span style={{ color: "rgba(255,255,255,0.72)" }}>CV genere</span>
+                      <span style={{ color: "rgba(255,255,255,0.78)", lineHeight: 1.55 }}>CV genere</span>
                       <strong style={{ color: "#8b5cf6" }}>Pret</strong>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                      <span style={{ color: "rgba(255,255,255,0.72)" }}>Score ATS</span>
+                      <span style={{ color: "rgba(255,255,255,0.78)", lineHeight: 1.55 }}>Score ATS</span>
                       <strong style={{ color: "#10b981" }}>86 / 100</strong>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                      <span style={{ color: "rgba(255,255,255,0.72)" }}>Simulation entretien</span>
+                      <span style={{ color: "rgba(255,255,255,0.78)", lineHeight: 1.55 }}>Simulation entretien</span>
                       <strong style={{ color: "#f59e0b" }}>A retravailler</strong>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                      <span style={{ color: "rgba(255,255,255,0.72)" }}>Relance recommandee</span>
+                      <span style={{ color: "rgba(255,255,255,0.78)", lineHeight: 1.55 }}>Relance recommandee</span>
                       <strong style={{ color: "#ec4899" }}>2 entreprises</strong>
                     </div>
                   </div>
@@ -281,14 +295,15 @@ export function Landing() {
                   style={{
                     padding: 16,
                     borderRadius: 8,
-                    background: "rgba(85,72,245,0.12)",
-                    border: "1px solid rgba(139,92,246,0.24)",
+                    background: "linear-gradient(180deg, rgba(85,72,245,0.12) 0%, rgba(85,72,245,0.08) 100%)",
+                    border: "1px solid rgba(139,92,246,0.18)",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
                   }}
                 >
                   <div style={{ fontSize: 12, textTransform: "uppercase", color: "#c4b5fd", marginBottom: 8 }}>
                     Ce que tu gagnes
                   </div>
-                  <p style={{ margin: 0, lineHeight: 1.65, color: "rgba(255,255,255,0.84)" }}>
+                  <p style={{ margin: 0, lineHeight: 1.72, color: "rgba(255,255,255,0.82)", fontSize: 15 }}>
                     Moins de dispersion, plus de coherence entre tes supports, et un dashboard qui garde la memoire de tes vraies actions.
                   </p>
                 </div>
@@ -321,9 +336,24 @@ export function Landing() {
                     borderRadius: 8,
                     padding: 20,
                     border: "1px solid rgba(20,15,38,0.08)",
+                    borderTop: `3px solid ${module.color}`,
+                    cursor: "pointer",
+                    transition: "background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease",
+                  }}
+                  onMouseEnter={(event) => {
+                    event.currentTarget.style.background = module.hoverBackground;
+                    event.currentTarget.style.borderColor = module.hoverBorder;
+                    event.currentTarget.style.boxShadow = "0 12px 28px rgba(20,15,38,0.08)";
+                    event.currentTarget.style.transform = "scale(1.01)";
+                  }}
+                  onMouseLeave={(event) => {
+                    event.currentTarget.style.background = "white";
+                    event.currentTarget.style.borderColor = "rgba(20,15,38,0.08)";
+                    event.currentTarget.style.boxShadow = "none";
+                    event.currentTarget.style.transform = "scale(1)";
                   }}
                 >
-                  <module.icon size={18} style={{ color: "#5548f5" }} />
+                  <module.icon size={18} style={{ color: module.color }} />
                   <h2 style={{ margin: "14px 0 8px", fontSize: 20 }}>{module.name}</h2>
                   <p style={{ margin: 0, lineHeight: 1.6, color: "#625b76" }}>{module.description}</p>
                 </Link>
