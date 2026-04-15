@@ -3,7 +3,6 @@ import { Link } from "react-router";
 import {
   ArrowRight,
   Briefcase,
-  CheckCircle2,
   Clock3,
   FileText,
   Linkedin,
@@ -56,63 +55,22 @@ function buildActivity(data: DashboardData): ActivityItem[] {
   const items: Array<ActivityItem & { ts: number }> = [];
 
   data.cvs.forEach((item) => {
-    items.push({
-      id: `cv-${item.id}`,
-      label: item.title || "CV enregistre",
-      meta: "ReussIA",
-      date: timeAgo(item.updatedAt),
-      ts: new Date(item.updatedAt).getTime(),
-    });
+    items.push({ id: `cv-${item.id}`, label: item.title || "CV enregistre", meta: "ReussIA", date: timeAgo(item.updatedAt), ts: new Date(item.updatedAt).getTime() });
   });
-
   data.letters.forEach((item) => {
-    items.push({
-      id: `letter-${item.id}`,
-      label: item.title || `${item.company || "Lettre"} - ${item.position || "candidature"}`,
-      meta: "Cover letter",
-      date: timeAgo(item.updatedAt),
-      ts: new Date(item.updatedAt).getTime(),
-    });
+    items.push({ id: `letter-${item.id}`, label: item.title || `${item.company || "Lettre"} - ${item.position || "candidature"}`, meta: "Cover letter", date: timeAgo(item.updatedAt), ts: new Date(item.updatedAt).getTime() });
   });
-
   data.ats.forEach((item) => {
-    items.push({
-      id: `ats-${item.id}`,
-      label: `Analyse ATS ${item.score}/100`,
-      meta: item.missingKeywords.length ? `${item.missingKeywords.length} mots-cles manquants` : "Bon niveau de compatibilite",
-      date: timeAgo(item.analyzedAt),
-      ts: new Date(item.analyzedAt).getTime(),
-    });
+    items.push({ id: `ats-${item.id}`, label: `Analyse ATS ${item.score}/100`, meta: item.missingKeywords.length ? `${item.missingKeywords.length} mots-cles manquants` : "Bon niveau de compatibilite", date: timeAgo(item.analyzedAt), ts: new Date(item.analyzedAt).getTime() });
   });
-
   data.interviews.forEach((item) => {
-    items.push({
-      id: `interview-${item.id}`,
-      label: `Simulation ${item.type}`,
-      meta: `Score ${item.score}/100`,
-      date: timeAgo(item.completedAt),
-      ts: new Date(item.completedAt).getTime(),
-    });
+    items.push({ id: `interview-${item.id}`, label: `Simulation ${item.type}`, meta: `Score ${item.score}/100`, date: timeAgo(item.completedAt), ts: new Date(item.completedAt).getTime() });
   });
-
   data.applications.forEach((item) => {
-    items.push({
-      id: `application-${item.id}`,
-      label: `${item.company} - ${item.position}`,
-      meta: `Statut: ${item.status}`,
-      date: timeAgo(item.updatedAt),
-      ts: new Date(item.updatedAt).getTime(),
-    });
+    items.push({ id: `application-${item.id}`, label: `${item.company} - ${item.position}`, meta: `Statut: ${item.status}`, date: timeAgo(item.updatedAt), ts: new Date(item.updatedAt).getTime() });
   });
-
   data.linkedin.forEach((item) => {
-    items.push({
-      id: `linkedin-${item.id}`,
-      label: "Analyse LinkedIn",
-      meta: `Score ${item.score}/100`,
-      date: timeAgo(item.analyzedAt),
-      ts: new Date(item.analyzedAt).getTime(),
-    });
+    items.push({ id: `linkedin-${item.id}`, label: "Analyse LinkedIn", meta: `Score ${item.score}/100`, date: timeAgo(item.analyzedAt), ts: new Date(item.analyzedAt).getTime() });
   });
 
   return items.sort((a, b) => b.ts - a.ts).slice(0, 8);
@@ -149,25 +107,11 @@ export function Dashboard() {
 
   const summary = useMemo(() => {
     if (!data) {
-      return {
-        avgAts: 0,
-        avgInterview: 0,
-        completion: 0,
-        activeApplications: 0,
-        activity: [] as ActivityItem[],
-      };
+      return { avgAts: 0, avgInterview: 0, completion: 0, activeApplications: 0, activity: [] as ActivityItem[] };
     }
 
-    const avgAts =
-      data.ats.length > 0
-        ? Math.round(data.ats.reduce((acc, item) => acc + item.score, 0) / data.ats.length)
-        : 0;
-
-    const avgInterview =
-      data.interviews.length > 0
-        ? Math.round(data.interviews.reduce((acc, item) => acc + item.score, 0) / data.interviews.length)
-        : 0;
-
+    const avgAts = data.ats.length > 0 ? Math.round(data.ats.reduce((acc, item) => acc + item.score, 0) / data.ats.length) : 0;
+    const avgInterview = data.interviews.length > 0 ? Math.round(data.interviews.reduce((acc, item) => acc + item.score, 0) / data.interviews.length) : 0;
     const completion = Math.min(
       100,
       (data.cvs.length > 0 ? 20 : 0) +
@@ -175,7 +119,7 @@ export function Dashboard() {
         (data.ats.length > 0 ? 20 : 0) +
         (data.interviews.length > 0 ? 20 : 0) +
         (data.linkedin.length > 0 ? 10 : 0) +
-        (data.applications.length > 0 ? 15 : 0)
+        (data.applications.length > 0 ? 15 : 0),
     );
 
     return {
@@ -195,79 +139,34 @@ export function Dashboard() {
   ];
 
   const cards = [
-    {
-      label: "CV enregistres",
-      value: data?.cvs.length ?? 0,
-      hint: "Chaque nouvelle version apparait ici.",
-      icon: FileText,
-      color: "#5548f5",
-    },
-    {
-      label: "Candidatures actives",
-      value: summary.activeApplications,
-      hint: "Candidatures encore en cours ou a relancer.",
-      icon: Briefcase,
-      color: "#10b981",
-    },
-    {
-      label: "Score ATS moyen",
-      value: summary.avgAts,
-      suffix: "/100",
-      hint: summary.avgAts ? "Base sur tes analyses sauvegardees." : "Aucune analyse pour l'instant.",
-      icon: Search,
-      color: "#06b6d4",
-    },
-    {
-      label: "Score entretien moyen",
-      value: summary.avgInterview,
-      suffix: "/100",
-      hint: summary.avgInterview ? "Moyenne de tes simulations." : "Lance une simulation pour commencer.",
-      icon: MessageSquare,
-      color: "#ec4899",
-    },
+    { label: "CV enregistres", value: data?.cvs.length ?? 0, hint: "Chaque nouvelle version apparait ici.", icon: FileText, color: "#5044f5" },
+    { label: "Candidatures actives", value: summary.activeApplications, hint: "Candidatures encore en cours ou a relancer.", icon: Briefcase, color: "#14b8a6" },
+    { label: "Score ATS moyen", value: summary.avgAts, suffix: "/100", hint: summary.avgAts ? "Base sur tes analyses sauvegardees." : "Aucune analyse pour l'instant.", icon: Search, color: "#2563eb" },
+    { label: "Score entretien moyen", value: summary.avgInterview, suffix: "/100", hint: summary.avgInterview ? "Moyenne de tes simulations." : "Lance une simulation pour commencer.", icon: MessageSquare, color: "#d946ef" },
   ];
 
   return (
     <AppLayout>
-      <div className="max-w-6xl mx-auto space-y-6" style={{ fontFamily: "DM Sans, system-ui, sans-serif" }}>
-        <section
-          style={{
-            background: "linear-gradient(135deg, #120d23, #23174b)",
-            color: "white",
-            borderRadius: 8,
-            padding: 28,
-          }}
-        >
+      <div className="cadova-page space-y-6">
+        <section className="cadova-panel p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.16em", color: "rgba(255,255,255,0.45)" }}>
-                Tableau de bord
-              </div>
-              <h1 style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(2rem, 5vw, 3.4rem)", lineHeight: 1.02, margin: "10px 0 12px" }}>
-                Bonjour, {firstName}.
-              </h1>
-              <p style={{ maxWidth: 640, margin: 0, color: "rgba(255,255,255,0.72)", lineHeight: 1.7 }}>
+              <p className="cadova-kicker">Tableau de bord</p>
+              <h1 className="cadova-title">Bonjour, {firstName}.</h1>
+              <p className="cadova-subtitle">
                 Ici, seules tes vraies actions comptent: documents enregistres, analyses lancees, simulations terminees et candidatures suivies.
               </p>
             </div>
-            <div
-              style={{
-                minWidth: 240,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 8,
-                padding: 18,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "end" }}>
+            <div className="cadova-card min-w-[250px] p-5">
+              <div className="flex items-end justify-between gap-4">
                 <div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Progression globale</div>
-                  <div style={{ fontSize: 32, fontWeight: 800 }}>{summary.completion}%</div>
+                  <div className="text-xs font-semibold text-[var(--cadova-muted)]">Progression globale</div>
+                  <div className="mt-1 text-4xl font-extrabold tracking-[-0.05em] text-[var(--cadova-text)]">{summary.completion}%</div>
                 </div>
-                <TrendingUp size={18} style={{ color: "#8b5cf6" }} />
+                <TrendingUp className="size-5 text-[var(--cadova-primary)]" />
               </div>
-              <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,0.12)", marginTop: 14, overflow: "hidden" }}>
-                <div style={{ width: `${summary.completion}%`, height: "100%", background: "linear-gradient(90deg, #5548f5, #8b5cf6)" }} />
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--cadova-bg-alt)]">
+                <div className="h-full rounded-full bg-[linear-gradient(90deg,#5044f5,#7c5cff)]" style={{ width: `${summary.completion}%` }} />
               </div>
             </div>
           </div>
@@ -275,67 +174,44 @@ export function Dashboard() {
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {cards.map((card) => (
-            <div
-              key={card.label}
-              style={{
-                background: "white",
-                border: "1px solid rgba(20,15,38,0.08)",
-                borderRadius: 8,
-                padding: 20,
-              }}
-            >
+            <div key={card.label} className="cadova-card p-5">
               <div className="flex items-center justify-between">
-                <card.icon size={18} style={{ color: card.color }} />
-                <span style={{ fontSize: 12, color: "#9189a6" }}>{card.label}</span>
+                <span className="flex size-10 items-center justify-center rounded-[8px]" style={{ background: `${card.color}12` }}>
+                  <card.icon size={18} style={{ color: card.color }} />
+                </span>
+                <span className="text-xs font-semibold text-[var(--cadova-muted)]">{card.label}</span>
               </div>
-              <div style={{ marginTop: 18, fontSize: 34, fontWeight: 800, lineHeight: 1 }}>
+              <div className="mt-5 text-4xl font-extrabold tracking-[-0.055em] text-[var(--cadova-text)]">
                 {card.value}
-                {card.suffix ? <span style={{ fontSize: 18, color: "#8d86a2", marginLeft: 4 }}>{card.suffix}</span> : null}
+                {card.suffix ? <span className="ml-1 text-lg text-[var(--cadova-muted)]">{card.suffix}</span> : null}
               </div>
-              <p style={{ marginTop: 10, marginBottom: 0, color: "#69627d", lineHeight: 1.6, fontSize: 14 }}>{card.hint}</p>
+              <p className="mt-3 text-sm leading-6 text-[var(--cadova-muted)]">{card.hint}</p>
             </div>
           ))}
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div
-            style={{
-              background: "white",
-              borderRadius: 8,
-              border: "1px solid rgba(20,15,38,0.08)",
-              padding: 22,
-            }}
-          >
+          <div className="cadova-card p-6">
             <div className="flex items-center justify-between gap-4">
-              <h2 style={{ margin: 0, fontSize: 22 }}>Activite recente</h2>
-              <Clock3 size={18} style={{ color: "#8f87a4" }} />
+              <h2 className="text-2xl font-extrabold tracking-[-0.045em]">Activite recente</h2>
+              <Clock3 className="size-5 text-[var(--cadova-muted)]" />
             </div>
 
             {summary.activity.length === 0 ? (
-              <div style={{ marginTop: 18, padding: 20, borderRadius: 8, background: "#f7f6fb" }}>
-                <p style={{ margin: 0, color: "#5b5470", lineHeight: 1.7 }}>
+              <div className="mt-5 rounded-[8px] border border-[var(--cadova-border)] bg-[var(--cadova-bg-alt)] p-5">
+                <p className="m-0 text-sm leading-7 text-[var(--cadova-muted)]">
                   Ton dashboard s'alimente quand tu enregistres un CV, une lettre, une analyse ATS, une simulation d'entretien ou une candidature.
                 </p>
               </div>
             ) : (
-              <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
+              <div className="mt-5 grid gap-4">
                 {summary.activity.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 16,
-                      alignItems: "start",
-                      paddingBottom: 14,
-                      borderBottom: "1px solid rgba(20,15,38,0.08)",
-                    }}
-                  >
+                  <div key={item.id} className="flex items-start justify-between gap-4 border-b border-[var(--cadova-border)] pb-4 last:border-0 last:pb-0">
                     <div>
-                      <div style={{ fontWeight: 700 }}>{item.label}</div>
-                      <div style={{ color: "#766f8a", fontSize: 14, marginTop: 4 }}>{item.meta}</div>
+                      <div className="font-bold text-[var(--cadova-text)]">{item.label}</div>
+                      <div className="mt-1 text-sm text-[var(--cadova-muted)]">{item.meta}</div>
                     </div>
-                    <div style={{ color: "#9a93ae", fontSize: 13, whiteSpace: "nowrap" }}>{item.date}</div>
+                    <div className="whitespace-nowrap text-xs font-semibold text-[#a6abc0]">{item.date}</div>
                   </div>
                 ))}
               </div>
@@ -343,64 +219,36 @@ export function Dashboard() {
           </div>
 
           <div className="space-y-6">
-            <div
-              style={{
-                background: "white",
-                borderRadius: 8,
-                border: "1px solid rgba(20,15,38,0.08)",
-                padding: 22,
-              }}
-            >
-              <h2 style={{ margin: 0, fontSize: 22 }}>Actions rapides</h2>
-              <div style={{ display: "grid", gap: 12, marginTop: 18 }}>
+            <div className="cadova-card p-6">
+              <h2 className="text-2xl font-extrabold tracking-[-0.045em]">Actions rapides</h2>
+              <div className="mt-5 grid gap-3">
                 {quickActions.map((action) => (
-                  <Link
-                    key={action.href}
-                    to={action.href}
-                    style={{
-                      textDecoration: "none",
-                      color: "inherit",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: 14,
-                      borderRadius: 8,
-                      background: "#f7f6fb",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <action.icon size={17} style={{ color: "#5548f5" }} />
-                      <span style={{ fontWeight: 700 }}>{action.label}</span>
+                  <Link key={action.href} to={action.href} className="flex items-center justify-between gap-3 rounded-[8px] border border-[var(--cadova-border)] bg-white px-4 py-3 no-underline transition hover:bg-[var(--cadova-primary-soft)]">
+                    <div className="flex items-center gap-3">
+                      <action.icon className="size-4 text-[var(--cadova-primary)]" />
+                      <span className="font-bold text-[var(--cadova-text)]">{action.label}</span>
                     </div>
-                    <ArrowRight size={16} style={{ color: "#8a84a0" }} />
+                    <ArrowRight className="size-4 text-[var(--cadova-muted)]" />
                   </Link>
                 ))}
               </div>
             </div>
 
-            <div
-              style={{
-                background: "white",
-                borderRadius: 8,
-                border: "1px solid rgba(20,15,38,0.08)",
-                padding: 22,
-              }}
-            >
-              <h2 style={{ margin: 0, fontSize: 22 }}>Etat des modules</h2>
-              <div style={{ display: "grid", gap: 12, marginTop: 18 }}>
+            <div className="cadova-card p-6">
+              <h2 className="text-2xl font-extrabold tracking-[-0.045em]">Etat des modules</h2>
+              <div className="mt-5 grid gap-3">
                 {[
                   { label: "ReussIA", value: (data?.cvs.length ?? 0) + (data?.letters.length ?? 0) + (data?.ats.length ?? 0), icon: FileText },
                   { label: "OralIA", value: data?.interviews.length ?? 0, icon: MessageSquare },
                   { label: "TrackIA", value: data?.applications.length ?? 0, icon: Briefcase },
                   { label: "SkillIA", value: data?.linkedin.length ?? 0, icon: Linkedin },
                 ].map((item) => (
-                  <div key={item.label} className="flex items-center justify-between">
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <item.icon size={16} style={{ color: "#5548f5" }} />
-                      <span>{item.label}</span>
+                  <div key={item.label} className="flex items-center justify-between rounded-[8px] bg-[var(--cadova-bg-alt)] px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <item.icon className="size-4 text-[var(--cadova-primary)]" />
+                      <span className="font-semibold text-[var(--cadova-text)]">{item.label}</span>
                     </div>
-                    <strong>{item.value}</strong>
+                    <strong className="text-[var(--cadova-text)]">{item.value}</strong>
                   </div>
                 ))}
               </div>

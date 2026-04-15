@@ -18,12 +18,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { CadovaLogo } from "./CadovaLogo";
 
-// ── Navigation structure ───────────────────────────────────────────
-
 const navSections = [
   {
     module: "TrackIA",
-    accent: "#10B981",
+    accent: "#14b8a6",
     items: [
       { icon: LayoutDashboard, label: "Dashboard", sub: "Vue d'ensemble", path: "/dashboard" },
       { icon: MapPin, label: "Carte Entreprises", sub: "Trouver un poste", path: "/company-finder" },
@@ -31,31 +29,29 @@ const navSections = [
   },
   {
     module: "ReussIA",
-    accent: "#5548F5",
+    accent: "#5044f5",
     items: [
-      { icon: FileText, label: "Générateur CV", sub: "Optimisé ATS", path: "/cv-generator" },
+      { icon: FileText, label: "Generateur CV", sub: "Optimise ATS", path: "/cv-generator" },
       { icon: PenTool, label: "Lettre de motivation", sub: "Sur-mesure IA", path: "/cover-letter" },
       { icon: Search, label: "Analyse ATS", sub: "Score & gaps", path: "/ats-analysis" },
     ],
   },
   {
     module: "OralIA",
-    accent: "#EC4899",
+    accent: "#d946ef",
     items: [
-      { icon: MessageSquare, label: "Simulation entretien", sub: "Questions réalistes", path: "/interview" },
+      { icon: MessageSquare, label: "Simulation entretien", sub: "Questions realistes", path: "/interview" },
     ],
   },
   {
     module: "SkillIA",
-    accent: "#F59E0B",
+    accent: "#2563eb",
     items: [
-      { icon: Linkedin, label: "LinkedIn", sub: "Profil optimisé", path: "/linkedin" },
-      { icon: Lightbulb, label: "Compétences", sub: "Roadmap IA", path: "/skills" },
+      { icon: Linkedin, label: "LinkedIn", sub: "Profil optimise", path: "/linkedin" },
+      { icon: Lightbulb, label: "Competences", sub: "Roadmap IA", path: "/skills" },
     ],
   },
 ];
-
-// ── Sidebar content ────────────────────────────────────────────────
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   const location = useLocation();
@@ -65,116 +61,75 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const handleLogout = async () => {
     try {
       await signOut();
-      toast.success("Déconnexion réussie");
+      toast.success("Deconnexion reussie");
       navigate("/");
     } catch {
-      toast.error("Erreur lors de la déconnexion");
+      toast.error("Erreur lors de la deconnexion");
     }
   };
 
-  const firstName = user?.name
-    ? user.name.split(" ")[0]
-    : user?.email?.split("@")[0] || "Utilisateur";
-
+  const firstName = user?.name ? user.name.split(" ")[0] : user?.email?.split("@")[0] || "Utilisateur";
   const initials = firstName.slice(0, 2).toUpperCase();
 
   return (
-    <div
-      className="flex flex-col h-full select-none"
-      style={{ background: "#0A0914", borderRight: "1px solid rgba(255,255,255,0.05)" }}
-    >
-      {/* ── Brand header ── */}
-      <div className="px-5 pt-5 pb-4 flex items-center justify-between">
-        <Link to="/dashboard" onClick={onClose}>
-          <CadovaLogo width={72} white />
+    <div className="flex h-full select-none flex-col bg-[var(--cadova-navy)] text-white">
+      <div
+        className="absolute inset-0 pointer-events-none opacity-100"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px), radial-gradient(circle at 80% 0%, rgba(80,68,245,0.22), transparent 25%)",
+          backgroundSize: "48px 48px, 48px 48px, auto",
+        }}
+      />
+      <div className="relative z-10 flex items-center justify-between px-5 pb-4 pt-5">
+        <Link to="/dashboard" onClick={onClose} className="inline-flex">
+          <CadovaLogo width={78} white />
         </Link>
         {onClose && (
           <button
             onClick={onClose}
-            className="size-8 flex items-center justify-center rounded-lg transition-colors"
-            style={{ color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.05)" }}
+            className="flex size-9 items-center justify-center rounded-[8px] bg-white/5 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
           >
             <X className="size-4" />
           </button>
         )}
       </div>
 
-      {/* ── Thin rule ── */}
-      <div style={{ height: "1px", background: "rgba(255,255,255,0.05)", margin: "0 20px" }} />
+      <div className="relative z-10 mx-5 h-px bg-white/10" />
 
-      {/* ── Nav ── */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
+      <nav className="relative z-10 flex-1 overflow-y-auto px-3 py-4">
         {navSections.map((section, si) => (
-          <div key={section.module} className={si > 0 ? "mt-1" : ""}>
-            {/* Module label */}
-            <div className="flex items-center gap-2 px-3 py-2.5 mb-0.5">
-              <span
-                className="text-[9px] font-bold tracking-[0.18em] uppercase"
-                style={{ color: section.accent, opacity: 0.7 }}
-              >
+          <div key={section.module} className={si > 0 ? "mt-2" : ""}>
+            <div className="mb-1 flex items-center gap-2 px-3 py-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.18em]" style={{ color: section.accent }}>
                 {section.module}
               </span>
-              <div
-                className="flex-1 h-px"
-                style={{ background: `${section.accent}18` }}
-              />
+              <div className="h-px flex-1" style={{ background: `${section.accent}30` }} />
             </div>
 
-            {/* Items */}
-            <div className="space-y-0.5 mb-2">
+            <div className="space-y-1">
               {section.items.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
-                  <Link key={item.path} to={item.path} onClick={onClose}>
+                  <Link key={item.path} to={item.path} onClick={onClose} className="block no-underline">
                     <div
-                      className="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
-                      style={
-                        isActive
-                          ? {
-                              background: `${section.accent}14`,
-                              borderLeft: `2px solid ${section.accent}`,
-                              paddingLeft: "10px",
-                            }
-                          : {
-                              borderLeft: "2px solid transparent",
-                              paddingLeft: "10px",
-                            }
-                      }
+                      className="group flex items-center gap-3 rounded-[8px] border px-3 py-2.5 transition-all"
+                      style={{
+                        background: isActive ? `${section.accent}18` : "transparent",
+                        borderColor: isActive ? `${section.accent}44` : "transparent",
+                      }}
                     >
-                      {/* Icon — minimal, no background */}
                       <item.icon
-                        className="size-4 flex-shrink-0 transition-opacity"
-                        style={{
-                          color: isActive ? section.accent : "rgba(255,255,255,0.25)",
-                        }}
+                        className="size-4 shrink-0"
+                        style={{ color: isActive ? section.accent : "rgba(255,255,255,0.34)" }}
                       />
-
-                      {/* Text */}
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className="text-[13px] leading-none mb-0.5 transition-colors truncate"
-                          style={{
-                            color: isActive ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.45)",
-                            fontWeight: isActive ? 600 : 400,
-                          }}
-                        >
+                      <div className="min-w-0 flex-1">
+                        <p className="mb-0.5 truncate text-[13px] font-semibold leading-none" style={{ color: isActive ? "white" : "rgba(255,255,255,0.58)" }}>
                           {item.label}
                         </p>
-                        <p
-                          className="text-[10px] leading-none truncate"
-                          style={{ color: "rgba(255,255,255,0.18)" }}
-                        >
-                          {item.sub}
-                        </p>
+                        <p className="truncate text-[10px] leading-none text-white/24">{item.sub}</p>
                       </div>
-
-                      {/* Active dot */}
-                      {isActive && (
-                        <div
-                          className="size-1.5 rounded-full flex-shrink-0"
-                          style={{ background: section.accent }}
-                        />
-                      )}
+                      {isActive && <div className="size-1.5 shrink-0 rounded-full" style={{ background: section.accent }} />}
                     </div>
                   </Link>
                 );
@@ -183,61 +138,36 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           </div>
         ))}
 
-        {/* Settings */}
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: "8px", paddingTop: "8px" }}>
-          <Link to="/settings" onClick={onClose}>
+        <div className="mt-3 border-t border-white/10 pt-3">
+          <Link to="/settings" onClick={onClose} className="block no-underline">
             <div
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
+              className="flex items-center gap-3 rounded-[8px] border px-3 py-2.5 transition-all"
               style={{
-                borderLeft: location.pathname === "/settings"
-                  ? "2px solid rgba(255,255,255,0.2)"
-                  : "2px solid transparent",
-                paddingLeft: "10px",
-                color: location.pathname === "/settings"
-                  ? "rgba(255,255,255,0.7)"
-                  : "rgba(255,255,255,0.25)",
+                background: location.pathname === "/settings" ? "rgba(255,255,255,0.08)" : "transparent",
+                borderColor: location.pathname === "/settings" ? "rgba(255,255,255,0.14)" : "transparent",
+                color: location.pathname === "/settings" ? "white" : "rgba(255,255,255,0.48)",
               }}
             >
-              <Settings className="size-4 flex-shrink-0" />
-              <span className="text-[13px]">Paramètres</span>
+              <Settings className="size-4 shrink-0" />
+              <span className="text-[13px] font-semibold">Parametres</span>
             </div>
           </Link>
         </div>
       </nav>
 
-      {/* ── User footer — editorial strip ── */}
-      <div
-        style={{
-          borderTop: "1px solid rgba(255,255,255,0.05)",
-          padding: "12px 14px",
-        }}
-      >
-        <div className="flex items-center gap-3">
-          {/* Avatar */}
-          <div
-            className="size-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-            style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
-          >
+      <div className="relative z-10 border-t border-white/10 p-4">
+        <div className="flex items-center gap-3 rounded-[8px] border border-white/10 bg-white/[0.035] p-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-[8px] bg-[linear-gradient(135deg,#5044f5,#7c5cff)] text-xs font-extrabold text-white">
             {initials}
           </div>
-
-          <div className="flex-1 min-w-0">
-            <p
-              className="text-[12px] font-semibold truncate"
-              style={{ color: "rgba(255,255,255,0.7)" }}
-            >
-              {firstName}
-            </p>
-            <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>
-              Plan gratuit
-            </p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[12px] font-bold text-white/80">{firstName}</p>
+            <p className="text-[10px] text-white/32">Plan gratuit</p>
           </div>
-
           <button
             onClick={handleLogout}
-            className="size-8 flex items-center justify-center rounded-lg transition-colors hover:bg-red-500/10 flex-shrink-0"
-            title="Déconnexion"
-            style={{ color: "rgba(255,255,255,0.2)" }}
+            className="flex size-8 shrink-0 items-center justify-center rounded-[8px] text-white/30 transition hover:bg-red-500/10 hover:text-red-200"
+            title="Deconnexion"
           >
             <LogOut className="size-3.5" />
           </button>
@@ -247,31 +177,25 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   );
 }
 
-// ── Main Layout ────────────────────────────────────────────────────
-
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex" style={{ background: "#F4F3FB" }}>
-
-      {/* Desktop sidebar — fixed */}
-      <aside className="hidden lg:flex w-56 flex-col fixed h-full shadow-2xl" style={{ zIndex: 40 }}>
+    <div className="flex min-h-screen bg-[var(--cadova-bg-soft)]">
+      <aside className="fixed hidden h-full w-60 flex-col overflow-hidden shadow-2xl lg:flex" style={{ zIndex: 40 }}>
         <SidebarContent />
       </aside>
 
-      {/* Mobile — backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 lg:hidden backdrop-blur-sm"
-          style={{ background: "rgba(0,0,0,0.65)", zIndex: 3000 }}
+          className="fixed inset-0 backdrop-blur-sm lg:hidden"
+          style={{ background: "rgba(8,7,25,0.68)", zIndex: 3000 }}
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Mobile — drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 w-60 transform transition-transform duration-300 ease-out lg:hidden shadow-2xl ${
+        className={`fixed inset-y-0 left-0 w-64 transform overflow-hidden shadow-2xl transition-transform duration-300 ease-out lg:hidden ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{ zIndex: 3100 }}
@@ -279,32 +203,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarContent onClose={() => setSidebarOpen(false)} />
       </aside>
 
-      {/* Main content area */}
-      <div className="flex-1 lg:ml-56 min-h-screen flex flex-col">
-
-        {/* Mobile top bar */}
-        <header
-          className="lg:hidden sticky top-0 flex items-center justify-between px-4 py-3"
-          style={{
-            background: "#0A0914",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
-            zIndex: 30,
-          }}
-        >
+      <div className="flex min-h-screen flex-1 flex-col lg:ml-60">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[var(--cadova-border)] bg-[rgba(247,247,249,0.86)] px-4 py-3 backdrop-blur-lg lg:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="size-9 flex items-center justify-center rounded-xl transition-colors"
-            style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.6)" }}
+            className="flex size-10 items-center justify-center rounded-[8px] border border-[var(--cadova-border)] bg-white text-[var(--cadova-text)]"
           >
             <Menu className="size-5" />
           </button>
-
-          <CadovaLogo width={54} white />
-
-          <div className="size-9" />
+          <CadovaLogo width={58} />
+          <div className="size-10" />
         </header>
 
-        {/* Page content */}
         <main className="flex-1 p-5 md:p-8">{children}</main>
       </div>
     </div>

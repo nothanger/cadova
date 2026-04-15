@@ -564,7 +564,7 @@ export function analyzeAnswer(
   let scoreLabel: string;
   let scoreColor: string;
   if (score >= 85) { scoreLabel = "Excellent"; scoreColor = "#10B981"; }
-  else if (score >= 70) { scoreLabel = "Bon"; scoreColor = "#5548F5"; }
+  else if (score >= 70) { scoreLabel = "Bon"; scoreColor = "#5044f5"; }
   else if (score >= 50) { scoreLabel = "Moyen"; scoreColor = "#F59E0B"; }
   else { scoreLabel = "À améliorer"; scoreColor = "#EF4444"; }
 
@@ -638,16 +638,16 @@ export function buildSessionReport(
   };
 
   const categoryScores = [
-    { label: "Score global", score: avg, color: avg >= 70 ? "#5548F5" : "#F59E0B" },
+    { label: "Score global", score: avg, color: avg >= 70 ? "#5044f5" : "#F59E0B" },
     { label: "Méthode STAR", score: starScores.Action, color: "#EC4899" },
     { label: "Exemples concrets", score: starScores.Résultat, color: "#10B981" },
-    { label: "Richesse du contenu", score: starScores.Structure, color: "#8B5CF6" },
+    { label: "Richesse du contenu", score: starScores.Structure, color: "#6b55f7" },
   ];
 
   let scoreLabel: string;
   let scoreColor: string;
   if (avg >= 85) { scoreLabel = "Excellent"; scoreColor = "#10B981"; }
-  else if (avg >= 70) { scoreLabel = "Bon niveau"; scoreColor = "#5548F5"; }
+  else if (avg >= 70) { scoreLabel = "Bon niveau"; scoreColor = "#5044f5"; }
   else if (avg >= 50) { scoreLabel = "Moyen"; scoreColor = "#F59E0B"; }
   else { scoreLabel = "À travailler"; scoreColor = "#EF4444"; }
 

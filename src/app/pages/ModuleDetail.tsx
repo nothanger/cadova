@@ -64,8 +64,8 @@ export function ModuleDetail() {
             </div>
           </div>
 
-          <div className="marketing-panel-dark" style={{ padding: 28 }}>
-            <div className="marketing-kicker" style={{ color: "rgba(245,244,239,0.58)" }}>
+          <div className="marketing-panel" style={{ padding: 28 }}>
+            <div className="marketing-kicker">
               {module.previewTitle}
             </div>
             <h2 className="marketing-title-section" style={{ marginTop: 14, fontSize: "clamp(1.8rem, 4vw, 3rem)" }}>
@@ -81,11 +81,11 @@ export function ModuleDetail() {
                     gap: 12,
                     paddingBottom: 12,
                     borderBottom: "1px solid rgba(255,255,255,0.08)",
-                    color: "rgba(245,244,239,0.8)",
+                    color: "#697085",
                   }}
                 >
                   <span>{metric.label}</span>
-                  <strong style={{ color: "white" }}>{metric.value}</strong>
+                  <strong style={{ color: module.accentColor }}>{metric.value}</strong>
                 </div>
               ))}
             </div>

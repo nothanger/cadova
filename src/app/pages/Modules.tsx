@@ -60,14 +60,14 @@ export function Modules() {
 
       <section className="marketing-section">
         <div className="marketing-container marketing-grid-2">
-          <div className="marketing-panel-dark" style={{ padding: 28 }}>
-            <div className="marketing-kicker" style={{ color: "rgba(245,244,239,0.58)" }}>
+          <div className="marketing-panel" style={{ padding: 28 }}>
+            <div className="marketing-kicker">
               Vue d'ensemble
             </div>
             <h2 className="marketing-title-section" style={{ marginTop: 14 }}>
               Modulaire dans l'entree, coherent dans l'ensemble.
             </h2>
-            <p className="marketing-copy-muted" style={{ marginTop: 16 }}>
+            <p className="marketing-copy" style={{ marginTop: 16 }}>
               Le but n'est pas d'empiler des outils. Le but est de garder une ligne claire entre candidature, entretien, visibilite et suivi.
             </p>
           </div>

@@ -20,7 +20,7 @@ export function ModuleCard({
       aria-label={`${module.name}, a partir de ${startingPrice}`}
       style={{
         borderColor: module.hoverBorder,
-        background: `linear-gradient(180deg, ${module.hoverBackground} 0%, rgba(255,255,255,0.94) 28%, rgba(247,244,236,0.92) 100%)`,
+        background: `radial-gradient(circle at top right, ${module.hoverBackground}, transparent 35%), linear-gradient(180deg, #ffffff 0%, #fbfbfd 100%)`,
         padding: compact ? 18 : 22,
       }}
     >

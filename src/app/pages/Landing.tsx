@@ -106,7 +106,7 @@ export function Landing() {
             </div>
           </div>
 
-          <div className="marketing-panel-dark marketing-hero-visual">
+          <div className="marketing-panel marketing-hero-visual">
             <div className="marketing-preview-frame">
               <div className="marketing-preview-topline">
                 <span>Cadova flow</span>
@@ -114,7 +114,7 @@ export function Landing() {
               </div>
 
               <div className="marketing-preview-highlight">
-                <span className="marketing-kicker" style={{ color: "rgba(245,244,239,0.6)" }}>
+                <span className="marketing-kicker">
                   Vue active
                 </span>
                 <h3>Tu sais quoi produire, quoi relancer, et quoi corriger ensuite.</h3>
@@ -123,35 +123,35 @@ export function Landing() {
               <div className="marketing-preview-stack">
                 <div className="marketing-metric-card">
                   <span className="marketing-metric-label">CV genere</span>
-                  <span className="marketing-metric-value" style={{ color: "#ff8a66" }}>
+                  <span className="marketing-metric-value" style={{ color: "#5044f5" }}>
                     Pret
                   </span>
                 </div>
                 <div className="marketing-metric-card">
                   <span className="marketing-metric-label">Score ATS</span>
-                  <span className="marketing-metric-value" style={{ color: "#3dd3b0" }}>
+                  <span className="marketing-metric-value" style={{ color: "#5044f5" }}>
                     86/100
                   </span>
                 </div>
                 <div className="marketing-metric-card">
                   <span className="marketing-metric-label">Simulation</span>
-                  <span className="marketing-metric-value" style={{ color: "#73a9ff" }}>
+                  <span className="marketing-metric-value" style={{ color: "#5044f5" }}>
                     7 Q
                   </span>
                 </div>
                 <div className="marketing-metric-card">
                   <span className="marketing-metric-label">Relances</span>
-                  <span className="marketing-metric-value" style={{ color: "#ffd36c" }}>
+                  <span className="marketing-metric-value" style={{ color: "#5044f5" }}>
                     2
                   </span>
                 </div>
               </div>
 
               <div className="marketing-spotlight">
-                <span className="marketing-kicker" style={{ color: "rgba(245,244,239,0.62)" }}>
+                <span className="marketing-kicker">
                   Ce que tu recuperes
                 </span>
-                <p style={{ margin: 0, lineHeight: 1.7, color: "rgba(245,244,239,0.84)" }}>
+                <p className="marketing-card-copy" style={{ margin: 0 }}>
                   Moins de friction mentale, plus de coherence entre ce que tu racontes, ce que tu envoies et ce que tu suis.
                 </p>
               </div>

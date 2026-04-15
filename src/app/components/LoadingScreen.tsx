@@ -1,7 +1,7 @@
 /**
  * LoadingScreen — Écran de chargement cinématique partagé entre tous les générateurs.
  * Usage :
- *   <LoadingScreen steps={[...]} accent="#5548F5" label="Génération du CV" />
+ *   <LoadingScreen steps={[...]} accent="#5044f5" label="Génération du CV" />
  */
 
 import { useEffect, useState } from "react";
@@ -23,7 +23,7 @@ interface LoadingScreenProps {
 
 export function LoadingScreen({
   steps,
-  accent = "#5548F5",
+  accent = "#5044F5",
   label,
   onComplete,
 }: LoadingScreenProps) {
@@ -76,11 +76,11 @@ export function LoadingScreen({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
       className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "#0A0914" }}
+      style={{ background: "#080719" }}
     >
       {/* Glow décoratif */}
       <div
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none"
+        className="absolute top-1/3 left-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px] pointer-events-none"
         style={{ background: `${accent}22` }}
       />
 
@@ -96,7 +96,7 @@ export function LoadingScreen({
           </motion.div>
           <p
             className="text-[11px] uppercase tracking-[0.2em]"
-            style={{ color: "rgba(255,255,255,0.25)" }}
+            style={{ color: "rgba(255,255,255,0.32)", fontFamily: "Sora, system-ui, sans-serif" }}
           >
             {label}
           </p>
@@ -153,7 +153,7 @@ export function LoadingScreen({
                       : isActive
                       ? "rgba(255,255,255,0.95)"
                       : "rgba(255,255,255,0.25)",
-                    fontFamily: "DM Sans, system-ui, sans-serif",
+                    fontFamily: "Sora, system-ui, sans-serif",
                   }}
                 >
                   {step.label}

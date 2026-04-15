@@ -1540,7 +1540,7 @@ const MOCK_COMPANIES: Company[] = [
 // ── Helpers ────────────────────────────────────────────────────────
 
 function getMarkerColor(type: CompanyType) {
-  return type === "stage" ? "#6366f1" : type === "emploi" ? "#10b981" : "#8b5cf6";
+  return type === "stage" ? "#6366f1" : type === "emploi" ? "#10b981" : "#6b55f7";
 }
 
 function createIcon(type: CompanyType) {

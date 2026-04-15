@@ -485,7 +485,7 @@ export function CVGenerator() {
       {isGenerating && (
         <LoadingScreen
           label="Génération du CV"
-          accent="#5548F5"
+          accent="#5044f5"
           steps={[
             { label: "Analyse du profil et du secteur", duration: 700 },
             { label: "Sélection du template optimal", duration: 600 },

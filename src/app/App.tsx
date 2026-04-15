@@ -9,14 +9,14 @@ function RouteLoadingFallback() {
         minHeight: "100vh",
         display: "grid",
         placeItems: "center",
-        background: "#f4f1ff",
-        color: "#140f26",
-        fontFamily: "DM Sans, system-ui, sans-serif",
+        background: "#f7f7f9",
+        color: "#070716",
+        fontFamily: "Sora, system-ui, sans-serif",
       }}
     >
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 16, fontWeight: 700 }}>Chargement de Cadova</div>
-        <div style={{ marginTop: 8, color: "#5f5874" }}>Encore une seconde.</div>
+        <div style={{ marginTop: 8, color: "#697085" }}>Encore une seconde.</div>
       </div>
     </div>
   );
@@ -41,7 +41,7 @@ export default function App() {
     if (!existingTheme) {
       const meta = document.createElement("meta");
       meta.setAttribute("name", "theme-color");
-      meta.setAttribute("content", "#0C0B1A");
+      meta.setAttribute("content", "#080719");
       document.head.appendChild(meta);
     }
 

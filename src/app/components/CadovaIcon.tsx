@@ -75,7 +75,7 @@ export function CadovaIcon({ size = 512 }: { size?: number }) {
       <text
         x="256"
         y="440"
-        fontFamily="Syne, sans-serif"
+        fontFamily="Sora, system-ui, sans-serif"
         fontSize="140"
         fontWeight="700"
         fill="url(#textGradient)"

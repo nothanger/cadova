@@ -23,13 +23,13 @@ export function AuthGuard() {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ background: "#0A0914" }}
+        style={{ background: "#080719" }}
       >
         <div
           className="size-7 rounded-full border-2 animate-spin"
           style={{
-            borderColor: "rgba(85,72,245,0.15)",
-            borderTopColor: "#5548F5",
+            borderColor: "rgba(80,68,245,0.15)",
+            borderTopColor: "#5044f5",
           }}
         />
       </div>

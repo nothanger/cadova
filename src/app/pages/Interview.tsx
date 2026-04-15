@@ -74,14 +74,14 @@ function WordCountBar({ count }: { count: number }) {
           className="h-full rounded-full transition-all duration-300"
           style={{
             width: `${pct}%`,
-            background: tooShort ? "#F59E0B" : optimal ? "#10B981" : "#5548F5",
+            background: tooShort ? "#F59E0B" : optimal ? "#10B981" : "#5044f5",
           }}
         />
       </div>
       <span
         className="text-[10px] tabular-nums flex-shrink-0"
         style={{
-          color: tooShort ? "#F59E0B" : optimal ? "#10B981" : "#5548F5",
+          color: tooShort ? "#F59E0B" : optimal ? "#10B981" : "#5044f5",
           fontFamily: "ui-monospace, monospace",
         }}
       >
@@ -97,7 +97,7 @@ function FeedbackCard({ feedback }: { feedback: AnswerFeedback }) {
       initial={{ opacity: 0, y: 6, height: 0 }}
       animate={{ opacity: 1, y: 0, height: "auto" }}
       className="mt-2 mx-2 rounded-xl overflow-hidden"
-      style={{ background: "#F8F7FF", border: "1px solid rgba(85,72,245,0.1)" }}
+      style={{ background: "#f7f7ff", border: "1px solid rgba(80,68,245,0.1)" }}
     >
       <div className="p-4">
         {/* Score header */}
@@ -110,7 +110,7 @@ function FeedbackCard({ feedback }: { feedback: AnswerFeedback }) {
           </div>
           <div
             className="px-3 py-1 rounded-full text-[11px] font-black tabular-nums"
-            style={{ background: `${feedback.scoreColor}15`, color: feedback.scoreColor, fontFamily: "Syne, sans-serif" }}
+            style={{ background: `${feedback.scoreColor}15`, color: feedback.scoreColor, fontFamily: "Sora, system-ui, sans-serif" }}
           >
             {feedback.score}/100
           </div>
@@ -126,8 +126,8 @@ function FeedbackCard({ feedback }: { feedback: AnswerFeedback }) {
                 key={part}
                 className="size-6 rounded flex items-center justify-center text-[10px] font-bold"
                 style={{
-                  background: detected ? "#5548F520" : "rgba(0,0,0,0.05)",
-                  color: detected ? "#5548F5" : "#C4C4D4",
+                  background: detected ? "#5044f520" : "rgba(0,0,0,0.05)",
+                  color: detected ? "#5044f5" : "#C4C4D4",
                   fontFamily: "ui-monospace, monospace",
                 }}
                 title={detected ? `${part} détecté` : `${part} non détecté`}
@@ -165,8 +165,8 @@ function FeedbackCard({ feedback }: { feedback: AnswerFeedback }) {
         </div>
 
         {/* Conseil personnalisé */}
-        <div className="mt-3 p-2 rounded-lg" style={{ background: "rgba(85,72,245,0.06)" }}>
-          <p className="text-[11px] leading-snug flex items-center gap-2" style={{ color: "#5548F5" }}>
+        <div className="mt-3 p-2 rounded-lg" style={{ background: "rgba(80,68,245,0.06)" }}>
+          <p className="text-[11px] leading-snug flex items-center gap-2" style={{ color: "#5044f5" }}>
             <Sparkles className="w-5 h-5 text-current flex-shrink-0" />
             <span>{feedback.tip}</span>
           </p>
@@ -186,7 +186,7 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
       {/* Score global */}
       <div
         className="rounded-2xl p-8 mb-6 text-center relative overflow-hidden"
-        style={{ background: "#0A0914", border: "1px solid rgba(85,72,245,0.15)" }}
+        style={{ background: "#080719", border: "1px solid rgba(80,68,245,0.15)" }}
       >
         <div
           className="absolute inset-0 rounded-full blur-3xl pointer-events-none"
@@ -198,7 +198,7 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
           </p>
           <div
             className="text-8xl font-black tabular-nums mb-2"
-            style={{ fontFamily: "Syne, sans-serif", color: report.scoreColor, letterSpacing: "-0.04em" }}
+            style={{ fontFamily: "Sora, system-ui, sans-serif", color: report.scoreColor, letterSpacing: "-0.04em" }}
           >
             {report.averageScore}
           </div>
@@ -223,7 +223,7 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
             <div className="flex items-end gap-2 mb-2">
               <span
                 className="text-2xl font-black tabular-nums leading-none"
-                style={{ fontFamily: "Syne, sans-serif", color: "#0C0B1A" }}
+                style={{ fontFamily: "Sora, system-ui, sans-serif", color: "#070716" }}
               >
                 {cat.score}
               </span>
@@ -267,8 +267,8 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
       </div>
 
       {/* Conseil global */}
-      <div className="rounded-xl p-5 mb-6" style={{ background: "#F5F3FF", border: "1px solid rgba(85,72,245,0.12)" }}>
-        <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "#5548F5" }}>
+      <div className="rounded-xl p-5 mb-6" style={{ background: "#efedff", border: "1px solid rgba(80,68,245,0.12)" }}>
+        <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "#5044f5" }}>
           Conseil OralIA
         </p>
         <p className="text-[13px] leading-relaxed" style={{ color: "#3730A3" }}>
@@ -279,7 +279,7 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
       <button
         onClick={onReset}
         className="w-full py-3 rounded-xl font-semibold text-sm transition-all hover:opacity-90 flex items-center justify-center gap-2"
-        style={{ background: "#0A0914", color: "white" }}
+        style={{ background: "#080719", color: "white" }}
       >
         <RotateCcw className="size-4" />
         Nouvelle simulation
@@ -424,7 +424,7 @@ export function Interview() {
 
   return (
     <AppLayout>
-      <div className="max-w-5xl mx-auto" style={{ fontFamily: "DM Sans, system-ui, sans-serif" }}>
+      <div className="max-w-5xl mx-auto" style={{ fontFamily: "Sora, system-ui, sans-serif" }}>
 
         {/* Header éditorial */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
@@ -436,7 +436,7 @@ export function Interview() {
               <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "#EC4899" }}>
                 OralIA
               </p>
-              <h1 className="font-black leading-none" style={{ fontFamily: "Syne, sans-serif", color: "#0C0B1A", fontSize: "clamp(1.4rem, 3vw, 2rem)", letterSpacing: "-0.025em" }}>
+              <h1 className="font-black leading-none" style={{ fontFamily: "Sora, system-ui, sans-serif", color: "#070716", fontSize: "clamp(1.4rem, 3vw, 2rem)", letterSpacing: "-0.025em" }}>
                 Simulation d'entretien
               </h1>
             </div>
@@ -500,9 +500,9 @@ export function Interview() {
                           onClick={() => setSector(sector === s ? "" : s)}
                           className="px-3 py-1.5 rounded-lg text-[11px] transition-all"
                           style={{
-                            background: sector === s ? "#5548F515" : "rgba(0,0,0,0.03)",
-                            color: sector === s ? "#5548F5" : "#9CA3AF",
-                            border: sector === s ? "1px solid #5548F530" : "1px solid transparent",
+                            background: sector === s ? "#5044f515" : "rgba(0,0,0,0.03)",
+                            color: sector === s ? "#5044f5" : "#9CA3AF",
+                            border: sector === s ? "1px solid #5044f530" : "1px solid transparent",
                           }}
                         >
                           {s}
@@ -517,7 +517,7 @@ export function Interview() {
                     style={{ background: pressureMode ? "#EC489910" : "rgba(0,0,0,0.02)", border: `1px solid ${pressureMode ? "#EC489930" : "transparent"}` }}
                   >
                     <div>
-                      <p className="text-[13px] font-semibold" style={{ color: "#0C0B1A" }}>Mode pression</p>
+                      <p className="text-[13px] font-semibold" style={{ color: "#070716" }}>Mode pression</p>
                       <p className="text-[11px]" style={{ color: "#9CA3AF" }}>Questions enchaînées plus rapidement — simule un vrai entretien</p>
                     </div>
                     <button
@@ -533,11 +533,11 @@ export function Interview() {
                   </div>
 
                   {/* Info box */}
-                  <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background: "#F5F3FF" }}>
-                    <Lightbulb className="size-4 flex-shrink-0 mt-0.5" style={{ color: "#5548F5" }} />
+                  <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background: "#efedff" }}>
+                    <Lightbulb className="size-4 flex-shrink-0 mt-0.5" style={{ color: "#5044f5" }} />
                     <div>
                       <p className="text-[12px] font-semibold mb-1" style={{ color: "#3730A3" }}>Comment ça marche ?</p>
-                      <p className="text-[12px] leading-relaxed" style={{ color: "#5548F5" }}>
+                      <p className="text-[12px] leading-relaxed" style={{ color: "#5044f5" }}>
                         7 questions progressives (présentation → motivation → situations → compétences). Chaque réponse est analysée selon la méthode STAR : Situation, Tâche, Action, Résultat.
                       </p>
                     </div>
@@ -563,11 +563,11 @@ export function Interview() {
                 </div>
                 <div className="p-5 space-y-3">
                   {[
-                    { cat: "Présentation", q: "Présentez-vous en 2 minutes.", color: "#5548F5" },
+                    { cat: "Présentation", q: "Présentez-vous en 2 minutes.", color: "#5044f5" },
                     { cat: "Motivation", q: "Pourquoi cette entreprise ?", color: "#EC4899" },
                     { cat: "Situation", q: "Parlez-moi d'un problème résolu.", color: "#10B981" },
                     { cat: "Compétence", q: "Vos outils maîtrisés ?", color: "#F59E0B" },
-                    { cat: "Finale", q: "Avez-vous des questions ?", color: "#8B5CF6" },
+                    { cat: "Finale", q: "Avez-vous des questions ?", color: "#6b55f7" },
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <span
@@ -613,7 +613,7 @@ export function Interview() {
                         <Bot className="size-4 text-white" />
                       </div>
                       <div>
-                        <p className="text-[13px] font-semibold" style={{ color: "#0C0B1A" }}>Recruteur OralIA</p>
+                        <p className="text-[13px] font-semibold" style={{ color: "#070716" }}>Recruteur OralIA</p>
                         <p className="text-[11px]" style={{ color: "#9CA3AF" }}>
                           Question {Math.min(questionIdx + 1, questions.length)}/{questions.length}
                         </p>
@@ -651,7 +651,7 @@ export function Interview() {
                               style={{
                                 background: msg.role === "interviewer"
                                   ? "linear-gradient(135deg, #EC4899, #BE185D)"
-                                  : "linear-gradient(135deg, #5548F5, #8B5CF6)",
+                                  : "linear-gradient(135deg, #5044f5, #6b55f7)",
                               }}
                             >
                               {msg.role === "interviewer"
@@ -663,8 +663,8 @@ export function Interview() {
                             <div
                               className="max-w-[78%] rounded-2xl px-4 py-3"
                               style={{
-                                background: msg.role === "interviewer" ? "#F9FAFB" : "#5548F5",
-                                color: msg.role === "interviewer" ? "#0C0B1A" : "white",
+                                background: msg.role === "interviewer" ? "#F9FAFB" : "#5044f5",
+                                color: msg.role === "interviewer" ? "#070716" : "white",
                                 borderRadius: msg.role === "interviewer" ? "4px 16px 16px 16px" : "16px 4px 16px 16px",
                               }}
                             >
@@ -726,8 +726,8 @@ export function Interview() {
                         style={{
                           background: "rgba(0,0,0,0.02)",
                           border: "1px solid rgba(0,0,0,0.08)",
-                          color: "#0C0B1A",
-                          fontFamily: "DM Sans, system-ui, sans-serif",
+                          color: "#070716",
+                          fontFamily: "Sora, system-ui, sans-serif",
                         }}
                         disabled={isTyping}
                         onKeyDown={(e) => {
@@ -761,7 +761,7 @@ export function Interview() {
                   <div className="p-5 text-center">
                     <div
                       className="text-5xl font-black tabular-nums mb-1"
-                      style={{ fontFamily: "Syne, sans-serif", color: avgScore ? (avgScore >= 70 ? "#10B981" : avgScore >= 50 ? "#F59E0B" : "#EF4444") : "#E5E7EB", letterSpacing: "-0.04em" }}
+                      style={{ fontFamily: "Sora, system-ui, sans-serif", color: avgScore ? (avgScore >= 70 ? "#10B981" : avgScore >= 50 ? "#F59E0B" : "#EF4444") : "#E5E7EB", letterSpacing: "-0.04em" }}
                     >
                       {avgScore ?? "—"}
                     </div>
@@ -785,9 +785,9 @@ export function Interview() {
                   onClick={() => setShowFeedback(!showFeedback)}
                   className="w-full px-4 py-3 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-2 transition-all"
                   style={{
-                    background: showFeedback ? "#5548F510" : "rgba(0,0,0,0.04)",
-                    color: showFeedback ? "#5548F5" : "#9CA3AF",
-                    border: `1px solid ${showFeedback ? "#5548F530" : "transparent"}`,
+                    background: showFeedback ? "#5044f510" : "rgba(0,0,0,0.04)",
+                    color: showFeedback ? "#5044f5" : "#9CA3AF",
+                    border: `1px solid ${showFeedback ? "#5044f530" : "transparent"}`,
                   }}
                 >
                   <Star className="size-4" />
@@ -795,7 +795,7 @@ export function Interview() {
                 </button>
 
                 {/* Méthode STAR reminder */}
-                <div className="rounded-2xl p-5" style={{ background: "#0A0914", border: "1px solid rgba(85,72,245,0.12)" }}>
+                <div className="rounded-2xl p-5" style={{ background: "#080719", border: "1px solid rgba(80,68,245,0.12)" }}>
                   <p className="text-[10px] uppercase tracking-[0.15em] mb-3" style={{ color: "rgba(255,255,255,0.25)" }}>
                     Méthode STAR
                   </p>
@@ -808,7 +808,7 @@ export function Interview() {
                     <div key={item.letter} className="flex items-start gap-3 mb-2.5">
                       <span
                         className="size-5 rounded flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
-                        style={{ background: "#5548F520", color: "#8B5CF6", fontFamily: "ui-monospace, monospace" }}
+                        style={{ background: "#5044f520", color: "#6b55f7", fontFamily: "ui-monospace, monospace" }}
                       >
                         {item.letter}
                       </span>

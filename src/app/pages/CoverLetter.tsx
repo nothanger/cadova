@@ -128,7 +128,7 @@ export function CoverLetter() {
       {isGenerating ? (
         <LoadingScreen
           label="Lettre de motivation"
-          accent="#8b5cf6"
+          accent="#6b55f7"
           steps={[
             { label: "Analyse du contexte", duration: 450 },
             { label: "Choix du ton", duration: 350 },
