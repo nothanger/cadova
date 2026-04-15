@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ArrowRight, CheckCircle2, Shield, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Shield } from "lucide-react";
 import { MarketingShell } from "../components/MarketingShell";
 import { ModuleCard } from "../components/ModuleCard";
 import { useSEO } from "../hooks/useSEO";
@@ -53,10 +53,6 @@ export function Landing() {
       <section className="marketing-section marketing-hero">
         <div className="marketing-container marketing-hero-grid">
           <div>
-            <span className="marketing-eyebrow">
-              <Sparkles size={14} />
-              Un cockpit de candidature plus net
-            </span>
             <h1 className="marketing-title">
               Le style de recherche
               <br />
@@ -107,53 +103,26 @@ export function Landing() {
           </div>
 
           <div className="marketing-panel marketing-hero-visual">
-            <div className="marketing-preview-frame">
-              <div className="marketing-preview-topline">
-                <span>Cadova flow</span>
-                <span>Objectif: alternance marketing</span>
+            <div className="marketing-workspace-preview" aria-hidden="true">
+              <div className="marketing-workspace-sidebar">
+                <span />
+                <span />
+                <span />
               </div>
-
-              <div className="marketing-preview-highlight">
-                <span className="marketing-kicker">
-                  Vue active
-                </span>
-                <h3>Tu sais quoi produire, quoi relancer, et quoi corriger ensuite.</h3>
-              </div>
-
-              <div className="marketing-preview-stack">
-                <div className="marketing-metric-card">
-                  <span className="marketing-metric-label">CV genere</span>
-                  <span className="marketing-metric-value" style={{ color: "#5044f5" }}>
-                    Pret
-                  </span>
+              <div className="marketing-workspace-main">
+                <div className="marketing-workspace-bar" />
+                <div className="marketing-workspace-line marketing-workspace-line-wide" />
+                <div className="marketing-workspace-line" />
+                <div className="marketing-workspace-doc">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
                 </div>
-                <div className="marketing-metric-card">
-                  <span className="marketing-metric-label">Score ATS</span>
-                  <span className="marketing-metric-value" style={{ color: "#5044f5" }}>
-                    86/100
-                  </span>
+                <div className="marketing-workspace-actions">
+                  <span />
+                  <span />
                 </div>
-                <div className="marketing-metric-card">
-                  <span className="marketing-metric-label">Simulation</span>
-                  <span className="marketing-metric-value" style={{ color: "#5044f5" }}>
-                    7 Q
-                  </span>
-                </div>
-                <div className="marketing-metric-card">
-                  <span className="marketing-metric-label">Relances</span>
-                  <span className="marketing-metric-value" style={{ color: "#5044f5" }}>
-                    2
-                  </span>
-                </div>
-              </div>
-
-              <div className="marketing-spotlight">
-                <span className="marketing-kicker">
-                  Ce que tu recuperes
-                </span>
-                <p className="marketing-card-copy" style={{ margin: 0 }}>
-                  Moins de friction mentale, plus de coherence entre ce que tu racontes, ce que tu envoies et ce que tu suis.
-                </p>
               </div>
             </div>
           </div>
