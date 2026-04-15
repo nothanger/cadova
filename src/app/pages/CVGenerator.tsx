@@ -31,6 +31,9 @@ import {
 } from "lucide-react";
 import { AppLayout } from "../components/AppLayout";
 import { motion, AnimatePresence } from "motion/react";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveCV } from "@/lib/localStorage";
+import { toast } from "sonner";
 import {
   SECTORS,
   BULLETS,
@@ -109,6 +112,7 @@ const BEGINNER_BULLET_DENYLIST = [
 /* ──���──────────────────────────────────────────────────── composant */
 export function CVGenerator() {
  useSEO({ title: "Générateur de CV — Cadova", noindex: false });
+  const { user } = useAuth();
   // Navigation
   const [step, setStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -352,7 +356,45 @@ export function CVGenerator() {
   };
 
   /* ── export PDF ── */
+  const handleSaveCV = () => {
+    if (!user?.id) {
+      toast.error("Connecte-toi pour enregistrer ton CV.");
+      return;
+    }
+
+    const title =
+      jobTitle?.trim() ||
+      `${firstName || "CV"} ${lastName || ""}`.trim() ||
+      "CV Cadova";
+
+    saveCV({
+      userId: user.id,
+      title,
+      content: {
+        firstName,
+        lastName,
+        email,
+        phone,
+        city,
+        linkedin,
+        jobTitle,
+        summary,
+        education,
+        experiences,
+        projects,
+        selectedSkills,
+        selectedSoftSkills,
+        languageEntries,
+        sector,
+        level,
+        candidatureType,
+      },
+    });
+    toast.success("CV enregistre dans ton dashboard.");
+  };
+
   const handlePrint = () => {
+    handleSaveCV();
     const fullName = `${firstName} ${lastName}`.trim();
     const allSkills = [...selectedSkills, ...selectedSoftSkills];
     const langStr = languageEntries
@@ -1038,6 +1080,10 @@ export function CVGenerator() {
             {step === 6 && (
               <div className="space-y-4">
                 <div className="flex flex-wrap justify-end gap-3">
+                  <Button variant="outline" onClick={handleSaveCV} className="gap-2">
+                    <CheckCircle className="size-4" />
+                    Sauvegarder
+                  </Button>
                   <Button variant="outline" onClick={handlePrint} className="gap-2">
                     <Download className="size-4" />
                     Telecharger PDF

@@ -5,7 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 
 export function Root() {
   useEffect(() => {
-    document.title = "Cadova - L'écosystème IA pour l'emploi des jeunes";
+    document.title = "Cadova - IA pour CV, entretiens et candidatures";
   }, []);
 
   return (

@@ -19,6 +19,9 @@ import {
   Mail,
 } from "lucide-react";
 import L from "leaflet";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveApplication } from "@/lib/localStorage";
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -1750,9 +1753,11 @@ function CompanyCard({
 function CompanyDetail({
   company,
   onClose,
+  onTrack,
 }: {
   company: Company;
   onClose: () => void;
+  onTrack: (company: Company) => void;
 }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
@@ -1864,9 +1869,12 @@ function CompanyDetail({
             <ExternalLink className="size-4" />
             Voir le site
           </a>
-          <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm hover:bg-slate-50 transition-colors">
+          <button
+            onClick={() => onTrack(company)}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm hover:bg-slate-50 transition-colors"
+          >
             <Mail className="size-4" />
-            Postuler
+            Suivre
           </button>
         </div>
       </div>
@@ -1878,6 +1886,7 @@ function CompanyDetail({
 
 export function CompanyFinder() {
   useSEO({ title: "Carte entreprises TrackIA — Cadova", noindex: true });
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "stage" | "emploi">(
     "all"
@@ -1941,6 +1950,26 @@ export function CompanyFinder() {
     setMapCenter([company.lat, company.lng]);
     setMapZoom(14);
   }, []);
+
+  const handleTrackCompany = useCallback(
+    (company: Company) => {
+      if (!user?.id) {
+        toast.error("Connecte-toi pour enregistrer cette candidature.");
+        return;
+      }
+
+      saveApplication({
+        userId: user.id,
+        company: company.name,
+        position: company.type === "stage" ? "Stage" : company.type === "emploi" ? "Emploi" : "Stage / Emploi",
+        status: "sent",
+        appliedAt: new Date().toISOString(),
+        notes: `Ajoute depuis la carte entreprises (${company.city})`,
+      });
+      toast.success("Entreprise ajoutee a ton suivi.");
+    },
+    [user?.id]
+  );
 
   const stageCount = MOCK_COMPANIES.filter(
     (c) => c.type === "stage" || c.type === "both"
@@ -2152,6 +2181,7 @@ export function CompanyFinder() {
                 <CompanyDetail
                   company={selectedCompany}
                   onClose={() => setSelectedCompany(null)}
+                  onTrack={handleTrackCompany}
                 />
                 <button
                   onClick={() => setSelectedCompany(null)}

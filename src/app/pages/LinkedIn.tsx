@@ -1,31 +1,94 @@
+import { useMemo, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Linkedin,
+  Loader2,
+  Save,
+  TrendingUp,
+} from "lucide-react";
+import { toast } from "sonner";
 import { AppLayout } from "../components/AppLayout";
-import { useState } from "react";
 import { useSEO } from "../hooks/useSEO";
 import { Button } from "../components/ui/button";
 import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { apiCall } from "@/lib/supabase";
-import { toast } from "sonner";
-import {
-  Lightbulb,
-  Linkedin,
-  Loader2,
-  TrendingUp,
-  AlertCircle,
-  CheckCircle2,
-  ArrowRight,
-} from "lucide-react";
+import { saveLinkedInAnalysis } from "@/lib/localStorage";
+import { useAuth } from "@/contexts/AuthContext";
+
+type LinkedInResult = {
+  score: number;
+  strengths: string[];
+  improvements: string[];
+  suggestedSummary: string;
+  suggestedSkills: string[];
+};
+
+function buildLocalAnalysis(profileText: string): LinkedInResult {
+  const lowered = profileText.toLowerCase();
+  const words = profileText.trim().split(/\s+/).filter(Boolean);
+  const hasHeadline = words.length > 12;
+  const hasNumbers = /\d/.test(profileText);
+  const hasKeywords = ["linkedin", "strategie", "gestion", "projet", "marketing", "developpement", "vente", "produit"].some((word) =>
+    lowered.includes(word)
+  );
+  const hasCallToAction = /(contact|disponible|ouvert|a l'ecoute)/.test(lowered);
+
+  let score = 45;
+  if (hasHeadline) score += 15;
+  if (hasNumbers) score += 15;
+  if (hasKeywords) score += 15;
+  if (hasCallToAction) score += 10;
+
+  return {
+    score: Math.min(score, 95),
+    strengths: [
+      hasHeadline ? "Le profil contient assez de matiere pour raconter ton parcours." : "Tu as deja une base de profil a retravailler.",
+      hasNumbers ? "Des chiffres ou resultats mesurables apparaissent dans le texte." : "Il y a de la place pour ajouter des resultats concrets.",
+      hasKeywords ? "Le profil mentionne deja plusieurs mots utiles pour les recruteurs." : "Le texte reste general et peut devenir plus cible.",
+    ],
+    improvements: [
+      "Ajoute une accroche d'une ou deux lignes qui dit clairement qui tu es et ce que tu vises.",
+      "Integre des resultats concrets: pourcentage, volume, delai, taille d'equipe ou projet.",
+      "Termine ton resume par une ouverture claire: ce que tu recherches et comment te contacter.",
+    ],
+    suggestedSummary:
+      "Je developpe un profil oriente resultat, avec une experience que je transforme en actions concretes, competences visibles et objectifs clairs pour mon prochain poste.",
+    suggestedSkills: ["Communication", "Gestion de projet", "Analyse", "Organisation", "Relation client"],
+  };
+}
 
 export function LinkedIn() {
-  useSEO({ title: "Optimisation LinkedIn SkillIA — Cadova", noindex: true });
+  useSEO({ title: "Optimisation LinkedIn - Cadova", noindex: true });
+  const { user } = useAuth();
   const [profileText, setProfileText] = useState("");
+  const [analysis, setAnalysis] = useState<LinkedInResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [analysis, setAnalysis] = useState<any>(null);
+
+  const hint = useMemo(() => {
+    const length = profileText.trim().length;
+    if (length === 0) return "Colle le texte de ton profil pour commencer.";
+    if (length < 240) return "Ajoute encore un peu de contenu pour une analyse plus utile.";
+    return "La matiere est suffisante pour sortir des pistes concretes.";
+  }, [profileText]);
+
+  const saveResult = (result: LinkedInResult) => {
+    if (!user?.id) return;
+    saveLinkedInAnalysis({
+      userId: user.id,
+      score: result.score,
+      strengths: result.strengths,
+      improvements: result.improvements,
+      suggestedSummary: result.suggestedSummary,
+      suggestedSkills: result.suggestedSkills,
+    });
+  };
 
   const handleAnalyze = async () => {
     if (!profileText.trim()) {
-      toast.error("Veuillez coller le texte de votre profil LinkedIn");
+      toast.error("Colle le texte de ton profil LinkedIn.");
       return;
     }
 
@@ -39,17 +102,19 @@ export function LinkedIn() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        toast.error(data.error || "Erreur lors de l'analyse");
-        console.error("❌ LinkedIn analysis error:", data);
-        return;
+      if (!response.ok || !data.analysis) {
+        throw new Error(data.error || "Analyse distante indisponible");
       }
 
-      setAnalysis(data.analysis);
-      toast.success("Analyse LinkedIn terminée !");
-    } catch (error: any) {
-      console.error("❌ Error analyzing LinkedIn profile:", error);
-      toast.error("Erreur inattendue lors de l'analyse");
+      const result = data.analysis as LinkedInResult;
+      setAnalysis(result);
+      saveResult(result);
+      toast.success("Analyse LinkedIn enregistree.");
+    } catch {
+      const localResult = buildLocalAnalysis(profileText);
+      setAnalysis(localResult);
+      saveResult(localResult);
+      toast.success("Analyse locale terminee et enregistree.");
     } finally {
       setLoading(false);
     }
@@ -58,94 +123,63 @@ export function LinkedIn() {
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* Header */}
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="size-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <span className="size-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
               <Linkedin className="size-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">Analyse LinkedIn</h1>
-              <p className="text-slate-600">
-                Module SkillIA - Optimisez votre profil LinkedIn
-              </p>
-            </div>
-          </div>
+            </span>
+            Optimisation LinkedIn
+          </h1>
+          <p className="text-slate-600 mt-2">Analyse ton profil, repere les manques et sauvegarde le resultat dans ton dashboard.</p>
         </div>
 
-        {/* Input Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Votre profil LinkedIn</CardTitle>
+            <CardTitle>Texte du profil</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">
-                Copiez-collez le texte de votre profil LinkedIn
-              </label>
-              <Textarea
-                placeholder="Exemple: Développeur Full Stack passionné avec 3 ans d'expérience..."
-                value={profileText}
-                onChange={(e) => setProfileText(e.target.value)}
-                rows={8}
-                className="resize-none"
-              />
-              <p className="text-xs text-slate-500 mt-2 flex items-center gap-2">
-                <Lightbulb className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                <span>
-                  Astuce : Allez sur votre profil LinkedIn, copiez tout le
-                  texte (résumé, expériences, formations) et collez-le ici.
-                </span>
-              </p>
+            <Textarea
+              rows={10}
+              value={profileText}
+              onChange={(event) => setProfileText(event.target.value)}
+              placeholder="Resume, experiences, competences, projets, objectifs..."
+              className="resize-none"
+            />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-slate-500">{hint}</p>
+              <Button onClick={handleAnalyze} disabled={loading || !profileText.trim()} className="gap-2">
+                {loading ? <Loader2 className="size-4 animate-spin" /> : <TrendingUp className="size-4" />}
+                Analyser
+              </Button>
             </div>
-
-            <Button
-              onClick={handleAnalyze}
-              disabled={loading || !profileText.trim()}
-              className="w-full"
-              size="lg"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyse en cours...
-                </>
-              ) : (
-                <>
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Analyser mon profil
-                </>
-              )}
-            </Button>
           </CardContent>
         </Card>
 
-        {/* Results Section */}
-        {analysis && (
+        {analysis ? (
           <div className="space-y-6">
-            {/* Score */}
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center">
                   <div className="inline-flex items-center justify-center size-24 rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 text-white text-3xl font-bold mb-4">
                     {analysis.score}
                   </div>
-                  <h3 className="text-xl font-bold mb-2">
-                    Score de votre profil LinkedIn
-                  </h3>
-                  <p className="text-slate-600">
-                    {analysis.score >= 85
-                      ? "Excellent ! Votre profil est très bien optimisé."
-                      : analysis.score >= 70
-                      ? "Bon profil, mais quelques améliorations possibles."
-                      : "Des améliorations significatives sont recommandées."}
-                  </p>
+                  <p className="text-slate-600">Score global du profil</p>
+                  <Button
+                    variant="outline"
+                    className="mt-4 gap-2"
+                    onClick={() => {
+                      saveResult(analysis);
+                      toast.success("Analyse sauvegardee a nouveau.");
+                    }}
+                  >
+                    <Save className="size-4" />
+                    Sauvegarder
+                  </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Strengths & Improvements */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-green-700">
@@ -153,140 +187,57 @@ export function LinkedIn() {
                     Points forts
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {analysis.strengths.map((strength: string, idx: number) => (
-                      <li
-                        key={idx}
-                        className="flex items-start gap-2 text-sm text-slate-700"
-                      >
-                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                        {strength}
-                      </li>
-                    ))}
-                  </ul>
+                <CardContent className="space-y-2">
+                  {analysis.strengths.map((item) => (
+                    <div key={item} className="flex items-start gap-2 text-sm text-slate-700">
+                      <CheckCircle2 className="size-4 mt-0.5 text-green-600" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-orange-700">
+                  <CardTitle className="flex items-center gap-2 text-amber-700">
                     <AlertCircle className="size-5" />
-                    À améliorer
+                    A renforcer
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {analysis.improvements.map(
-                      (improvement: string, idx: number) => (
-                        <li
-                          key={idx}
-                          className="flex items-start gap-2 text-sm text-slate-700"
-                        >
-                          <AlertCircle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                          {improvement}
-                        </li>
-                      )
-                    )}
-                  </ul>
+                <CardContent className="space-y-2">
+                  {analysis.improvements.map((item) => (
+                    <div key={item} className="flex items-start gap-2 text-sm text-slate-700">
+                      <AlertCircle className="size-4 mt-0.5 text-amber-600" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
             </div>
 
-            {/* Suggested Summary */}
             <Card>
               <CardHeader>
-                <CardTitle>Résumé suggéré</CardTitle>
+                <CardTitle>Resume suggere</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                  <p className="text-sm text-slate-700 italic">
-                    {analysis.suggestedSummary}
-                  </p>
-                </div>
+                <p className="text-sm text-slate-700 leading-7">{analysis.suggestedSummary}</p>
               </CardContent>
             </Card>
 
-            {/* Suggested Skills */}
             <Card>
               <CardHeader>
-                <CardTitle>Compétences suggérées</CardTitle>
+                <CardTitle>Competences a mettre en avant</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {analysis.suggestedSkills.map((skill: string, idx: number) => (
-                    <Badge
-                      key={idx}
-                      variant="secondary"
-                      className="bg-blue-50 text-blue-700 hover:bg-blue-100"
-                    >
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Roadmap */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Roadmap d'amélioration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {analysis.roadmap.map((step: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className="flex items-start gap-4 pb-4 border-b last:border-0"
-                    >
-                      <div className="flex-shrink-0 size-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">
-                        {step.step}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold text-slate-900">
-                            {step.title}
-                          </h4>
-                          <Badge
-                            variant={
-                              step.priority === "high"
-                                ? "destructive"
-                                : "secondary"
-                            }
-                          >
-                            {step.priority === "high"
-                              ? "Priorité haute"
-                              : "Priorité moyenne"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-slate-600">
-                          {step.description}
-                        </p>
-                      </div>
-                      <ArrowRight className="size-5 text-slate-400 flex-shrink-0" />
-                    </div>
-                  ))}
-                </div>
+              <CardContent className="flex flex-wrap gap-2">
+                {analysis.suggestedSkills.map((skill) => (
+                  <Badge key={skill} className="bg-blue-50 text-blue-700 border border-blue-200">
+                    {skill}
+                  </Badge>
+                ))}
               </CardContent>
             </Card>
           </div>
-        )}
-
-        {/* Empty State */}
-        {!analysis && !loading && (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Linkedin className="size-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-700 mb-2">
-                Prêt à optimiser votre LinkedIn ?
-              </h3>
-              <p className="text-sm text-slate-500">
-                Collez le texte de votre profil ci-dessus pour obtenir une
-                analyse détaillée.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        ) : null}
       </div>
     </AppLayout>
   );

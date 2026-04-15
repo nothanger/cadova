@@ -25,7 +25,7 @@ export default function App() {
       document.head.appendChild(meta);
     }
 
-    document.title = "Cadova — L'IA qui décuple tes chances d'embauche";
+    document.title = "Cadova - IA pour CV, entretiens et candidatures";
   }, []);
 
   return <RouterProvider router={router} />;
