@@ -1,0 +1,581 @@
+.marketing-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(61, 211, 176, 0.16), transparent 28%),
+    radial-gradient(circle at top right, rgba(255, 106, 77, 0.14), transparent 26%),
+    linear-gradient(180deg, #f7f6f1 0%, #f3efe6 52%, #eef4f3 100%);
+  color: #161426;
+}
+
+.marketing-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 80px;
+}
+
+.marketing-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  backdrop-filter: blur(18px);
+  background: rgba(247, 245, 239, 0.82);
+  border-bottom: 1px solid rgba(22, 20, 38, 0.08);
+}
+
+.marketing-header-inner,
+.marketing-container {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.marketing-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 0;
+}
+
+.marketing-logo-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.marketing-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.marketing-nav-link {
+  color: #5d586d;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 12px;
+  border-radius: 8px;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.marketing-nav-link:hover,
+.marketing-nav-link.is-active {
+  background: rgba(22, 20, 38, 0.06);
+  color: #161426;
+}
+
+.marketing-nav-cta,
+.marketing-button-primary,
+.marketing-button-secondary,
+.marketing-button-light {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.marketing-nav-cta,
+.marketing-button-primary {
+  background: #161426;
+  color: #f9f8f4;
+  box-shadow: 0 12px 24px rgba(22, 20, 38, 0.12);
+}
+
+.marketing-button-secondary {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(22, 20, 38, 0.12);
+  color: #161426;
+}
+
+.marketing-button-light {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f9f8f4;
+}
+
+.marketing-nav-cta:hover,
+.marketing-button-primary:hover,
+.marketing-button-secondary:hover,
+.marketing-button-light:hover {
+  transform: translateY(-1px);
+}
+
+.marketing-section {
+  padding: 0 20px;
+}
+
+.marketing-surface,
+.marketing-panel,
+.marketing-table,
+.marketing-module-card,
+.marketing-pricing-card {
+  border: 1px solid rgba(22, 20, 38, 0.08);
+  box-shadow: 0 18px 40px rgba(22, 20, 38, 0.06);
+}
+
+.marketing-surface {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.marketing-panel {
+  border-radius: 8px;
+  background: #fffdf9;
+}
+
+.marketing-panel-dark {
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at top right, rgba(61, 211, 176, 0.2), transparent 30%),
+    linear-gradient(160deg, #111018 0%, #1d2430 55%, #202936 100%);
+  color: #f5f4ef;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 50px rgba(10, 12, 20, 0.2);
+}
+
+.marketing-hero {
+  padding-top: 44px;
+}
+
+.marketing-hero-grid,
+.marketing-grid-2,
+.marketing-grid-3,
+.marketing-grid-4 {
+  display: grid;
+  gap: 20px;
+}
+
+.marketing-hero-grid {
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  align-items: center;
+}
+
+.marketing-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.marketing-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.marketing-grid-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.marketing-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(22, 20, 38, 0.08);
+  color: #59556a;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.marketing-title {
+  margin: 16px 0 0;
+  font-family: "Syne", sans-serif;
+  font-size: clamp(2.8rem, 7vw, 5.5rem);
+  line-height: 0.96;
+}
+
+.marketing-title-section {
+  margin: 14px 0 0;
+  font-family: "Syne", sans-serif;
+  font-size: clamp(2rem, 5vw, 3.8rem);
+  line-height: 1;
+}
+
+.marketing-copy,
+.marketing-copy-muted {
+  font-size: 18px;
+  line-height: 1.7;
+  max-width: 720px;
+}
+
+.marketing-copy {
+  color: #373348;
+}
+
+.marketing-copy-muted {
+  color: rgba(245, 244, 239, 0.76);
+}
+
+.marketing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.marketing-proof-list,
+.marketing-inline-stats,
+.marketing-list {
+  display: grid;
+  gap: 12px;
+}
+
+.marketing-proof-list {
+  margin-top: 24px;
+}
+
+.marketing-proof-item,
+.marketing-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #464156;
+}
+
+.marketing-list-item {
+  color: inherit;
+}
+
+.marketing-proof-icon {
+  color: #22a883;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.marketing-hero-visual {
+  padding: 24px;
+  overflow: hidden;
+}
+
+.marketing-preview-frame {
+  display: grid;
+  gap: 16px;
+}
+
+.marketing-preview-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 12px;
+  color: rgba(245, 244, 239, 0.6);
+  text-transform: uppercase;
+}
+
+.marketing-preview-highlight {
+  padding: 18px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.marketing-preview-highlight h3 {
+  margin: 12px 0 0;
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.marketing-preview-stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.marketing-metric-card {
+  padding: 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.marketing-metric-label {
+  display: block;
+  font-size: 12px;
+  color: rgba(245, 244, 239, 0.62);
+  text-transform: uppercase;
+}
+
+.marketing-metric-value {
+  display: block;
+  margin-top: 10px;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.marketing-spotlight {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(61, 211, 176, 0.18), rgba(46, 119, 255, 0.12));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.marketing-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.marketing-meta-card {
+  padding: 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(22, 20, 38, 0.08);
+}
+
+.marketing-meta-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 20px;
+}
+
+.marketing-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.marketing-kicker {
+  font-size: 12px;
+  color: #6d687b;
+  text-transform: uppercase;
+}
+
+.marketing-link {
+  color: #161426;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.marketing-module-card {
+  display: block;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 244, 236, 0.88));
+  padding: 22px;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.marketing-module-card:hover,
+.marketing-module-card:focus-visible,
+.marketing-pricing-card:hover,
+.marketing-pricing-card:focus-within {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 44px rgba(22, 20, 38, 0.1);
+}
+
+.marketing-module-icon-wrap {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(22, 20, 38, 0.05);
+}
+
+.marketing-module-card h3,
+.marketing-pricing-card h3 {
+  margin: 16px 0 0;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.marketing-card-copy {
+  margin: 10px 0 0;
+  color: #5f596f;
+  line-height: 1.7;
+}
+
+.marketing-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+  color: #161426;
+  font-weight: 700;
+}
+
+.marketing-price-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.marketing-price-line strong {
+  font-size: 24px;
+}
+
+.marketing-price-note {
+  color: #6d687b;
+  font-size: 14px;
+}
+
+.marketing-pricing-card {
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 246, 240, 0.92));
+  padding: 24px;
+}
+
+.marketing-pricing-card.is-featured {
+  background:
+    radial-gradient(circle at top right, rgba(61, 211, 176, 0.2), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(243, 242, 255, 0.96));
+}
+
+.marketing-pricing-badge {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(22, 20, 38, 0.06);
+  font-size: 12px;
+  font-weight: 700;
+  color: #4d485d;
+  text-transform: uppercase;
+}
+
+.marketing-table-wrap {
+  overflow-x: auto;
+}
+
+.marketing-table {
+  min-width: 980px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.marketing-table-row {
+  display: grid;
+  grid-template-columns: 220px repeat(4, minmax(180px, 1fr));
+}
+
+.marketing-table-head {
+  background: #f5f2eb;
+}
+
+.marketing-table-cell {
+  padding: 18px;
+  border-top: 1px solid rgba(22, 20, 38, 0.08);
+  border-right: 1px solid rgba(22, 20, 38, 0.08);
+  color: #5f596f;
+  line-height: 1.6;
+}
+
+.marketing-table-row:first-child .marketing-table-cell {
+  border-top: 0;
+}
+
+.marketing-table-cell:first-child {
+  color: #161426;
+  font-weight: 700;
+}
+
+.marketing-detail-hero {
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  align-items: stretch;
+}
+
+.marketing-detail-block {
+  padding: 24px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(22, 20, 38, 0.08);
+}
+
+.marketing-detail-block-title {
+  margin: 14px 0 0;
+  font-size: 20px;
+}
+
+.marketing-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.marketing-empty {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #f7f6f1;
+  color: #161426;
+}
+
+@media (max-width: 980px) {
+  .marketing-hero-grid,
+  .marketing-grid-2,
+  .marketing-grid-3,
+  .marketing-grid-4,
+  .marketing-detail-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-meta-grid,
+  .marketing-preview-stack {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .marketing-header-inner {
+    align-items: flex-start;
+  }
+
+  .marketing-nav {
+    justify-content: flex-end;
+  }
+
+  .marketing-section {
+    padding: 0 16px;
+  }
+
+  .marketing-header-inner,
+  .marketing-container {
+    width: min(1180px, calc(100% - 32px));
+  }
+
+  .marketing-main {
+    gap: 16px;
+  }
+
+  .marketing-hero {
+    padding-top: 28px;
+  }
+
+  .marketing-title {
+    font-size: clamp(2.5rem, 12vw, 4rem);
+  }
+
+  .marketing-copy,
+  .marketing-copy-muted {
+    font-size: 16px;
+  }
+
+  .marketing-meta-grid,
+  .marketing-preview-stack {
+    grid-template-columns: 1fr;
+  }
+}

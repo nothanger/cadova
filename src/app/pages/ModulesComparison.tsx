@@ -41,56 +41,56 @@ export function ModulesComparison() {
 
   return (
     <MarketingShell>
-        <section style={{ padding: "72px 20px 42px" }}>
-          <div style={{ maxWidth: 780, margin: "0 auto" }}>
-            <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.14em", color: "#827b98" }}>Comparaison</div>
-            <h1 style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(2.6rem, 7vw, 4.8rem)", lineHeight: 1, letterSpacing: "-0.04em", margin: "12px 0 16px" }}>
-              Quel module te sert vraiment maintenant ?
-            </h1>
-            <p style={{ fontSize: 18, lineHeight: 1.7, color: "#5f5874", margin: 0 }}>
-              Cette vue sert a trancher vite. Tu vois ce que chaque module fait, pour qui il est le plus utile, et a quel niveau de prix il commence.
+      <section className="marketing-section marketing-hero">
+        <div className="marketing-container marketing-panel" style={{ padding: 30 }}>
+          <div style={{ maxWidth: 800 }}>
+            <div className="marketing-kicker">Comparaison</div>
+            <h1 className="marketing-title-section">Le bon module depend du moment, pas du bruit autour.</h1>
+            <p className="marketing-copy" style={{ marginTop: 16 }}>
+              Cette vue sert a trancher vite. Tu vois ce que chaque module fait, a qui il sert le plus et a quel niveau de prix il commence.
             </p>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section style={{ padding: "0 20px 56px" }}>
-          <div style={{ maxWidth: 1180, margin: "0 auto", overflowX: "auto" }}>
-            <div style={{ minWidth: 980, background: "white", borderRadius: 8, border: "1px solid rgba(20,15,38,0.08)", overflow: "hidden" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "220px repeat(4, minmax(180px, 1fr))", background: "#f8f7fc" }}>
-                <div style={{ padding: 18, borderRight: "1px solid rgba(20,15,38,0.08)" }} />
-                {cadovaModules.map((module) => (
-                  <div key={module.slug} style={{ padding: 18, borderRight: "1px solid rgba(20,15,38,0.08)" }}>
-                    <module.icon size={18} style={{ color: module.accentColor }} />
-                    <div style={{ marginTop: 12, fontWeight: 700 }}>{module.name}</div>
-                    <div style={{ marginTop: 6, color: "#6b6480", lineHeight: 1.55, fontSize: 14 }}>{module.tagline}</div>
-                  </div>
-                ))}
-              </div>
-
-              {rows.map((row) => (
-                <div key={row.label} style={{ display: "grid", gridTemplateColumns: "220px repeat(4, minmax(180px, 1fr))", borderTop: "1px solid rgba(20,15,38,0.08)" }}>
-                  <div style={{ padding: 18, fontWeight: 700, color: "#433d58", borderRight: "1px solid rgba(20,15,38,0.08)" }}>{row.label}</div>
-                  {cadovaModules.map((module) => (
-                    <div key={`${row.label}-${module.slug}`} style={{ padding: 18, color: "#655e79", lineHeight: 1.6, borderRight: "1px solid rgba(20,15,38,0.08)" }}>
-                      {row.getValue(module.slug)}
-                    </div>
-                  ))}
+      <section className="marketing-section">
+        <div className="marketing-container marketing-table-wrap">
+          <div className="marketing-table">
+            <div className="marketing-table-row marketing-table-head">
+              <div className="marketing-table-cell" />
+              {cadovaModules.map((module) => (
+                <div key={module.slug} className="marketing-table-cell" style={{ borderTop: 0 }}>
+                  <module.icon size={18} style={{ color: module.accentColor }} />
+                  <div style={{ marginTop: 12, fontWeight: 800, color: "#161426" }}>{module.name}</div>
+                  <div style={{ marginTop: 6 }}>{module.tagline}</div>
                 </div>
               ))}
+            </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "220px repeat(4, minmax(180px, 1fr))", borderTop: "1px solid rgba(20,15,38,0.08)" }}>
-                <div style={{ padding: 18, fontWeight: 700, color: "#433d58", borderRight: "1px solid rgba(20,15,38,0.08)" }}>Voir le detail</div>
+            {rows.map((row) => (
+              <div key={row.label} className="marketing-table-row">
+                <div className="marketing-table-cell">{row.label}</div>
                 {cadovaModules.map((module) => (
-                  <div key={`cta-${module.slug}`} style={{ padding: 18, borderRight: "1px solid rgba(20,15,38,0.08)" }}>
-                    <Link to={module.route} style={{ textDecoration: "none", color: module.accentColor, fontWeight: 700 }}>
-                      Ouvrir la page module
-                    </Link>
+                  <div key={`${row.label}-${module.slug}`} className="marketing-table-cell">
+                    {row.getValue(module.slug)}
                   </div>
                 ))}
               </div>
+            ))}
+
+            <div className="marketing-table-row">
+              <div className="marketing-table-cell">Voir le detail</div>
+              {cadovaModules.map((module) => (
+                <div key={`cta-${module.slug}`} className="marketing-table-cell">
+                  <Link to={module.route} className="marketing-link" style={{ color: module.accentColor }}>
+                    Ouvrir la page module
+                  </Link>
+                </div>
+              ))}
             </div>
           </div>
-        </section>
+        </div>
+      </section>
     </MarketingShell>
   );
 }
