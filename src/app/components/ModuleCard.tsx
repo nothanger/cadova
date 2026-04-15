@@ -12,10 +12,24 @@ export function ModuleCard({
   compact?: boolean;
 }) {
   const startingPrice = module.plans[0]?.priceMonthly ?? "";
+  const applyInteractiveState = (element: HTMLAnchorElement) => {
+    element.style.background = module.hoverBackground;
+    element.style.borderColor = module.hoverBorder;
+    element.style.boxShadow = "0 12px 28px rgba(20,15,38,0.08)";
+    element.style.transform = "translateY(-2px)";
+  };
+
+  const resetInteractiveState = (element: HTMLAnchorElement) => {
+    element.style.background = "white";
+    element.style.borderColor = "rgba(20,15,38,0.08)";
+    element.style.boxShadow = "none";
+    element.style.transform = "translateY(0)";
+  };
 
   return (
     <Link
       to={module.route}
+      aria-label={`${module.name}, a partir de ${startingPrice}`}
       style={{
         textDecoration: "none",
         color: "inherit",
@@ -29,16 +43,16 @@ export function ModuleCard({
         display: "block",
       }}
       onMouseEnter={(event) => {
-        event.currentTarget.style.background = module.hoverBackground;
-        event.currentTarget.style.borderColor = module.hoverBorder;
-        event.currentTarget.style.boxShadow = "0 12px 28px rgba(20,15,38,0.08)";
-        event.currentTarget.style.transform = "scale(1.01)";
+        applyInteractiveState(event.currentTarget);
       }}
       onMouseLeave={(event) => {
-        event.currentTarget.style.background = "white";
-        event.currentTarget.style.borderColor = "rgba(20,15,38,0.08)";
-        event.currentTarget.style.boxShadow = "none";
-        event.currentTarget.style.transform = "scale(1)";
+        resetInteractiveState(event.currentTarget);
+      }}
+      onFocus={(event) => {
+        applyInteractiveState(event.currentTarget);
+      }}
+      onBlur={(event) => {
+        resetInteractiveState(event.currentTarget);
       }}
     >
       <module.icon size={18} style={{ color: module.accentColor }} />

@@ -2,6 +2,26 @@ import { useEffect } from "react";
 import { RouterProvider } from "react-router";
 import { router } from "./routes";
 
+function RouteLoadingFallback() {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "grid",
+        placeItems: "center",
+        background: "#f4f1ff",
+        color: "#140f26",
+        fontFamily: "DM Sans, system-ui, sans-serif",
+      }}
+    >
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 16, fontWeight: 700 }}>Chargement de Cadova</div>
+        <div style={{ marginTop: 8, color: "#5f5874" }}>Encore une seconde.</div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   useEffect(() => {
     const existingFavicon = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
@@ -28,5 +48,5 @@ export default function App() {
     document.title = "Cadova - IA pour CV, entretiens et candidatures";
   }, []);
 
-  return <RouterProvider router={router} />;
+  return <RouterProvider router={router} fallbackElement={<RouteLoadingFallback />} />;
 }

@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { CadovaLogo } from "../components/CadovaLogo";
+import { MarketingShell } from "../components/MarketingShell";
 import { useSEO } from "../hooks/useSEO";
 import { cadovaModules } from "../lib/module-data";
 
@@ -40,36 +40,7 @@ export function ModulesComparison() {
   });
 
   return (
-    <div style={{ background: "#f4f1ff", color: "#140f26", fontFamily: "DM Sans, system-ui, sans-serif", minHeight: "100vh" }}>
-      <header
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 20,
-          backdropFilter: "blur(16px)",
-          background: "rgba(244,241,255,0.88)",
-          borderBottom: "1px solid rgba(20,15,38,0.08)",
-        }}
-      >
-        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-          <Link to="/" style={{ display: "inline-flex", alignItems: "center" }}>
-            <CadovaLogo width={72} />
-          </Link>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <Link to="/modules" style={{ color: "#5b5570", textDecoration: "none", fontSize: 14 }}>
-              Modules
-            </Link>
-            <Link to="/pricing" style={{ color: "#5b5570", textDecoration: "none", fontSize: 14 }}>
-              Pricing
-            </Link>
-            <Link to="/signup" style={{ textDecoration: "none", background: "#5548f5", color: "white", borderRadius: 8, padding: "10px 16px", fontSize: 14, fontWeight: 700 }}>
-              Commencer
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main>
+    <MarketingShell>
         <section style={{ padding: "72px 20px 42px" }}>
           <div style={{ maxWidth: 780, margin: "0 auto" }}>
             <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.14em", color: "#827b98" }}>Comparaison</div>
@@ -120,7 +91,6 @@ export function ModulesComparison() {
             </div>
           </div>
         </section>
-      </main>
-    </div>
+    </MarketingShell>
   );
 }

@@ -1,57 +1,43 @@
+import type { ComponentType } from "react";
 import { createBrowserRouter } from "react-router";
 import { Root } from "./pages/Root";
-import { Landing } from "./pages/Landing";
-import { Login } from "./pages/Login";
-import { Signup } from "./pages/Signup";
-import { ForgotPassword } from "./pages/ForgotPassword";
-import { ResetPassword } from "./pages/ResetPassword";
-import { Dashboard } from "./pages/Dashboard";
-import { SettingsPage } from "./pages/Settings";
-import { CVGenerator } from "./pages/CVGenerator";
-import { CoverLetter } from "./pages/CoverLetter";
-import { ATSAnalysis } from "./pages/ATSAnalysis";
-import { Interview } from "./pages/Interview";
-import { CompanyFinder } from "./pages/CompanyFinder";
-import { LinkedIn } from "./pages/LinkedIn";
-import { Skills } from "./pages/Skills";
-import { HealthCheck } from "./pages/HealthCheck";
-import { SystemInfo } from "./pages/SystemInfo";
-import GenerateIcons from "./icon-generator";
 import { AuthGuard } from "./components/AuthGuard";
-import { Modules } from "./pages/Modules";
-import { ModuleDetail } from "./pages/ModuleDetail";
-import { ModulesComparison } from "./pages/ModulesComparison";
-import { Pricing } from "./pages/Pricing";
+
+const loadComponent = <T extends Record<string, unknown>>(loader: () => Promise<T>, exportName: keyof T) =>
+  async () => {
+    const module = await loader();
+    return { Component: module[exportName] as ComponentType };
+  };
 
 export const router = createBrowserRouter([
   {
     path: "/",
     Component: Root,
     children: [
-      { index: true, Component: Landing },
-      { path: "modules", Component: Modules },
-      { path: "modules/comparaison", Component: ModulesComparison },
-      { path: "modules/:slug", Component: ModuleDetail },
-      { path: "pricing", Component: Pricing },
-      { path: "login", Component: Login },
-      { path: "signup", Component: Signup },
-      { path: "forgot-password", Component: ForgotPassword },
-      { path: "reset-password", Component: ResetPassword },
-      { path: "health", Component: HealthCheck },
-      { path: "system-info", Component: SystemInfo },
-      { path: "generate-icons", Component: GenerateIcons },
+      { index: true, lazy: loadComponent(() => import("./pages/Landing"), "Landing") },
+      { path: "modules", lazy: loadComponent(() => import("./pages/Modules"), "Modules") },
+      { path: "modules/comparaison", lazy: loadComponent(() => import("./pages/ModulesComparison"), "ModulesComparison") },
+      { path: "modules/:slug", lazy: loadComponent(() => import("./pages/ModuleDetail"), "ModuleDetail") },
+      { path: "pricing", lazy: loadComponent(() => import("./pages/Pricing"), "Pricing") },
+      { path: "login", lazy: loadComponent(() => import("./pages/Login"), "Login") },
+      { path: "signup", lazy: loadComponent(() => import("./pages/Signup"), "Signup") },
+      { path: "forgot-password", lazy: loadComponent(() => import("./pages/ForgotPassword"), "ForgotPassword") },
+      { path: "reset-password", lazy: loadComponent(() => import("./pages/ResetPassword"), "ResetPassword") },
+      { path: "health", lazy: loadComponent(() => import("./pages/HealthCheck"), "HealthCheck") },
+      { path: "system-info", lazy: loadComponent(() => import("./pages/SystemInfo"), "SystemInfo") },
+      { path: "generate-icons", lazy: loadComponent(() => import("./icon-generator"), "default") },
       {
         Component: AuthGuard,
         children: [
-          { path: "dashboard", Component: Dashboard },
-          { path: "settings", Component: SettingsPage },
-          { path: "cv-generator", Component: CVGenerator },
-          { path: "cover-letter", Component: CoverLetter },
-          { path: "ats-analysis", Component: ATSAnalysis },
-          { path: "interview", Component: Interview },
-          { path: "company-finder", Component: CompanyFinder },
-          { path: "linkedin", Component: LinkedIn },
-          { path: "skills", Component: Skills },
+          { path: "dashboard", lazy: loadComponent(() => import("./pages/Dashboard"), "Dashboard") },
+          { path: "settings", lazy: loadComponent(() => import("./pages/Settings"), "SettingsPage") },
+          { path: "cv-generator", lazy: loadComponent(() => import("./pages/CVGenerator"), "CVGenerator") },
+          { path: "cover-letter", lazy: loadComponent(() => import("./pages/CoverLetter"), "CoverLetter") },
+          { path: "ats-analysis", lazy: loadComponent(() => import("./pages/ATSAnalysis"), "ATSAnalysis") },
+          { path: "interview", lazy: loadComponent(() => import("./pages/Interview"), "Interview") },
+          { path: "company-finder", lazy: loadComponent(() => import("./pages/CompanyFinder"), "CompanyFinder") },
+          { path: "linkedin", lazy: loadComponent(() => import("./pages/LinkedIn"), "LinkedIn") },
+          { path: "skills", lazy: loadComponent(() => import("./pages/Skills"), "Skills") },
         ],
       },
     ],
