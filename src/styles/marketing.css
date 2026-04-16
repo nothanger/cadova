@@ -169,6 +169,13 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.marketing-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
+  gap: 18px;
+}
+
 .marketing-grid-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -437,7 +444,9 @@
 }
 
 .marketing-price-line strong {
-  font-size: 24px;
+  color: #070716;
+  font-size: 32px;
+  line-height: 1;
 }
 
 .marketing-price-note {
@@ -446,13 +455,58 @@
 }
 
 .marketing-pricing-card {
+  position: relative;
   padding: 24px;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .marketing-pricing-card.is-featured {
+  z-index: 2;
+  padding: 30px;
+  border-color: rgba(80, 68, 245, 0.42);
   background:
-    radial-gradient(circle at top right, rgba(80, 68, 245, 0.12), transparent 28%),
-    linear-gradient(180deg, #ffffff, #f4f3ff);
+    radial-gradient(circle at top right, rgba(80, 68, 245, 0.14), transparent 30%),
+    linear-gradient(180deg, #ffffff, #fbfbff);
+  box-shadow: 0 32px 78px rgba(15, 16, 33, 0.1), 0 22px 60px rgba(80, 68, 245, 0.14);
+  transform: scale(1.06);
+}
+
+.marketing-pricing-card.is-featured:hover,
+.marketing-pricing-card.is-featured:focus-within {
+  transform: scale(1.06) translateY(-2px);
+  box-shadow: 0 36px 86px rgba(15, 16, 33, 0.12), 0 26px 70px rgba(80, 68, 245, 0.18);
+}
+
+.marketing-pricing-card.is-featured .marketing-price-line strong {
+  color: #5044f5;
+  font-size: 44px;
+  letter-spacing: -0.05em;
+}
+
+.marketing-pricing-subtitle {
+  margin-top: 8px;
+  color: #5044f5;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.marketing-recommended-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border: 1px solid rgba(80, 68, 245, 0.18);
+  border-radius: 999px;
+  background: #efedff;
+  color: #5044f5;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 7px 10px;
+  text-transform: uppercase;
+}
+
+.marketing-pricing-cta-featured {
+  box-shadow: 0 18px 42px rgba(80, 68, 245, 0.24);
 }
 
 .marketing-table-wrap {
@@ -526,6 +580,21 @@
     grid-template-columns: 1fr 1fr;
   }
 
+  .marketing-pricing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .marketing-pricing-card.is-featured {
+    order: -1;
+    grid-column: 1 / -1;
+    transform: none;
+  }
+
+  .marketing-pricing-card.is-featured:hover,
+  .marketing-pricing-card.is-featured:focus-within {
+    transform: translateY(-2px);
+  }
+
   .marketing-hero-stats {
     max-width: 620px;
     grid-template-columns: 1fr 1fr;
@@ -578,6 +647,18 @@
 
   .marketing-meta-grid {
     grid-template-columns: 1fr;
+  }
+
+  .marketing-pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-pricing-card.is-featured {
+    padding: 26px;
+  }
+
+  .marketing-pricing-card.is-featured .marketing-price-line strong {
+    font-size: 38px;
   }
 
   .marketing-hero-stats {

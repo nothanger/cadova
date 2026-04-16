@@ -3,6 +3,12 @@ import { PricingCard } from "../components/PricingCard";
 import { useSEO } from "../hooks/useSEO";
 import { cadovaBundle, cadovaModules, cadovaPlans } from "../lib/module-data";
 
+const pricingItems = [
+  ...cadovaModules.slice(0, 2),
+  "bundle",
+  ...cadovaModules.slice(2),
+];
+
 export function Pricing() {
   useSEO({
     title: "Pricing Cadova",
@@ -25,31 +31,45 @@ export function Pricing() {
       </section>
 
       <section className="marketing-section">
-        <div className="marketing-container marketing-grid-4">
-          {cadovaModules.map((module) => (
-            <PricingCard
-              key={module.slug}
-              title={module.name}
-              price={module.plans[0].priceMonthly}
-              note={module.plans[0].priceNote}
-              summary={module.plans[0].summary}
-              highlights={module.plans[0].highlights}
-              accentColor={module.accentColor}
-              ctaLabel={module.ctaLabel}
-              ctaHref={module.ctaHref}
-            />
-          ))}
-          <PricingCard
-            title={cadovaBundle.name}
-            price={cadovaBundle.priceMonthly}
-            note={cadovaBundle.note}
-            summary="La formule la plus complete si tu veux relier production, preparation et suivi dans le meme espace."
-            highlights={cadovaBundle.highlights}
-            accentColor="#161426"
-            ctaLabel="Choisir Cadova complet"
-            ctaHref="/signup"
-            featured
-          />
+        <div className="marketing-container marketing-pricing-grid">
+          {pricingItems.map((item) => {
+            if (item === "bundle") {
+              return (
+                <PricingCard
+                  key="cadova-complet"
+                  title={cadovaBundle.name}
+                  price={cadovaBundle.priceMonthly}
+                  note="par mois"
+                  badge="Le plus choisi"
+                  subtitle="Acces complet aux 4 modules"
+                  summary="La formule la plus complete si tu veux relier production, preparation et suivi dans le meme espace."
+                  highlights={[
+                    "Tout Cadova dans un seul espace",
+                    "CV, ATS, entretien et suivi unifies",
+                    "Ideal pour une recherche active",
+                  ]}
+                  accentColor="#5044F5"
+                  ctaLabel="Commencer avec Cadova"
+                  ctaHref="/signup"
+                  featured
+                />
+              );
+            }
+
+            return (
+              <PricingCard
+                key={item.slug}
+                title={item.name}
+                price={item.plans[0].priceMonthly}
+                note={item.plans[0].priceNote}
+                summary={item.plans[0].summary}
+                highlights={item.plans[0].highlights}
+                accentColor={item.accentColor}
+                ctaLabel={item.ctaLabel}
+                ctaHref={item.ctaHref}
+              />
+            );
+          })}
         </div>
       </section>
 
