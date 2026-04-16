@@ -10,7 +10,7 @@ export function Root() {
 
   return (
     <AuthProvider>
-      <div className="min-h-screen">
+      <div className="min-h-[100svh]">
         <Toaster richColors position="top-right" />
         <Outlet />
       </div>

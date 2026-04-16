@@ -20,7 +20,7 @@ export function AuthShell({
   perks?: string[];
 }) {
   return (
-    <div className="grid min-h-screen bg-[#f7f7f9] lg:grid-cols-[38%_62%]" style={{ fontFamily: "Sora, system-ui, sans-serif" }}>
+    <div className="grid min-h-[100svh] bg-[#f7f7f9] lg:grid-cols-[38%_62%]" style={{ fontFamily: "Sora, system-ui, sans-serif" }}>
       <aside className="relative hidden overflow-hidden bg-[var(--cadova-navy)] p-12 text-white lg:flex lg:flex-col lg:justify-between">
         <div
           className="absolute inset-0 opacity-100"
@@ -76,7 +76,7 @@ export function AuthShell({
         </div>
       </aside>
 
-      <main className="flex min-h-screen items-center justify-center px-5 py-8 sm:px-8 lg:px-12">
+      <main className="flex min-h-[100svh] items-center justify-center px-5 py-8 sm:px-8 lg:px-12">
         <div className="w-full max-w-[460px]">
           <div className="mb-10 flex justify-center lg:hidden">
             <CadovaLogo width={84} />

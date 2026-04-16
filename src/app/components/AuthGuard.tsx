@@ -22,7 +22,7 @@ export function AuthGuard() {
   if (loading) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
+        className="min-h-[100svh] flex items-center justify-center"
         style={{ background: "#080719" }}
       >
         <div

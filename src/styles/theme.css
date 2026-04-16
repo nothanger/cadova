@@ -138,6 +138,7 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-family);
+    -webkit-font-smoothing: antialiased;
   }
 
   h1,
@@ -160,6 +161,12 @@
   textarea,
   select {
     font-family: var(--font-family);
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 16px;
   }
 
   label,

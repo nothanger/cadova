@@ -181,7 +181,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[var(--cadova-bg-soft)]">
+    <div className="flex min-h-[100svh] bg-[var(--cadova-bg-soft)]">
       <aside className="fixed hidden h-full w-60 flex-col overflow-hidden shadow-2xl lg:flex" style={{ zIndex: 40 }}>
         <SidebarContent />
       </aside>
@@ -203,7 +203,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarContent onClose={() => setSidebarOpen(false)} />
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col lg:ml-60">
+      <div className="flex min-h-[100svh] flex-1 flex-col lg:ml-60">
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[var(--cadova-border)] bg-[rgba(247,247,249,0.86)] px-4 py-3 backdrop-blur-lg lg:hidden">
           <button
             onClick={() => setSidebarOpen(true)}

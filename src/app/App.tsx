@@ -6,7 +6,7 @@ function RouteLoadingFallback() {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        minHeight: "100svh",
         display: "grid",
         placeItems: "center",
         background: "#f7f7f9",
