@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
 import { Link, NavLink } from "react-router";
 import { CadovaLogo } from "./CadovaLogo";
 
@@ -15,6 +17,10 @@ export function MarketingShell({
   ctaHref?: string;
   ctaLabel?: string;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const closeMenu = () => setMenuOpen(false);
+
   return (
     <div className="marketing-shell">
       <a className="skip-link" href="#main-content">
@@ -25,20 +31,34 @@ export function MarketingShell({
           <Link to="/" aria-label="Cadova - accueil" className="marketing-logo-link">
             <CadovaLogo width={82} />
           </Link>
-          <nav aria-label="Navigation principale" className="marketing-nav">
-            <NavLink to="/modules" className={({ isActive }) => getNavClass(isActive)}>
+          <button
+            type="button"
+            className="marketing-menu-toggle"
+            aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+            aria-controls="marketing-navigation"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((current) => !current)}
+          >
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <nav
+            id="marketing-navigation"
+            aria-label="Navigation principale"
+            className={`marketing-nav${menuOpen ? " is-open" : ""}`}
+          >
+            <NavLink to="/modules" className={({ isActive }) => getNavClass(isActive)} onClick={closeMenu}>
               Modules
             </NavLink>
-            <NavLink to="/modules/comparaison" className={({ isActive }) => getNavClass(isActive)}>
+            <NavLink to="/modules/comparaison" className={({ isActive }) => getNavClass(isActive)} onClick={closeMenu}>
               Comparer
             </NavLink>
-            <NavLink to="/pricing" className={({ isActive }) => getNavClass(isActive)}>
+            <NavLink to="/pricing" className={({ isActive }) => getNavClass(isActive)} onClick={closeMenu}>
               Pricing
             </NavLink>
-            <NavLink to="/login" className={({ isActive }) => getNavClass(isActive)}>
+            <NavLink to="/login" className={({ isActive }) => getNavClass(isActive)} onClick={closeMenu}>
               Connexion
             </NavLink>
-            <Link to={ctaHref} className="marketing-nav-cta">
+            <Link to={ctaHref} className="marketing-nav-cta" onClick={closeMenu}>
               {ctaLabel}
             </Link>
           </nav>

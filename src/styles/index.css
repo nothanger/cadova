@@ -5,11 +5,13 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: hidden;
   background: var(--cadova-bg-soft);
   color: var(--cadova-text);
 }
@@ -153,6 +155,7 @@ a {
 
 .cadova-input {
   min-height: 48px;
+  width: 100%;
   border: 1px solid var(--cadova-border);
   border-radius: 8px;
   background: #fff;
@@ -194,6 +197,11 @@ a {
 }
 
 @media (max-width: 720px) {
+  .cadova-page {
+    width: 100%;
+    padding: 0 16px;
+  }
+
   .cadova-page-header,
   .cadova-grid-2,
   .cadova-grid-3,
@@ -204,5 +212,16 @@ a {
   .cadova-page-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .cadova-title {
+    font-size: clamp(2rem, 11vw, 2.8rem);
+    line-height: 1.05;
+  }
+
+  .cadova-button-primary,
+  .cadova-button-secondary {
+    width: 100%;
+    min-height: 48px;
   }
 }

@@ -1,12 +1,60 @@
+import { Link } from "react-router";
 import { MarketingShell } from "../components/MarketingShell";
 import { PricingCard } from "../components/PricingCard";
 import { useSEO } from "../hooks/useSEO";
 import { cadovaBundle, cadovaModules, cadovaPlans } from "../lib/module-data";
 
 const pricingItems = [
-  ...cadovaModules.slice(0, 2),
   "bundle",
-  ...cadovaModules.slice(2),
+  ...cadovaModules,
+];
+
+const recommendations = [
+  {
+    title: "Lyceen / premier stage",
+    need: "Premier dossier a rendre lisible rapidement.",
+    recommendation: "ReussIA",
+    reason: "Tu construis ton CV, ta lettre et ton score ATS sans partir d'une page blanche.",
+    ctaLabel: "Choisir ReussIA",
+    ctaHref: "/signup",
+    accentColor: "#5044f5",
+  },
+  {
+    title: "Etudiant / alternance",
+    need: "Recherche active avec plusieurs candidatures en parallele.",
+    recommendation: "Cadova Complet",
+    reason: "Tu relies candidature, entretien, suivi et profil dans un meme rythme.",
+    ctaLabel: "Choisir Cadova Complet",
+    ctaHref: "/signup",
+    accentColor: "#5044f5",
+  },
+  {
+    title: "Besoin principal : entretien",
+    need: "Un oral approche et tu veux structurer tes reponses.",
+    recommendation: "OralIA",
+    reason: "Tu t'entraines sur des questions concretes avec un feedback directement exploitable.",
+    ctaLabel: "Tester OralIA",
+    ctaHref: "/signup",
+    accentColor: "#d946ef",
+  },
+  {
+    title: "Besoin principal : suivi",
+    need: "Tu envoies beaucoup et tu perds le fil.",
+    recommendation: "TrackIA",
+    reason: "Tu gardes une vue claire sur tes statuts, relances et opportunites actives.",
+    ctaLabel: "Decouvrir TrackIA",
+    ctaHref: "/signup",
+    accentColor: "#14b8a6",
+  },
+  {
+    title: "Profil / LinkedIn / competences",
+    need: "Ton positionnement doit devenir plus net.",
+    recommendation: "SkillIA",
+    reason: "Tu rends ton profil public plus coherent avec les postes que tu vises.",
+    ctaLabel: "Lancer SkillIA",
+    ctaHref: "/signup",
+    accentColor: "#2563eb",
+  },
 ];
 
 export function Pricing() {
@@ -70,6 +118,48 @@ export function Pricing() {
               />
             );
           })}
+        </div>
+      </section>
+
+      <section className="marketing-section">
+        <div className="marketing-container">
+          <div className="marketing-section-head">
+            <div>
+              <div className="marketing-kicker">Recommandation</div>
+              <h2 className="marketing-title-section">Quelle formule te correspond ?</h2>
+            </div>
+            <p className="marketing-copy marketing-section-intro">
+              Choisis selon ton profil, ton besoin principal et l'urgence de ta recherche.
+            </p>
+          </div>
+
+          <div className="marketing-recommendation-grid">
+            {recommendations.map((item) => (
+              <article
+                key={item.title}
+                className="marketing-recommendation-card"
+                style={{ borderColor: `${item.accentColor}2e` }}
+              >
+                <span className="marketing-recommendation-accent" style={{ background: item.accentColor }} />
+                <div>
+                  <h3>{item.title}</h3>
+                  <p className="marketing-recommendation-need">{item.need}</p>
+                </div>
+                <div className="marketing-recommendation-result">
+                  <span>Module conseille</span>
+                  <strong style={{ color: item.accentColor }}>{item.recommendation}</strong>
+                </div>
+                <p className="marketing-card-copy">{item.reason}</p>
+                <Link
+                  to={item.ctaHref}
+                  className="marketing-button-primary marketing-recommendation-cta"
+                  style={{ background: item.accentColor, boxShadow: "none" }}
+                >
+                  {item.ctaLabel}
+                </Link>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
