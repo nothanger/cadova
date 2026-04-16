@@ -3,7 +3,6 @@
 
 @import 'tw-animate-css';
 
-/* Mobile responsive container padding */
 @media (max-width: 768px) {
   .container {
     padding-left: 1rem !important;

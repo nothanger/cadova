@@ -45,8 +45,6 @@ import {
   ExperienceLevel,
   CandidatureType,
 } from "../lib/reussia-data";
-
-/* ──────────────────────────────────────────────────────── types */
 interface Experience {
   id: string;
   title: string;
@@ -74,7 +72,6 @@ interface Project {
   context: string;
   description: string;
 }
-/* ──────────────────────────────────────────────────────── constantes */
 const STEPS = ["Contexte", "Identite", "Formation", "Experience", "Projets", "Competences", "Apercu"];
 
 const LEVEL_OPTIONS: { value: ExperienceLevel; label: string; desc: string }[] = [
@@ -108,21 +105,14 @@ const BEGINNER_BULLET_DENYLIST = [
   "management d'equipe",
   "budget significatif",
 ];
-
-/* ──���──────────────────────────────────────────────────── composant */
 export function CVGenerator() {
  useSEO({ title: "Générateur de CV — Cadova", noindex: false });
   const { user } = useAuth();
-  // Navigation
   const [step, setStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
-
-  // Étape 0 — Contexte
   const [sector, setSector] = useState<SectorId>("marketing");
   const [level, setLevel] = useState<ExperienceLevel>("etudiant");
   const [candidatureType, setCandidatureType] = useState<CandidatureType>("stage");
-
-  // Étape 1 — Identité
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -130,42 +120,28 @@ export function CVGenerator() {
   const [city, setCity] = useState("");
   const [linkedin, setLinkedin] = useState("");
   const [jobTitle, setJobTitle] = useState("");
-
-  // Étape 2 — Formation
   const [education, setEducation] = useState<Education[]>([
     { id: "1", degree: "", school: "", period: "", description: "" },
   ]);
-
-  // Étape 3 — Expérience
   const [noExperience, setNoExperience] = useState(false);
   const [experiences, setExperiences] = useState<Experience[]>([
     { id: "1", title: "", company: "", period: "", description: "" },
   ]);
   const [activeBulletExp, setActiveBulletExp] = useState("1");
-
-  // Étape 4 — Projets
   const [projects, setProjects] = useState<Project[]>([
     { id: "1", name: "", context: "", description: "" },
   ]);
   const [activeBulletProj, setActiveBulletProj] = useState("1");
-
-  // Étape 5 — Compétences
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedSoftSkills, setSelectedSoftSkills] = useState<string[]>([]);
   const [languageEntries, setLanguageEntries] = useState<LanguageEntry[]>([
     { lang: "Anglais", level: "Scolaire (B1)" },
   ]);
-
-  // Étape 6 — Aperçu
   const [summaryVariantIdx, setSummaryVariantIdx] = useState(0);
   const [editedSummary, setEditedSummary] = useState<string | null>(null);
-
-  /* ── navigation ── */
-  const goNext = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
+const goNext = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
   const goPrev = () => setStep((s) => Math.max(s - 1, 0));
-
-  /* ── résumé auto ── */
-  const autoSummary = useMemo(() => {
+const autoSummary = useMemo(() => {
     return buildSummary({
       firstName,
       sector,
@@ -174,7 +150,6 @@ export function CVGenerator() {
       type: candidatureType,
       company: "",
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [summaryVariantIdx, firstName, sector, level, candidatureType, education]);
 
   const summary = editedSummary ?? autoSummary;
@@ -188,8 +163,7 @@ export function CVGenerator() {
       return !BEGINNER_BULLET_DENYLIST.some((keyword) => normalizedBullet.includes(keyword));
     });
   }, [beginner, sector]);
-    /* ── helpers formation ── */
-  const addEducation = () => {
+const addEducation = () => {
     setEducation((prev) => [
       ...prev,
       {
@@ -217,9 +191,7 @@ export function CVGenerator() {
       )
     );
   };
-
-  /* ── helpers expérience ── */
-  const addExperience = () => {
+const addExperience = () => {
     const newId = crypto.randomUUID();
     setExperiences((prev) => [
       ...prev,
@@ -273,9 +245,7 @@ export function CVGenerator() {
       })
     );
   };
-
-  /* ── helpers projets ── */
-  const addProject = () => {
+const addProject = () => {
     const newId = crypto.randomUUID();
     setProjects((prev) => [
       ...prev,
@@ -310,9 +280,7 @@ export function CVGenerator() {
       )
     );
   };
-
-  /* ── helpers compétences ── */
-  const toggleSkill = (
+const toggleSkill = (
     skill: string,
     list: string[],
     setter: Dispatch<SetStateAction<string[]>>
@@ -323,9 +291,7 @@ export function CVGenerator() {
         : [...prev, skill]
     );
   };
-
-  /* ── helpers langues ── */
-  const updateLanguage = (
+const updateLanguage = (
     index: number,
     field: keyof LanguageEntry,
     value: string
@@ -344,19 +310,14 @@ export function CVGenerator() {
   const removeLanguage = (index: number) => {
     setLanguageEntries((prev) => prev.filter((_, i) => i !== index));
   };
-
-  /* ── Avancer vers l'aperçu avec loading screen ── */
-  const handleGoToPreview = () => {
+const handleGoToPreview = () => {
     if (step === STEPS.length - 2) {
-      // Passage vers Apercu → déclenche le loading
       setIsGenerating(true);
     } else {
       setStep((s) => s + 1);
     }
   };
-
-  /* ── export PDF ── */
-  const handleSaveCV = () => {
+const handleSaveCV = () => {
     if (!user?.id) {
       toast.error("Connecte-toi pour enregistrer ton CV.");
       return;
@@ -478,9 +439,7 @@ export function CVGenerator() {
     printWindow.document.close();
     printWindow.print();
   };
-
-  /* ─────────────────────────────────────────────── render */
-  return (
+return (
     <AppLayout>
       {isGenerating && (
         <LoadingScreen
@@ -501,8 +460,7 @@ export function CVGenerator() {
         />
       )}
       <div className="max-w-6xl mx-auto">
-        {/* Header + progress */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
             <div className="size-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center">
               <FileText className="size-5 text-white" />
@@ -511,9 +469,7 @@ export function CVGenerator() {
           </h1>
           <p className="text-slate-600 mt-1">Etape {step + 1} sur {STEPS.length} — {STEPS[step]}</p>
         </motion.div>
-
-        {/* Wizard steps indicator */}
-        <div className="flex items-center gap-1 mb-8 overflow-x-auto pb-1">
+<div className="flex items-center gap-1 mb-8 overflow-x-auto pb-1">
           {STEPS.map((name, i) => (
             <div key={i} className="flex items-center gap-1 flex-shrink-0">
               <button
@@ -550,8 +506,7 @@ export function CVGenerator() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
           >
-            {/* ── ÉTAPE 0 : CONTEXTE ── */}
-            {step === 0 && (
+{step === 0 && (
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
@@ -633,9 +588,7 @@ export function CVGenerator() {
                 </div>
               </div>
             )}
-
-            {/* ── ÉTAPE 1 : IDENTITÉ ── */}
-            {step === 1 && (
+{step === 1 && (
               <Card>
                 <CardHeader>
                   <CardTitle>Tes informations personnelles</CardTitle>
@@ -692,9 +645,7 @@ export function CVGenerator() {
                 </CardContent>
               </Card>
             )}
-
-            {/* ── ÉTAPE 2 : FORMATION ── */}
-            {step === 2 && (
+{step === 2 && (
               <div className="space-y-4">
                 {education.map((edu, i) => (
                   <Card key={edu.id}>
@@ -753,12 +704,9 @@ export function CVGenerator() {
                 </Button>
               </div>
             )}
-
-            {/* ── ÉTAPE 3 : EXPÉRIENCE ── */}
-            {step === 3 && (
+{step === 3 && (
               <div className="space-y-4">
-                {/* Toggle no experience */}
-                <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+<div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                   <button
                     type="button"
                     onClick={() => setNoExperience(!noExperience)}
@@ -782,8 +730,7 @@ export function CVGenerator() {
                 {!noExperience && (
                   <>
                     <div className="grid lg:grid-cols-3 gap-6">
-                      {/* Formulaires */}
-                      <div className="lg:col-span-2 space-y-4">
+<div className="lg:col-span-2 space-y-4">
                         {experiences.map((exp, i) => (
                           <Card key={exp.id} className={activeBulletExp === exp.id ? "border-indigo-300" : ""}>
                             <CardHeader>
@@ -852,9 +799,7 @@ export function CVGenerator() {
                           <Plus className="size-4" /> Ajouter une experience
                         </Button>
                       </div>
-
-                      {/* Suggestions de bullets */}
-                      <div className="lg:col-span-1">
+<div className="lg:col-span-1">
                         <Card className="sticky top-6">
                           <CardHeader>
                             <CardTitle className="text-sm flex items-center gap-2">
@@ -900,9 +845,7 @@ export function CVGenerator() {
                 )}
               </div>
             )}
-
-            {/* ── ÉTAPE 4 : PROJETS ── */}
-            {step === 4 && (
+{step === 4 && (
               <div className="space-y-4">
                 {projects.map((proj, i) => (
                   <Card key={proj.id} className={activeBulletProj === proj.id ? "border-indigo-300" : ""}>
@@ -965,12 +908,9 @@ export function CVGenerator() {
                 </Button>
               </div>
             )}
-
-            {/* ── ÉTAPE 5 : COMPÉTENCES ── */}
-            {step === 5 && (
+{step === 5 && (
               <div className="space-y-6">
-                {/* Compétences secteur */}
-                <Card>
+<Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       Competences metier
@@ -997,9 +937,7 @@ export function CVGenerator() {
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Soft skills */}
-                <Card>
+<Card>
                   <CardHeader>
                     <CardTitle>Soft skills & qualites</CardTitle>
                     <p className="text-xs text-slate-500">Choisis 4 a 6 qualites qui te correspondent vraiment.</p>
@@ -1028,9 +966,7 @@ export function CVGenerator() {
                     )}
                   </CardContent>
                 </Card>
-
-                {/* Langues */}
-                <Card>
+<Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Globe className="size-4" /> Langues
@@ -1075,9 +1011,7 @@ export function CVGenerator() {
                 </Card>
               </div>
             )}
-
-            {/* ── ÉTAPE 6 : APERÇU ── */}
-            {step === 6 && (
+{step === 6 && (
               <div className="space-y-4">
                 <div className="flex flex-wrap justify-end gap-3">
                   <Button variant="outline" onClick={handleSaveCV} className="gap-2">
@@ -1089,13 +1023,10 @@ export function CVGenerator() {
                     Telecharger PDF
                   </Button>
                 </div>
-
-                {/* CV Preview */}
-                <Card className="overflow-hidden">
+<Card className="overflow-hidden">
                   <CardContent className="p-0">
                     <div className="bg-white p-8 md:p-12 max-w-[800px] mx-auto print:p-6">
-                      {/* En-tête CV */}
-                      <div className="border-b-2 border-indigo-600 pb-6 mb-6">
+<div className="border-b-2 border-indigo-600 pb-6 mb-6">
                         <h1 className="text-3xl font-bold text-slate-900">
                           {firstName || lastName ? `${firstName} ${lastName}`.trim() : "Ton Nom"}
                         </h1>
@@ -1125,9 +1056,7 @@ export function CVGenerator() {
                           )}
                         </div>
                       </div>
-
-                      {/* Profil / Accroche */}
-                      <div className="mb-6">
+<div className="mb-6">
                         <div className="flex items-center justify-between mb-2">
                           <h2 className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
                             Profil
@@ -1161,9 +1090,7 @@ export function CVGenerator() {
                           className="text-sm text-slate-700 leading-relaxed resize-none border-dashed border-slate-200 bg-transparent hover:border-indigo-200 focus:border-indigo-400 p-2 rounded"
                         />
                       </div>
-
-                      {/* Experience */}
-                      {!noExperience && experiences.some((e) => e.title) && (
+{!noExperience && experiences.some((e) => e.title) && (
                         <div className="mb-6">
                           <h2 className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-3">
                             Experience professionnelle
@@ -1186,9 +1113,7 @@ export function CVGenerator() {
                           </div>
                         </div>
                       )}
-
-                      {/* Formation */}
-                      {education.some((e) => e.degree) && (
+{education.some((e) => e.degree) && (
                         <div className="mb-6">
                           <h2 className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-3">
                             Formation
@@ -1211,9 +1136,7 @@ export function CVGenerator() {
                           </div>
                         </div>
                       )}
-
-                      {/* Projets */}
-                      {projects.some((e) => e.name) && (
+{projects.some((e) => e.name) && (
                         <div className="mb-6">
                           <h2 className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-3">
                             Projets
@@ -1235,9 +1158,7 @@ export function CVGenerator() {
                           </div>
                         </div>
                       )}
-
-                      {/* Compétences */}
-                      {(selectedSkills.length > 0 || selectedSoftSkills.length > 0) && (
+{(selectedSkills.length > 0 || selectedSoftSkills.length > 0) && (
                         <div className="mb-6">
                           <h2 className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">
                             Competences
@@ -1254,9 +1175,7 @@ export function CVGenerator() {
                           </div>
                         </div>
                       )}
-
-                      {/* Langues */}
-                      {languageEntries.some((l) => l.lang) && (
+{languageEntries.some((l) => l.lang) && (
                         <div>
                           <h2 className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">
                             Langues
@@ -1272,9 +1191,7 @@ export function CVGenerator() {
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Conseils ATS */}
-                <Card className="bg-gradient-to-r from-indigo-50 to-violet-50 border-indigo-100">
+<Card className="bg-gradient-to-r from-indigo-50 to-violet-50 border-indigo-100">
                   <CardContent className="p-4">
                     <p className="text-sm font-medium text-indigo-900 mb-2 flex items-center gap-2">
                       <Eye className="size-4" /> Checklist ATS rapide
@@ -1300,9 +1217,7 @@ export function CVGenerator() {
             )}
           </motion.div>
         </AnimatePresence>
-
-        {/* Navigation buttons */}
-        <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-200">
+<div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-200">
           <Button
             variant="outline"
             onClick={goPrev}

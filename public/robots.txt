@@ -1,14 +1,8 @@
-# robots.txt — Cadova
-# https://cadova.fr
-
-# Autoriser tous les robots sur les pages publiques
 User-agent: *
 Allow: /
 Allow: /login
 Allow: /signup
 Allow: /forgot-password
-
-# Bloquer les pages privées (app, dashboard...)
 Disallow: /dashboard
 Disallow: /interview
 Disallow: /company-finder
@@ -19,9 +13,5 @@ Disallow: /reset-password
 Disallow: /health
 Disallow: /system-info
 Disallow: /generate-icons
-
-# Bloquer les assets non utiles au SEO
 Disallow: /api/
-
-# Sitemap
 Sitemap: https://cadova.fr/sitemap.xml

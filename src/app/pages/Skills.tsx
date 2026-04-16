@@ -59,8 +59,7 @@ export function Skills() {
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* Header */}
-        <div>
+<div>
           <div className="flex items-center gap-3 mb-2">
             <div className="size-10 rounded-xl bg-gradient-to-br from-amber-600 to-orange-600 flex items-center justify-center">
               <Lightbulb className="size-5 text-white" />
@@ -74,9 +73,7 @@ export function Skills() {
             </div>
           </div>
         </div>
-
-        {/* Input Section */}
-        <Card>
+<Card>
           <CardHeader>
             <CardTitle>Quel métier visez-vous ?</CardTitle>
           </CardHeader>
@@ -115,9 +112,7 @@ export function Skills() {
                 </Button>
               </div>
             </div>
-
-            {/* Popular Jobs */}
-            <div>
+<div>
               <p className="text-sm text-slate-600 mb-2 flex items-center gap-2">
                 <Lightbulb className="w-5 h-5 text-gray-500" />
                 Métiers populaires :
@@ -138,12 +133,9 @@ export function Skills() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Results Section */}
-        {suggestions && (
+{suggestions && (
           <div className="space-y-6">
-            {/* Essential Skills */}
-            <Card className="border-2 border-red-200 bg-red-50/30">
+<Card className="border-2 border-red-200 bg-red-50/30">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-red-800">
                   <Zap className="size-5" />
@@ -170,9 +162,7 @@ export function Skills() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Recommended Skills */}
-            <Card className="border-2 border-blue-200 bg-blue-50/30">
+<Card className="border-2 border-blue-200 bg-blue-50/30">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-blue-800">
                   <TrendingUp className="size-5" />
@@ -198,9 +188,7 @@ export function Skills() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Bonus Skills */}
-            <Card className="border-2 border-green-200 bg-green-50/30">
+<Card className="border-2 border-green-200 bg-green-50/30">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-green-800">
                   <Lightbulb className="size-5" />
@@ -224,9 +212,7 @@ export function Skills() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Action Tips */}
-            <Card>
+<Card>
               <CardHeader>
                 <CardTitle>Comment développer ces compétences ?</CardTitle>
               </CardHeader>
@@ -273,9 +259,7 @@ export function Skills() {
             </Card>
           </div>
         )}
-
-        {/* Empty State */}
-        {!suggestions && !loading && (
+{!suggestions && !loading && (
           <Card>
             <CardContent className="py-12 text-center">
               <Lightbulb className="size-12 text-slate-300 mx-auto mb-4" />

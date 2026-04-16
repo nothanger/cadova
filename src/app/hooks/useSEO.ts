@@ -1,14 +1,3 @@
-/**
- * useSEO — Hook pour mettre à jour les meta tags dynamiquement par page.
- *
- * Usage dans un composant page :
- *   useSEO({
- *     title: "Connexion — Cadova",
- *     description: "Connecte-toi à Cadova pour accéder à tes outils IA.",
- *     noindex: false, // true pour les pages privées
- *   });
- */
-
 import { useEffect } from "react";
 
 interface SEOProps {
@@ -16,8 +5,7 @@ interface SEOProps {
   description?: string;
   canonical?: string;
   ogImage?: string;
-  /** true = page privée, hors index Google */
-  noindex?: boolean;
+noindex?: boolean;
 }
 
 const BASE_URL = "https://cadova.fr";
@@ -58,26 +46,14 @@ export function useSEO({
     const resolvedDesc = description || DEFAULT_DESC;
     const resolvedImage = ogImage || DEFAULT_IMAGE;
     const resolvedCanonical = canonical || `${BASE_URL}${window.location.pathname}`;
-
-    // <title>
     document.title = resolvedTitle;
-
-    // meta description
     setMeta("description", resolvedDesc);
-
-    // robots — noindex pour les pages privées
     setMeta("robots", noindex ? "noindex, nofollow" : "index, follow, max-snippet:-1, max-image-preview:large");
-
-    // Canonical
     setLink("canonical", resolvedCanonical);
-
-    // Open Graph
     setMeta("og:title", resolvedTitle, "property");
     setMeta("og:description", resolvedDesc, "property");
     setMeta("og:url", resolvedCanonical, "property");
     setMeta("og:image", resolvedImage, "property");
-
-    // Twitter
     setMeta("twitter:title", resolvedTitle);
     setMeta("twitter:description", resolvedDesc);
     setMeta("twitter:image", resolvedImage);

@@ -1,11 +1,3 @@
-/* ─────────────────────────────────────────────────────────────────────────────
-   reussia-data.ts
-   Toutes les données statiques du module ReussIA :
-   secteurs, bullets par secteur, compétences par secteur,
-   templates de résumé, blocs de lettre de motivation,
-   mots-clés stop list pour l'analyse ATS.
-───────────────────────────────────────────────────────────────────────────── */
-
 import type { LucideIcon } from "lucide-react";
 import {
   BookOpen,
@@ -41,9 +33,6 @@ export type SectorId =
 export type ExperienceLevel = "lyceen" | "etudiant" | "junior" | "intermediaire";
 export type CandidatureType = "stage" | "alternance" | "emploi" | "parcoursup";
 export type LetterTone = "professionnel" | "dynamique" | "formel" | "creatif";
-
-/* ─── SECTEURS ───────────────────────────────────────���──────────────────────── */
-
 export const SECTORS: { id: SectorId; label: string; icon: LucideIcon }[] = [
   { id: "marketing",    label: "Marketing / Communication", icon: Megaphone },
   { id: "commerce",     label: "Commerce / Vente",           icon: Briefcase },
@@ -58,9 +47,6 @@ export const SECTORS: { id: SectorId; label: string; icon: LucideIcon }[] = [
   { id: "education",    label: "Education / Formation",      icon: BookOpen },
   { id: "autre",        label: "Autre / General",            icon: Wrench },
 ];
-
-/* ─── BULLETS PAR SECTEUR ───────────────────────────────────────────────────── */
-
 export const BULLETS: Record<SectorId, string[]> = {
   marketing: [
     "Animation des reseaux sociaux et creation de contenus (Instagram, LinkedIn, TikTok)",
@@ -174,9 +160,6 @@ export const BULLETS: Record<SectorId, string[]> = {
     "Classement, archivage et gestion documentaire",
   ],
 };
-
-/* ─── COMPETENCES PAR SECTEUR ───────────────────────────────────────────────── */
-
 export const SKILLS_BY_SECTOR: Record<SectorId, string[]> = {
   marketing: [
     "Community management", "Reseaux sociaux", "Content marketing",
@@ -239,18 +222,12 @@ export const SKILLS_BY_SECTOR: Record<SectorId, string[]> = {
     "Adaptabilite", "Rigueur",
   ],
 };
-
-/* ─── SOFT SKILLS UNIVERSELS ─────────────────────────────────────────────────── */
-
 export const SOFT_SKILLS = [
   "Travail en equipe", "Autonomie", "Rigueur", "Adaptabilite",
   "Sens des responsabilites", "Force de proposition", "Ecoute active",
   "Gestion du stress", "Ponctualite", "Curiosite intellectuelle",
   "Creativite", "Sens du detail", "Organisation", "Leadership",
 ];
-
-/* ─── LANGUES ────────────────────────────────────────────────────────────────── */
-
 export const LANGUAGES = [
   { lang: "Anglais", levels: ["Notions (A2)", "Scolaire (B1)", "Courant (B2)", "Bilingue (C1)", "Langue maternelle"] },
   { lang: "Espagnol", levels: ["Notions (A2)", "Scolaire (B1)", "Courant (B2)", "Bilingue (C1)"] },
@@ -260,9 +237,6 @@ export const LANGUAGES = [
   { lang: "Portugais", levels: ["Notions", "Courant", "Bilingue", "Langue maternelle"] },
   { lang: "Italien", levels: ["Notions", "Courant", "Bilingue"] },
 ];
-
-/* ─── TEMPLATES PROFIL CV ────────────────────────────────────────────────────── */
-
 interface SummaryParams {
   firstName?: string;
   sector: SectorId;
@@ -352,9 +326,6 @@ export function buildSummary(params: {
     .replace("{type}", typeLabel[params.type] || "stage")
     .replace("{entreprise}", params.company || "votre entreprise");
 }
-
-/* ─── LETTRE DE MOTIVATION — BLOCS ──────────────────────────────────────────── */
-
 type IntroKey = `${CandidatureType}_${LetterTone}`;
 
 const INTRO_BLOCKS: Partial<Record<IntroKey, string>> = {
@@ -528,9 +499,6 @@ export function buildCoverLetter(params: {
     .filter((l) => l !== undefined && l !== null)
     .join("\n");
 }
-
-/* ─── ATS — ANALYSE SANS IA ─────────────────────────────────────────────────── */
-
 const STOP_WORDS_FR = new Set([
   "le","la","les","de","du","des","un","une","et","est","en","au","aux",
   "par","pour","sur","avec","dans","ce","qui","que","vous","nous","votre",
@@ -600,8 +568,6 @@ export interface ATSResult {
   mode: ATSMode;
   hasJobDesc: boolean;
 }
-
-/* ── Pondérations par mode pour le score structure ── */
 const WEIGHTS: Record<ATSMode, Record<string, number>> = {
   pro:         { coordonnees: 0.15, formation: 0.15, experience: 0.20, competences: 0.20, chiffres: 0.15, linkedin: 0.10, longueur: 0.05 },
   stage:       { coordonnees: 0.20, formation: 0.20, experience: 0.20, competences: 0.15, chiffres: 0.08, linkedin: 0.05, longueur: 0.12 },
@@ -615,9 +581,7 @@ export function runATSAnalysis(
 ): ATSResult {
   const cvNorm = normalize(cvText);
   const hasJobDesc = jobDesc.trim().length > 30;
-
-  /* ── Analyse mots-clés (seulement si offre fournie) ── */
-  const jobTokens = hasJobDesc ? tokenize(jobDesc) : [];
+const jobTokens = hasJobDesc ? tokenize(jobDesc) : [];
   const cvTokens = new Set(tokenize(cvText));
 
   const freq = new Map<string, number>();
@@ -635,22 +599,16 @@ export function runATSAnalysis(
     freq: freq.get(word) || 1,
     found: cvTokens.has(word),
   }));
-
-  /* ── Détection des éléments du CV ── */
-  const hasEmail    = cvNorm.includes("@") || cvNorm.includes("email") || cvNorm.includes("mail");
+const hasEmail    = cvNorm.includes("@") || cvNorm.includes("email") || cvNorm.includes("mail");
   const hasPhone    = /06|07|01|02|03|04|05|\+33/.test(cvText);
   const hasLinkedIn = cvNorm.includes("linkedin");
   const hasMetrics  = /\d+%|\d+\s?k|\d+\s?clients|\d+\s?projets|\+\d/.test(cvText);
   const wordCount   = cvText.trim() ? cvText.trim().split(/\s+/).length : 0;
-
-  // Formation — détection élargie selon mode
   const hasFormation = mode === "observation"
     ? ["college", "lycee", "troisieme", "3eme", "seconde", "premiere", "terminale",
        "classe", "ecole", "sixieme", "cinquieme", "quatrieme", "bac", "brevet", "section"].some((k) => cvNorm.includes(k))
     : ["licence", "master", "bts", "dut", "bac", "diplome", "universite", "ecole",
        "iut", "bep", "cap", "lycee", "terminale", "seconde", "premiere", "mba"].some((k) => cvNorm.includes(k));
-
-  // Expérience / contenu adapté selon mode
   const hasExperience = mode === "observation"
     ? ["interet", "loisir", "passion", "hobby", "club", "sport", "musique",
        "benevolat", "association", "projet", "aide", "babysitting", "cuisine",
@@ -658,16 +616,12 @@ export function runATSAnalysis(
     : ["stage", "mission", "poste", "assistant", "charge", "cdi", "cdd",
        "interim", "benevolat", "association", "emploi", "experience",
        "apprenti", "alternance"].some((k) => cvNorm.includes(k));
-
-  // Compétences
   const hasSkills = mode === "observation"
     ? ["competence", "maitrise", "informatique", "bureautique", "langue",
        "anglais", "espagnol", "sport", "musique", "art", "creation"].some((k) => cvNorm.includes(k))
     : ["competence", "maitrise", "connaissance", "logiciel", "outil",
        "microsoft", "excel", "word", "canva", "photoshop", "javascript",
        "python", "pack office"].some((k) => cvNorm.includes(k));
-
-  // Longueur cible par mode (en mots)
   const targetWords = { observation: 120, stage: 250, pro: 380 }[mode];
   const longueurScore = wordCount >= targetWords
     ? 90
@@ -676,18 +630,13 @@ export function runATSAnalysis(
     : wordCount >= targetWords * 0.35
     ? 40
     : 20;
-
-  /* ── Score de chaque critère ── */
-  const sCoord   = hasEmail && hasPhone ? 95 : hasEmail ? 65 : hasPhone ? 50 : 20;
+const sCoord   = hasEmail && hasPhone ? 95 : hasEmail ? 65 : hasPhone ? 50 : 20;
   const sFormation  = hasFormation ? 90 : 30;
   const sExperience = hasExperience ? 85 : (mode === "observation" ? 45 : 30);
   const sCompetences= hasSkills ? 82 : (mode === "observation" ? 55 : 32);
-  // Pour les critères non exigés selon mode : score neutre
   const sChiffres   = hasMetrics ? 90 : (mode === "pro" ? 30 : mode === "stage" ? 55 : 85);
   const sLinkedIn   = hasLinkedIn ? 90 : (mode === "pro" ? 35 : mode === "stage" ? 65 : 85);
-
-  /* ── Score structure pondéré ── */
-  const w = WEIGHTS[mode];
+const w = WEIGHTS[mode];
   const structureScore = Math.round(
     sCoord       * w.coordonnees +
     sFormation   * w.formation   +
@@ -697,20 +646,15 @@ export function runATSAnalysis(
     sLinkedIn    * w.linkedin    +
     longueurScore * w.longueur
   );
-
-  /* ── Score final : structure seule ou structure + compatibilité offre ── */
-  let score: number;
+let score: number;
   if (hasJobDesc && importantWords.length > 0) {
     const keywordScore = Math.round((matched.length / importantWords.length) * 100);
-    // 40% structure + 60% compatibilité mots-clés
     score = Math.round(structureScore * 0.4 + keywordScore * 0.6);
   } else {
     score = structureScore;
   }
   score = Math.min(Math.max(score, 0), 98);
-
-  /* ── Sections affichées (adaptées au mode) ── */
-  const sections: ATSResult["sections"] = [];
+const sections: ATSResult["sections"] = [];
 
   sections.push({
     name: "Coordonnees",
@@ -794,9 +738,7 @@ export function runATSAnalysis(
       ? `Bonne longueur (${wordCount} mots) — le recruteur a assez d'elements pour te juger.`
       : `Dossier un peu court (${wordCount} mots). Vise ${targetWords}+ mots pour un contenu complet.`,
   });
-
-  /* ── Suggestions adaptées au mode ── */
-  const suggestions: string[] = [];
+const suggestions: string[] = [];
 
   if (mode === "observation") {
     if (!hasExperience)

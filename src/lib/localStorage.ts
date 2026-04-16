@@ -1,5 +1,3 @@
-// Local Storage Management for Cadova
-// Remplace Supabase pour la compatibilité avec Figma Make
 
 const STORAGE_KEYS = {
   CURRENT_USER: "cadova_current_user",
@@ -11,10 +9,6 @@ const STORAGE_KEYS = {
   APPLICATIONS: "cadova_applications",
   LINKEDIN_ANALYSES: "cadova_linkedin_analyses",
 };
-
-// ===============================================
-// 🔐 AUTHENTICATION
-// ===============================================
 
 export interface User {
   id: string;
@@ -35,19 +29,13 @@ export interface Session {
   user: User;
   expiresAt: string;
 }
-
-// Get all users
 const getUsers = (): User[] => {
   const usersJson = localStorage.getItem(STORAGE_KEYS.USERS);
   return usersJson ? JSON.parse(usersJson) : [];
 };
-
-// Save all users
 const saveUsers = (users: User[]) => {
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
 };
-
-// Sign up
 export const signup = async (
   email: string,
   password: string,
@@ -55,8 +43,6 @@ export const signup = async (
 ): Promise<{ success: boolean; user?: User; error?: string }> => {
   try {
     const users = getUsers();
-
-    // Check if user already exists
     if (users.some((u) => u.email === email)) {
       return { success: false, error: "Un compte existe déjà avec cet email" };
     }
@@ -84,8 +70,6 @@ export const signup = async (
     return { success: false, error: error.message };
   }
 };
-
-// Sign in
 export const signin = async (
   email: string,
   password: string
@@ -97,8 +81,6 @@ export const signin = async (
     if (!user) {
       return { success: false, error: "Email ou mot de passe incorrect" };
     }
-
-    // Create session
     const session: Session = {
       user,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
@@ -111,20 +93,14 @@ export const signin = async (
     return { success: false, error: error.message };
   }
 };
-
-// Sign out
 export const signout = () => {
   localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
 };
-
-// Get current session
 export const getSession = (): Session | null => {
   const sessionJson = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
   if (!sessionJson) return null;
 
   const session: Session = JSON.parse(sessionJson);
-
-  // Check if session expired
   if (new Date(session.expiresAt) < new Date()) {
     signout();
     return null;
@@ -132,14 +108,10 @@ export const getSession = (): Session | null => {
 
   return session;
 };
-
-// Get current user
 export const getCurrentUser = (): User | null => {
   const session = getSession();
   return session?.user || null;
 };
-
-// Update user profile
 export const updateProfile = (updates: Partial<User>): boolean => {
   try {
     const session = getSession();
@@ -152,8 +124,6 @@ export const updateProfile = (updates: Partial<User>): boolean => {
 
     users[userIndex] = { ...users[userIndex], ...updates };
     saveUsers(users);
-
-    // Update session
     session.user = users[userIndex];
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
 
@@ -162,10 +132,6 @@ export const updateProfile = (updates: Partial<User>): boolean => {
     return false;
   }
 };
-
-// ===============================================
-// 💾 DATA STORAGE HELPERS
-// ===============================================
 
 export interface CV {
   id: string;
@@ -246,8 +212,6 @@ export const saveInterviewSession = (
   };
   return addItem(STORAGE_KEYS.INTERVIEWS, session);
 };
-
-// Generic storage functions
 const getItems = <T>(key: string, userId?: string): T[] => {
   const itemsJson = localStorage.getItem(key);
   const items = itemsJson ? JSON.parse(itemsJson) : [];
@@ -295,10 +259,6 @@ const deleteItem = <T extends { id: string }>(key: string, id: string): boolean 
   return true;
 };
 
-// ===============================================
-// 📄 CVS
-// ===============================================
-
 export const getCVs = (userId: string): CV[] => {
   return getItems<CV>(STORAGE_KEYS.CVS, userId);
 };
@@ -316,10 +276,6 @@ export const saveCV = (cvData: Omit<CV, "id" | "createdAt" | "updatedAt">): CV =
 export const deleteCV = (id: string): boolean => {
   return deleteItem(STORAGE_KEYS.CVS, id);
 };
-
-// ===============================================
-// ✉️ COVER LETTERS
-// ===============================================
 
 export const getCoverLetters = (userId: string): CoverLetter[] => {
   return getItems<CoverLetter>(STORAGE_KEYS.COVER_LETTERS, userId);
@@ -341,10 +297,6 @@ export const deleteCoverLetter = (id: string): boolean => {
   return deleteItem(STORAGE_KEYS.COVER_LETTERS, id);
 };
 
-// ===============================================
-// 🔍 ATS ANALYSES
-// ===============================================
-
 export const getATSAnalyses = (userId: string): ATSAnalysis[] => {
   return getItems<ATSAnalysis>(STORAGE_KEYS.ATS_ANALYSES, userId);
 };
@@ -359,10 +311,6 @@ export const saveATSAnalysis = (
   };
   return addItem(STORAGE_KEYS.ATS_ANALYSES, analysis);
 };
-
-// ===============================================
-// 📊 APPLICATIONS
-// ===============================================
 
 export const getApplications = (userId: string): Application[] => {
   return getItems<Application>(STORAGE_KEYS.APPLICATIONS, userId);
@@ -394,10 +342,6 @@ export const deleteApplication = (id: string): boolean => {
   return deleteItem(STORAGE_KEYS.APPLICATIONS, id);
 };
 
-// ===============================================
-// 🧠 LINKEDIN ANALYSES
-// ===============================================
-
 export const getLinkedInAnalyses = (userId: string): LinkedInAnalysis[] => {
   return getItems<LinkedInAnalysis>(STORAGE_KEYS.LINKEDIN_ANALYSES, userId);
 };
@@ -413,12 +357,7 @@ export const saveLinkedInAnalysis = (
   return addItem(STORAGE_KEYS.LINKEDIN_ANALYSES, analysis);
 };
 
-// ===============================================
-// 🧪 MOCK DATA GENERATOR (for demo)
-// ===============================================
-
 export const generateMockData = () => {
-  // Only generate if no users exist
   if (getUsers().length === 0) {
     signup("demo@cadova.fr", "demo123", "Utilisateur Demo");
   }

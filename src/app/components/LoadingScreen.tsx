@@ -1,9 +1,3 @@
-/**
- * LoadingScreen — Écran de chargement cinématique partagé entre tous les générateurs.
- * Usage :
- *   <LoadingScreen steps={[...]} accent="#5044f5" label="Génération du CV" />
- */
-
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { CheckCircle } from "lucide-react";
@@ -45,8 +39,6 @@ export function LoadingScreen({
 
       setCurrentStep(stepIdx);
       const duration = steps[stepIdx].duration;
-
-      // Animate progress during this step
       const startElapsed = elapsed;
       const startTime = Date.now();
       const tick = () => {
@@ -66,7 +58,6 @@ export function LoadingScreen({
     };
 
     runStep();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -78,16 +69,13 @@ export function LoadingScreen({
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: "#080719" }}
     >
-      {/* Glow décoratif */}
-      <div
+<div
         className="absolute top-1/3 left-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px] pointer-events-none"
         style={{ background: `${accent}22` }}
       />
 
       <div className="relative w-full max-w-sm mx-auto px-8 flex flex-col items-center gap-10">
-
-        {/* Logo + label */}
-        <div className="flex flex-col items-center gap-4">
+<div className="flex flex-col items-center gap-4">
           <motion.div
             animate={{ scale: [1, 1.04, 1] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -101,9 +89,7 @@ export function LoadingScreen({
             {label}
           </p>
         </div>
-
-        {/* Steps list */}
-        <div className="w-full space-y-3">
+<div className="w-full space-y-3">
           {steps.map((step, i) => {
             const isDone = completedSteps.includes(i);
             const isActive = currentStep === i && !isDone;
@@ -116,8 +102,7 @@ export function LoadingScreen({
                 transition={{ delay: 0.05 * i }}
                 className="flex items-center gap-3"
               >
-                {/* Indicateur */}
-                <div className="flex-shrink-0 size-5 flex items-center justify-center">
+<div className="flex-shrink-0 size-5 flex items-center justify-center">
                   {isDone ? (
                     <motion.div
                       initial={{ scale: 0 }}
@@ -143,9 +128,7 @@ export function LoadingScreen({
                     />
                   )}
                 </div>
-
-                {/* Texte */}
-                <span
+<span
                   className="text-[13px] transition-all duration-300"
                   style={{
                     color: isDone
@@ -162,9 +145,7 @@ export function LoadingScreen({
             );
           })}
         </div>
-
-        {/* Barre de progression globale */}
-        <div className="w-full">
+<div className="w-full">
           <div
             className="h-px rounded-full overflow-hidden"
             style={{ background: "rgba(255,255,255,0.08)" }}

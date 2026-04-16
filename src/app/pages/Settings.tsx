@@ -10,10 +10,6 @@ import {
 import { AppLayout } from "../components/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-
-// ─────────────────────────────────────────────
-// Sous-composant : Section Changement de mot de passe
-// ─────────────────────────────────────────────
 function ChangePasswordSection() {
   const { updatePassword } = useAuth();
   const [open, setOpen] = useState(false);
@@ -67,8 +63,7 @@ function ChangePasswordSection() {
       className="rounded-2xl overflow-hidden"
       style={{ border: "1px solid rgba(80,68,245,0.1)", background: "white" }}
     >
-      {/* Header cliquable */}
-      <button
+<button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between p-5 text-left transition-colors hover:bg-indigo-50/50"
@@ -91,9 +86,7 @@ function ChangePasswordSection() {
           <ChevronDown className="size-4 shrink-0" style={{ color: "#9CA3AF" }} />
         )}
       </button>
-
-      {/* Formulaire dépliable */}
-      {open && (
+{open && (
         <div
           className="px-5 pb-5 pt-1"
           style={{ borderTop: "1px solid rgba(80,68,245,0.06)" }}
@@ -107,8 +100,7 @@ function ChangePasswordSection() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4 mt-3">
-              {/* Mot de passe actuel */}
-              <div>
+<div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B8A" }}>
                   Mot de passe actuel
                 </label>
@@ -136,9 +128,7 @@ function ChangePasswordSection() {
                   </Link>
                 </div>
               </div>
-
-              {/* Nouveau mot de passe */}
-              <div>
+<div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B8A" }}>
                   Nouveau mot de passe
                 </label>
@@ -170,9 +160,7 @@ function ChangePasswordSection() {
                   </div>
                 )}
               </div>
-
-              {/* Confirmation */}
-              <div>
+<div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B8A" }}>
                   Confirmer le nouveau mot de passe
                 </label>
@@ -231,10 +219,6 @@ function ChangePasswordSection() {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────
-// Sous-composant : Section 2FA TOTP
-// ─────────────────────────────────────────────
 type TotpStep = "idle" | "enrolling" | "scanning" | "verifying" | "active" | "disabling";
 
 function TwoFactorSection() {
@@ -323,8 +307,7 @@ function TwoFactorSection() {
       className="rounded-2xl overflow-hidden"
       style={{ border: "1px solid rgba(80,68,245,0.1)", background: "white" }}
     >
-      {/* Header */}
-      <div className="p-5 flex items-center justify-between">
+<div className="p-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
             className="size-9 rounded-xl flex items-center justify-center"
@@ -382,9 +365,7 @@ function TwoFactorSection() {
           </button>
         )}
       </div>
-
-      {/* Enrôlement en cours */}
-      {step === "enrolling" && (
+{step === "enrolling" && (
         <div
           className="px-5 pb-5 flex items-center gap-3"
           style={{ borderTop: "1px solid rgba(80,68,245,0.06)" }}
@@ -393,16 +374,13 @@ function TwoFactorSection() {
           <p className="text-sm mt-4" style={{ color: "#6B6B8A" }}>Génération du QR code…</p>
         </div>
       )}
-
-      {/* Étape scan QR */}
-      {step === "scanning" && (
+{step === "scanning" && (
         <div
           className="px-5 pb-5 pt-2"
           style={{ borderTop: "1px solid rgba(80,68,245,0.06)" }}
         >
           <div className="grid md:grid-cols-2 gap-6 mt-2">
-            {/* QR code */}
-            <div>
+<div>
               <p className="text-xs font-semibold mb-3" style={{ color: "#6B6B8A" }}>
                 1. Scanne ce QR code avec ton app
               </p>
@@ -422,9 +400,7 @@ function TwoFactorSection() {
                 Compatible : Google Authenticator, Authy, 1Password…
               </p>
             </div>
-
-            {/* Secret texte */}
-            <div>
+<div>
               <p className="text-xs font-semibold mb-3" style={{ color: "#6B6B8A" }}>
                 Ou saisis le code manuellement
               </p>
@@ -448,9 +424,7 @@ function TwoFactorSection() {
                   {copied ? <CheckCheck className="size-4" /> : <Copy className="size-4" />}
                 </button>
               </div>
-
-              {/* Formulaire de vérification */}
-              <form onSubmit={handleVerify} className="mt-4 space-y-3">
+<form onSubmit={handleVerify} className="mt-4 space-y-3">
                 <p className="text-xs font-semibold" style={{ color: "#6B6B8A" }}>
                   2. Entre le code généré par l'app
                 </p>
@@ -498,9 +472,7 @@ function TwoFactorSection() {
           </div>
         </div>
       )}
-
-      {/* Erreur désactivation */}
-      {step === "active" && error && (
+{step === "active" && error && (
         <div
           className="mx-5 mb-4 p-3 rounded-xl text-sm flex items-center gap-2"
           style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}
@@ -512,10 +484,6 @@ function TwoFactorSection() {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────
-// Page principale Settings
-// ─────────────────────────────────────────────
 export function SettingsPage() {
   useSEO({ title: "Paramètres — Cadova", noindex: true });
   const { user, loading, updateProfile } = useAuth();
@@ -609,8 +577,7 @@ export function SettingsPage() {
         className="max-w-2xl mx-auto"
         style={{ fontFamily: "Sora, system-ui, sans-serif" }}
       >
-        {/* En-tête */}
-        <div className="mb-8">
+<div className="mb-8">
           <h1
             className="font-extrabold mb-1"
             style={{ fontFamily: "Sora, system-ui, sans-serif", fontSize: "1.75rem", color: "#070716" }}
@@ -623,9 +590,7 @@ export function SettingsPage() {
         </div>
 
         <div className="space-y-6">
-
-          {/* ── Profil ── */}
-          <div className={card} style={cardStyle}>
+<div className={card} style={cardStyle}>
             <div className={sectionTitle}>
               <div
                 className="size-9 rounded-xl flex items-center justify-center"
@@ -640,8 +605,7 @@ export function SettingsPage() {
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
-              {/* Avatar initiales */}
-              <div className="flex items-center gap-4">
+<div className="flex items-center gap-4">
                 <div
                   className="size-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white shrink-0"
                   style={{ background: "linear-gradient(135deg, #5044f5, #6b55f7)" }}
@@ -716,9 +680,7 @@ export function SettingsPage() {
               </button>
             </form>
           </div>
-
-          {/* ── Sécurité ── */}
-          <div>
+<div>
             <div className="flex items-center gap-2.5 mb-3">
               <Shield className="size-4" style={{ color: "#5044f5" }} />
               <p className="text-sm font-semibold" style={{ color: "#070716" }}>Sécurité</p>
@@ -729,9 +691,7 @@ export function SettingsPage() {
               <TwoFactorSection />
             </div>
           </div>
-
-          {/* ── Notifications ── */}
-          <div className={card} style={cardStyle}>
+<div className={card} style={cardStyle}>
             <div className={sectionTitle}>
               <div className="size-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(80,68,245,0.08)" }}>
                 <Bell className="size-4" style={{ color: "#5044f5" }} />
@@ -759,9 +719,7 @@ export function SettingsPage() {
               </div>
             ))}
           </div>
-
-          {/* ── Abonnement ── */}
-          <div className={card} style={cardStyle}>
+<div className={card} style={cardStyle}>
             <div className={sectionTitle}>
               <div className="size-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(80,68,245,0.08)" }}>
                 <CreditCard className="size-4" style={{ color: "#5044f5" }} />
@@ -792,9 +750,7 @@ export function SettingsPage() {
               )}
             </div>
           </div>
-
-          {/* ── Zone de danger ── */}
-          <div
+<div
             className={card}
             style={{ border: "1px solid rgba(239,68,68,0.2)", background: "#FFF8F8" }}
           >

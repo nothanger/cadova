@@ -7,8 +7,7 @@ export function SystemInfo() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
+<div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-3">
             <Info className="h-10 w-10 text-indigo-600" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
@@ -19,20 +18,15 @@ export function SystemInfo() {
             Comment Cadova protège vos données
           </p>
         </div>
-
-        {/* Current Mode */}
-        <Alert className="border-green-600 bg-green-50">
+<Alert className="border-green-600 bg-green-50">
           <CheckCircle2 className="h-5 w-5 text-green-600" />
           <AlertTitle className="text-green-900">Authentification Sécurisée Active</AlertTitle>
           <AlertDescription className="text-green-800">
             Cadova utilise <strong>Supabase Auth</strong> pour sécuriser votre compte. Vos mots de passe sont chiffrés et vos sessions protégées par des tokens JWT.
           </AlertDescription>
         </Alert>
-
-        {/* Architecture */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Auth */}
-          <Card className="border-2 border-green-600">
+<div className="grid md:grid-cols-2 gap-6">
+<Card className="border-2 border-green-600">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -56,9 +50,7 @@ export function SystemInfo() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Data */}
-          <Card className="border-2 border-indigo-600">
+<Card className="border-2 border-indigo-600">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -83,9 +75,7 @@ export function SystemInfo() {
             </CardContent>
           </Card>
         </div>
-
-        {/* How it Works */}
-        <Card>
+<Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="h-5 w-5" />
@@ -132,9 +122,7 @@ export function SystemInfo() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Security Note */}
-        <Alert className="border-blue-600 bg-blue-50">
+<Alert className="border-blue-600 bg-blue-50">
           <Cloud className="h-5 w-5 text-blue-600" />
           <AlertTitle className="text-blue-900">Infrastructure Cloud</AlertTitle>
           <AlertDescription className="text-blue-800">
@@ -142,9 +130,7 @@ export function SystemInfo() {
             C'est la même technologie utilisée par des milliers d'applications professionnelles.
           </AlertDescription>
         </Alert>
-
-        {/* Data Stored */}
-        <Card>
+<Card>
           <CardHeader>
             <CardTitle>Données Stockées</CardTitle>
             <CardDescription>Voici ce qui est enregistré de manière sécurisée</CardDescription>
@@ -178,9 +164,7 @@ export function SystemInfo() {
             </div>
           </CardContent>
         </Card>
-
-        {/* FAQ */}
-        <Card>
+<Card>
           <CardHeader>
             <CardTitle>Questions Fréquentes</CardTitle>
           </CardHeader>
