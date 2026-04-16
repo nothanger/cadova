@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState, useRef, useCallb
 import { supabase, API_URL } from "@/lib/supabase";
 import { publicAnonKey } from "/utils/supabase/info";
 
+
+
 interface UserProfile {
   id: string;
   email: string;
@@ -33,6 +35,8 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+
 const CACHE_KEY = "cadova_user_cache";
 const CACHE_TOKEN_KEY = "cadova_token_cache";
 
@@ -54,17 +58,24 @@ function setCachedUser(user: UserProfile | null) {
   } catch {}
 }
 
+
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  
   const [user, setUser] = useState<UserProfile | null>(getCachedUser);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(!getCachedUser());
   const initDone = useRef(false);
+
   const justSignedIn = useRef(false);
 
   const updateUser = useCallback((u: UserProfile | null) => {
     setUser(u);
     setCachedUser(u);
   }, []);
+
+
   const buildUserFromSession = useCallback(async (token: string) => {
     try {
       const { data: authData } = await supabase.auth.getUser(token);
@@ -80,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       }
     } catch {
+    
     }
   }, [updateUser]);
 
@@ -90,8 +102,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setAccessToken(session.access_token);
 
           if (event === "SIGNED_IN") {
+          
             if (justSignedIn.current) {
               justSignedIn.current = false;
+              
               buildUserFromSession(session.access_token);
             } else {
               buildUserFromSession(session.access_token);
@@ -100,8 +114,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (event === "INITIAL_SESSION") {
             if (getCachedUser()) {
+             
               buildUserFromSession(session.access_token);
             } else {
+              
               buildUserFromSession(session.access_token).then(() => {
                 if (!initDone.current) {
                   initDone.current = true;
@@ -139,6 +155,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(timeout);
     };
   }, [buildUserFromSession, updateUser]);
+
+  
   const signIn = async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -151,9 +169,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data.session) {
+       
         justSignedIn.current = true;
         setAccessToken(data.session.access_token);
+
         const metaName = data.user.user_metadata?.name;
+       
         const displayName = metaName || email.split("@")[0] || "Utilisateur";
         updateUser({
           id: data.user.id,
@@ -162,6 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           subscription: "free",
           credits: { cv: 1, coverLetter: 0, atsAnalysis: 0, interview: 0 },
         });
+       
       }
 
       return { error: null };
@@ -169,6 +191,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: err as Error };
     }
   };
+
+
   const signUp = async (email: string, password: string, name: string) => {
     try {
       const res = await fetch(`${API_URL}/auth/signup`, {
@@ -185,6 +209,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok || result.error) {
         return { error: new Error(result.error || "Erreur lors de l'inscription") };
       }
+
+
       justSignedIn.current = true;
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
@@ -211,7 +237,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: err as Error };
     }
   };
+
+
   const signOut = async () => {
+   
     updateUser(null);
     setAccessToken(null);
     try {
@@ -219,14 +248,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {}
 
     try {
+
       await supabase.auth.signOut();
     } catch (err) {
       console.error("❌ Erreur sign out Supabase:", err);
     }
   };
+
+ 
   const updateProfile = async (updates: Partial<Pick<UserProfile, "name" | "email">>) => {
     try {
       if (!user) return { error: new Error("Non connecté") };
+
       const { error } = await supabase.auth.updateUser({
         data: {
           ...(updates.name ? { name: updates.name } : {}),
@@ -240,6 +273,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: err as Error };
     }
   };
+
+
   const updatePassword = async (_currentPassword: string, newPassword: string) => {
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
@@ -249,6 +284,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: err as Error };
     }
   };
+
   const sendPasswordReset = async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -260,6 +296,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: err as Error };
     }
   };
+
+  
   const resetPassword = async (newPassword: string) => {
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
@@ -269,13 +307,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: err as Error };
     }
   };
+
+
   const enrollTotp = async () => {
     try {
       const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp" });
       if (error) return { qrUri: "", secret: "", factorId: "", error: new Error(error.message) };
       const totp = (data as any).totp;
       return {
-        qrUri: totp.qr_code,   // déjà en data:image/svg+xml
+        qrUri: totp.qr_code,  
         secret: totp.secret,
         factorId: data.id,
         error: null,
@@ -284,6 +324,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { qrUri: "", secret: "", factorId: "", error: err as Error };
     }
   };
+
+
   const verifyTotp = async (factorId: string, code: string) => {
     try {
       const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
@@ -293,6 +335,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: err as Error };
     }
   };
+
+
   const unenrollTotp = async (factorId: string) => {
     try {
       const { error } = await supabase.auth.mfa.unenroll({ factorId });
@@ -302,6 +346,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: err as Error };
     }
   };
+
   const getMfaFactors = async () => {
     try {
       const { data, error } = await supabase.auth.mfa.listFactors();

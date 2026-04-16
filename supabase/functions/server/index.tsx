@@ -6,7 +6,7 @@ import * as kv from "./kv_store.tsx";
 
 const app = new Hono();
 
-// OpenAI API helper
+
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 
 async function callOpenAI(systemPrompt: string, userPrompt: string, maxTokens = 2000): Promise<string> {
@@ -41,7 +41,6 @@ async function callOpenAI(systemPrompt: string, userPrompt: string, maxTokens = 
   return data.choices?.[0]?.message?.content || "";
 }
 
-// Create Supabase clients
 const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -52,10 +51,10 @@ const supabaseClient = createClient(
   Deno.env.get("SUPABASE_ANON_KEY") ?? ""
 );
 
-// Enable logger
+
 app.use("*", logger(console.log));
 
-// Enable CORS for all routes
+
 app.use(
   "/*",
   cors({
@@ -67,9 +66,6 @@ app.use(
   })
 );
 
-// ===============================================
-// 🏥 HEALTH CHECK
-// ===============================================
 app.get("/make-server-0a5eb56b/health", (c) => {
   return c.json({
     status: "ok",
@@ -78,11 +74,8 @@ app.get("/make-server-0a5eb56b/health", (c) => {
   });
 });
 
-// ===============================================
-// 🔐 AUTHENTICATION ROUTES
-// ===============================================
 
-// Sign Up
+
 app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
   try {
     const { email, password, name } = await c.req.json();
@@ -97,13 +90,13 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
       email,
       password,
       user_metadata: { name },
-      // Automatically confirm the user's email since an email server hasn't been configured.
+    
       email_confirm: true,
     });
 
     if (error) {
       console.error(`❌ Signup error for ${email}:`, error);
-      // Handle specific error codes with user-friendly messages
+   
       if (error.code === "email_exists" || error.message?.toLowerCase().includes("already been registered") || error.message?.toLowerCase().includes("already registered")) {
         return c.json({ error: "Un compte existe déjà avec cette adresse email. Connecte-toi plutôt.", code: "email_exists" }, 422);
       }
@@ -112,7 +105,6 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
 
     console.log(`✅ User created successfully: ${data.user?.id}`);
 
-    // Create user profile in KV store
     await kv.set(`user:${data.user?.id}`, {
       id: data.user?.id,
       email: data.user?.email,
@@ -120,7 +112,7 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
       createdAt: new Date().toISOString(),
       subscription: "free",
       credits: {
-        cv: 1, // Free tier: 1 CV
+        cv: 1,
         coverLetter: 0,
         atsAnalysis: 0,
         interview: 0,
@@ -141,11 +133,8 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
   }
 });
 
-// ===============================================
-// 👤 USER PROFILE ROUTES
-// ===============================================
 
-// Get user profile
+
 app.get("/make-server-0a5eb56b/user/profile", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -165,7 +154,6 @@ app.get("/make-server-0a5eb56b/user/profile", async (c) => {
 
     let profile = await kv.get(`user:${user.id}`);
 
-    // Auto-créer le profil s'il n'existe pas encore dans KV
     if (!profile) {
       console.log(`📝 Profile not found in KV, auto-creating for: ${user.id}`);
       profile = {
@@ -191,7 +179,7 @@ app.get("/make-server-0a5eb56b/user/profile", async (c) => {
   }
 });
 
-// Update user profile
+
 app.put("/make-server-0a5eb56b/user/profile", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -231,11 +219,7 @@ app.put("/make-server-0a5eb56b/user/profile", async (c) => {
   }
 });
 
-// ===============================================
-// 📄 MODULE 1: ReussIA - CV ROUTES
-// ===============================================
 
-// Get all CVs for a user
 app.get("/make-server-0a5eb56b/reussia/cvs", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -261,7 +245,6 @@ app.get("/make-server-0a5eb56b/reussia/cvs", async (c) => {
   }
 });
 
-// Save CV
 app.post("/make-server-0a5eb56b/reussia/cvs", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -298,11 +281,8 @@ app.post("/make-server-0a5eb56b/reussia/cvs", async (c) => {
   }
 });
 
-// ===============================================
-// ✉️ MODULE 1: ReussIA - COVER LETTER ROUTES
-// ===============================================
 
-// Get all cover letters for a user
+
 app.get("/make-server-0a5eb56b/reussia/cover-letters", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -328,7 +308,7 @@ app.get("/make-server-0a5eb56b/reussia/cover-letters", async (c) => {
   }
 });
 
-// Save cover letter
+
 app.post("/make-server-0a5eb56b/reussia/cover-letters", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -364,12 +344,6 @@ app.post("/make-server-0a5eb56b/reussia/cover-letters", async (c) => {
     return c.json({ error: error.message }, 500);
   }
 });
-
-// ===============================================
-// 🔍 MODULE 1: ReussIA - ATS ANALYSIS ROUTES
-// ===============================================
-
-// Analyze CV for ATS
 app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -388,7 +362,6 @@ app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
 
     console.log(`🔍 Running ATS analysis for user: ${user.id}`);
 
-    // Mock ATS analysis (replace with real AI API call)
     const analysis = {
       score: Math.floor(Math.random() * 30) + 70, // 70-100
       strengths: [
@@ -410,7 +383,7 @@ app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
       analyzedAt: new Date().toISOString(),
     };
 
-    // Save analysis
+  
     const analysisId = crypto.randomUUID();
     await kv.set(`ats_analysis:${user.id}:${analysisId}`, {
       id: analysisId,
@@ -427,11 +400,9 @@ app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
   }
 });
 
-// ===============================================
-// 🎤 MODULE 2: OralIA - INTERVIEW ROUTES
-// ===============================================
 
-// Get interview questions
+
+
 app.post("/make-server-0a5eb56b/oralia/questions", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -450,7 +421,6 @@ app.post("/make-server-0a5eb56b/oralia/questions", async (c) => {
 
     console.log(`🎤 Generating interview questions for user: ${user.id}, job: ${jobTitle}`);
 
-    // Mock questions (replace with real AI API call)
     const questions = [
       {
         id: 1,
@@ -491,7 +461,7 @@ app.post("/make-server-0a5eb56b/oralia/questions", async (c) => {
   }
 });
 
-// Analyze interview answer
+
 app.post("/make-server-0a5eb56b/oralia/analyze-answer", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -510,7 +480,7 @@ app.post("/make-server-0a5eb56b/oralia/analyze-answer", async (c) => {
 
     console.log(`📊 Analyzing interview answer for user: ${user.id}`);
 
-    // Mock analysis (replace with real AI API call)
+  
     const feedback = {
       score: Math.floor(Math.random() * 30) + 70, // 70-100
       strengths: [
@@ -532,11 +502,8 @@ app.post("/make-server-0a5eb56b/oralia/analyze-answer", async (c) => {
   }
 });
 
-// ===============================================
-// 📊 MODULE 3: TrackIA - APPLICATION TRACKING
-// ===============================================
 
-// Get all applications for a user
+
 app.get("/make-server-0a5eb56b/trackia/applications", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -562,7 +529,6 @@ app.get("/make-server-0a5eb56b/trackia/applications", async (c) => {
   }
 });
 
-// Create new application
 app.post("/make-server-0a5eb56b/trackia/applications", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -600,7 +566,6 @@ app.post("/make-server-0a5eb56b/trackia/applications", async (c) => {
   }
 });
 
-// Update application status
 app.put("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -641,7 +606,7 @@ app.put("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
   }
 });
 
-// Delete application
+
 app.delete("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -669,11 +634,9 @@ app.delete("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
   }
 });
 
-// ===============================================
-// 🧠 MODULE 4: SkillIA - LINKEDIN & SKILLS
-// ===============================================
 
-// Analyze LinkedIn profile
+
+
 app.post("/make-server-0a5eb56b/skillia/analyze-linkedin", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -692,7 +655,7 @@ app.post("/make-server-0a5eb56b/skillia/analyze-linkedin", async (c) => {
 
     console.log(`🧠 Analyzing LinkedIn profile for user: ${user.id}`);
 
-    // Mock analysis (replace with real AI API call)
+  
     const analysis = {
       score: Math.floor(Math.random() * 30) + 70, // 70-100
       strengths: [
@@ -736,7 +699,6 @@ app.post("/make-server-0a5eb56b/skillia/analyze-linkedin", async (c) => {
   }
 });
 
-// Get skill suggestions for a job
 app.post("/make-server-0a5eb56b/skillia/skill-suggestions", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -754,8 +716,6 @@ app.post("/make-server-0a5eb56b/skillia/skill-suggestions", async (c) => {
     const { jobTitle } = await c.req.json();
 
     console.log(`💡 Generating skill suggestions for user: ${user.id}, job: ${jobTitle}`);
-
-    // Mock suggestions (replace with real AI API call)
     const suggestions = {
       essentialSkills: [
         "JavaScript",
@@ -784,11 +744,6 @@ app.post("/make-server-0a5eb56b/skillia/skill-suggestions", async (c) => {
   }
 });
 
-// ===============================================
-// 🤖 AI-POWERED ROUTES (OpenAI GPT-4o-mini)
-// ===============================================
-
-// 🤖 AI: Generate/Optimize CV content
 app.post("/make-server-0a5eb56b/reussia/ai/generate-cv", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -848,10 +803,10 @@ Génère un CV optimisé et professionnel. Si certaines sections sont vides, pro
 
     const aiResponse = await callOpenAI(systemPrompt, userPrompt, 2500);
 
-    // Parse JSON from AI response
+   
     let cvData;
     try {
-      // Extract JSON from response (handle markdown code blocks)
+      
       const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)\s*```/) || aiResponse.match(/\{[\s\S]*\}/);
       const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : aiResponse;
       cvData = JSON.parse(jsonStr);
@@ -868,7 +823,7 @@ Génère un CV optimisé et professionnel. Si certaines sections sont vides, pro
   }
 });
 
-// 🤖 AI: Generate Cover Letter
+
 app.post("/make-server-0a5eb56b/reussia/ai/generate-cover-letter", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -928,7 +883,6 @@ Rédige une lettre de motivation complète, personnalisée et percutante.`;
   }
 });
 
-// 🤖 AI: ATS Analysis
 app.post("/make-server-0a5eb56b/reussia/ai/ats-analyze", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -999,8 +953,6 @@ Analyse ce CV par rapport à cette offre et donne un score ATS détaillé.`;
       console.log("Raw AI response:", aiResponse);
       return c.json({ error: "L'IA a renvoyé un format invalide. Réessayez." }, 500);
     }
-
-    // Save analysis
     const analysisId = crypto.randomUUID();
     await kv.set(`ats_analysis:${user.id}:${analysisId}`, {
       id: analysisId,
@@ -1016,8 +968,6 @@ Analyse ce CV par rapport à cette offre et donne un score ATS détaillé.`;
   }
 });
 
-// ===============================================
-// ��� START SERVER
-// ===============================================
+
 
 Deno.serve(app.fetch);

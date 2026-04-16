@@ -10,6 +10,8 @@ import {
 import { AppLayout } from "../components/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+
 function ChangePasswordSection() {
   const { updatePassword } = useAuth();
   const [open, setOpen] = useState(false);
@@ -53,17 +55,18 @@ function ChangePasswordSection() {
 
   const inputStyle = {
     background: "white",
-    border: "1.5px solid rgba(80,68,245,0.12)",
-    color: "#070716",
-    fontFamily: "Sora, system-ui, sans-serif",
+    border: "1.5px solid rgba(85,72,245,0.12)",
+    color: "#0C0B1A",
+    fontFamily: "DM Sans, sans-serif",
   };
 
   return (
     <div
       className="rounded-2xl overflow-hidden"
-      style={{ border: "1px solid rgba(80,68,245,0.1)", background: "white" }}
+      style={{ border: "1px solid rgba(85,72,245,0.1)", background: "white" }}
     >
-<button
+    
+      <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between p-5 text-left transition-colors hover:bg-indigo-50/50"
@@ -71,12 +74,12 @@ function ChangePasswordSection() {
         <div className="flex items-center gap-3">
           <div
             className="size-9 rounded-xl flex items-center justify-center"
-            style={{ background: "rgba(80,68,245,0.08)" }}
+            style={{ background: "rgba(85,72,245,0.08)" }}
           >
-            <KeyRound className="size-4" style={{ color: "#5044f5" }} />
+            <KeyRound className="size-4" style={{ color: "#5548F5" }} />
           </div>
           <div>
-            <p className="text-sm font-semibold" style={{ color: "#070716" }}>Mot de passe</p>
+            <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Mot de passe</p>
             <p className="text-xs" style={{ color: "#9CA3AF" }}>Modifier ton mot de passe de connexion</p>
           </div>
         </div>
@@ -86,10 +89,12 @@ function ChangePasswordSection() {
           <ChevronDown className="size-4 shrink-0" style={{ color: "#9CA3AF" }} />
         )}
       </button>
-{open && (
+
+     
+      {open && (
         <div
           className="px-5 pb-5 pt-1"
-          style={{ borderTop: "1px solid rgba(80,68,245,0.06)" }}
+          style={{ borderTop: "1px solid rgba(85,72,245,0.06)" }}
         >
           {success ? (
             <div
@@ -100,7 +105,8 @@ function ChangePasswordSection() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4 mt-3">
-<div>
+              
+              <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B8A" }}>
                   Mot de passe actuel
                 </label>
@@ -114,8 +120,8 @@ function ChangePasswordSection() {
                     required
                     className="w-full pl-9 pr-10 py-2.5 rounded-xl text-sm outline-none transition-all"
                     style={inputStyle}
-                    onFocus={(e) => (e.target.style.borderColor = "#5044f5")}
-                    onBlur={(e) => (e.target.style.borderColor = "rgba(80,68,245,0.12)")}
+                    onFocus={(e) => (e.target.style.borderColor = "#5548F5")}
+                    onBlur={(e) => (e.target.style.borderColor = "rgba(85,72,245,0.12)")}
                   />
                   <button type="button" onClick={() => setShowCurrent(v => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-60" style={{ color: "#9CA3AF" }}>
@@ -123,12 +129,14 @@ function ChangePasswordSection() {
                   </button>
                 </div>
                 <div className="flex justify-end mt-1">
-                  <Link to="/forgot-password" className="text-xs hover:opacity-70 transition-opacity" style={{ color: "#5044f5" }}>
+                  <Link to="/forgot-password" className="text-xs hover:opacity-70 transition-opacity" style={{ color: "#5548F5" }}>
                     Mot de passe oublié ?
                   </Link>
                 </div>
               </div>
-<div>
+
+              
+              <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B8A" }}>
                   Nouveau mot de passe
                 </label>
@@ -142,8 +150,8 @@ function ChangePasswordSection() {
                     required
                     className="w-full pl-9 pr-10 py-2.5 rounded-xl text-sm outline-none transition-all"
                     style={inputStyle}
-                    onFocus={(e) => (e.target.style.borderColor = "#5044f5")}
-                    onBlur={(e) => (e.target.style.borderColor = "rgba(80,68,245,0.12)")}
+                    onFocus={(e) => (e.target.style.borderColor = "#5548F5")}
+                    onBlur={(e) => (e.target.style.borderColor = "rgba(85,72,245,0.12)")}
                   />
                   <button type="button" onClick={() => setShowNew(v => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-60" style={{ color: "#9CA3AF" }}>
@@ -160,7 +168,8 @@ function ChangePasswordSection() {
                   </div>
                 )}
               </div>
-<div>
+
+              <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6B6B8A" }}>
                   Confirmer le nouveau mot de passe
                 </label>
@@ -174,8 +183,8 @@ function ChangePasswordSection() {
                     required
                     className="w-full pl-9 pr-10 py-2.5 rounded-xl text-sm outline-none transition-all"
                     style={inputStyle}
-                    onFocus={(e) => (e.target.style.borderColor = "#5044f5")}
-                    onBlur={(e) => (e.target.style.borderColor = "rgba(80,68,245,0.12)")}
+                    onFocus={(e) => (e.target.style.borderColor = "#5548F5")}
+                    onBlur={(e) => (e.target.style.borderColor = "rgba(85,72,245,0.12)")}
                   />
                   <button type="button" onClick={() => setShowConfirm(v => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-60" style={{ color: "#9CA3AF" }}>
@@ -206,7 +215,7 @@ function ChangePasswordSection() {
                   type="submit"
                   disabled={loading || !current || !newPw || !confirm}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg, #5044f5, #6b55f7)" }}
+                  style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
                 >
                   {loading ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
                   {loading ? "Mise à jour…" : "Confirmer"}
@@ -219,6 +228,8 @@ function ChangePasswordSection() {
     </div>
   );
 }
+
+
 type TotpStep = "idle" | "enrolling" | "scanning" | "verifying" | "active" | "disabling";
 
 function TwoFactorSection() {
@@ -305,25 +316,26 @@ function TwoFactorSection() {
   return (
     <div
       className="rounded-2xl overflow-hidden"
-      style={{ border: "1px solid rgba(80,68,245,0.1)", background: "white" }}
+      style={{ border: "1px solid rgba(85,72,245,0.1)", background: "white" }}
     >
-<div className="p-5 flex items-center justify-between">
+      {}
+      <div className="p-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
             className="size-9 rounded-xl flex items-center justify-center"
             style={{
               background: step === "active"
                 ? "rgba(34,197,94,0.1)"
-                : "rgba(80,68,245,0.08)"
+                : "rgba(85,72,245,0.08)"
             }}
           >
             {step === "active"
               ? <ShieldCheck className="size-4" style={{ color: "#22C55E" }} />
-              : <Smartphone className="size-4" style={{ color: "#5044f5" }} />
+              : <Smartphone className="size-4" style={{ color: "#5548F5" }} />
             }
           </div>
           <div>
-            <p className="text-sm font-semibold flex items-center gap-2" style={{ color: "#070716" }}>
+            <p className="text-sm font-semibold flex items-center gap-2" style={{ color: "#0C0B1A" }}>
               Authentification à 2 facteurs
               {step === "active" && (
                 <span
@@ -348,7 +360,7 @@ function TwoFactorSection() {
           <button
             onClick={handleEnroll}
             className="text-xs font-semibold px-3.5 py-2 rounded-xl transition-all hover:opacity-80"
-            style={{ background: "rgba(80,68,245,0.08)", color: "#5044f5" }}
+            style={{ background: "rgba(85,72,245,0.08)", color: "#5548F5" }}
           >
             Activer
           </button>
@@ -365,34 +377,39 @@ function TwoFactorSection() {
           </button>
         )}
       </div>
-{step === "enrolling" && (
+
+      {}
+      {step === "enrolling" && (
         <div
           className="px-5 pb-5 flex items-center gap-3"
-          style={{ borderTop: "1px solid rgba(80,68,245,0.06)" }}
+          style={{ borderTop: "1px solid rgba(85,72,245,0.06)" }}
         >
-          <Loader2 className="size-4 animate-spin mt-4" style={{ color: "#5044f5" }} />
+          <Loader2 className="size-4 animate-spin mt-4" style={{ color: "#5548F5" }} />
           <p className="text-sm mt-4" style={{ color: "#6B6B8A" }}>Génération du QR code…</p>
         </div>
       )}
-{step === "scanning" && (
+
+      {}
+      {step === "scanning" && (
         <div
           className="px-5 pb-5 pt-2"
-          style={{ borderTop: "1px solid rgba(80,68,245,0.06)" }}
+          style={{ borderTop: "1px solid rgba(85,72,245,0.06)" }}
         >
           <div className="grid md:grid-cols-2 gap-6 mt-2">
-<div>
+            {}
+            <div>
               <p className="text-xs font-semibold mb-3" style={{ color: "#6B6B8A" }}>
                 1. Scanne ce QR code avec ton app
               </p>
               <div
                 className="rounded-xl p-3 flex items-center justify-center"
-                style={{ background: "white", border: "1.5px solid rgba(80,68,245,0.12)" }}
+                style={{ background: "white", border: "1.5px solid rgba(85,72,245,0.12)" }}
               >
                 {qrUri ? (
                   <img src={qrUri} alt="QR Code 2FA" className="w-40 h-40" />
                 ) : (
                   <div className="w-40 h-40 flex items-center justify-center">
-                    <Loader2 className="size-6 animate-spin" style={{ color: "#5044f5" }} />
+                    <Loader2 className="size-6 animate-spin" style={{ color: "#5548F5" }} />
                   </div>
                 )}
               </div>
@@ -400,17 +417,19 @@ function TwoFactorSection() {
                 Compatible : Google Authenticator, Authy, 1Password…
               </p>
             </div>
-<div>
+
+            
+            <div>
               <p className="text-xs font-semibold mb-3" style={{ color: "#6B6B8A" }}>
                 Ou saisis le code manuellement
               </p>
               <div
                 className="rounded-xl p-3 flex items-center justify-between gap-2"
-                style={{ background: "#f7f7ff", border: "1.5px solid rgba(80,68,245,0.12)" }}
+                style={{ background: "#F8F7FF", border: "1.5px solid rgba(85,72,245,0.12)" }}
               >
                 <span
                   className="text-xs break-all"
-                  style={{ color: "#5044f5", fontFamily: "monospace", letterSpacing: "0.05em" }}
+                  style={{ color: "#5548F5", fontFamily: "monospace", letterSpacing: "0.05em" }}
                 >
                   {secret}
                 </span>
@@ -418,13 +437,15 @@ function TwoFactorSection() {
                   type="button"
                   onClick={copySecret}
                   className="shrink-0 transition-opacity hover:opacity-70"
-                  style={{ color: "#5044f5" }}
+                  style={{ color: "#5548F5" }}
                   title="Copier"
                 >
                   {copied ? <CheckCheck className="size-4" /> : <Copy className="size-4" />}
                 </button>
               </div>
-<form onSubmit={handleVerify} className="mt-4 space-y-3">
+
+              {}
+              <form onSubmit={handleVerify} className="mt-4 space-y-3">
                 <p className="text-xs font-semibold" style={{ color: "#6B6B8A" }}>
                   2. Entre le code généré par l'app
                 </p>
@@ -438,12 +459,12 @@ function TwoFactorSection() {
                   className="w-full py-3 px-4 rounded-xl text-center text-lg outline-none tracking-widest font-semibold transition-all"
                   style={{
                     background: "white",
-                    border: "1.5px solid rgba(80,68,245,0.15)",
-                    color: "#070716",
+                    border: "1.5px solid rgba(85,72,245,0.15)",
+                    color: "#0C0B1A",
                     fontFamily: "monospace",
                   }}
-                  onFocus={(e) => (e.target.style.borderColor = "#5044f5")}
-                  onBlur={(e) => (e.target.style.borderColor = "rgba(80,68,245,0.15)")}
+                  onFocus={(e) => (e.target.style.borderColor = "#5548F5")}
+                  onBlur={(e) => (e.target.style.borderColor = "rgba(85,72,245,0.15)")}
                 />
                 {error && (
                   <p className="text-xs" style={{ color: "#DC2626" }}>{error}</p>
@@ -461,7 +482,7 @@ function TwoFactorSection() {
                     type="submit"
                     disabled={verifying || code.length !== 6}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all hover:opacity-90"
-                    style={{ background: "linear-gradient(135deg, #5044f5, #6b55f7)" }}
+                    style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
                   >
                     {verifying ? <Loader2 className="size-3.5 animate-spin" /> : <ShieldCheck className="size-3.5" />}
                     {verifying ? "Vérification…" : "Activer la 2FA"}
@@ -472,7 +493,9 @@ function TwoFactorSection() {
           </div>
         </div>
       )}
-{step === "active" && error && (
+
+      
+      {step === "active" && error && (
         <div
           className="mx-5 mb-4 p-3 rounded-xl text-sm flex items-center gap-2"
           style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}
@@ -484,6 +507,8 @@ function TwoFactorSection() {
     </div>
   );
 }
+
+
 export function SettingsPage() {
   useSEO({ title: "Paramètres — Cadova", noindex: true });
   const { user, loading, updateProfile } = useAuth();
@@ -530,14 +555,14 @@ export function SettingsPage() {
   };
 
   const card = "rounded-2xl p-5 space-y-4";
-  const cardStyle = { border: "1px solid rgba(80,68,245,0.1)", background: "white" };
+  const cardStyle = { border: "1px solid rgba(85,72,245,0.1)", background: "white" };
   const sectionTitle = "flex items-center gap-2.5 mb-4";
 
   if (loading) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="size-8 animate-spin" style={{ color: "#5044f5" }} />
+          <Loader2 className="size-8 animate-spin" style={{ color: "#5548F5" }} />
         </div>
       </AppLayout>
     );
@@ -549,11 +574,11 @@ export function SettingsPage() {
         <div className="max-w-2xl mx-auto text-center py-20">
           <div
             className="size-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
-            style={{ background: "rgba(80,68,245,0.08)" }}
+            style={{ background: "rgba(85,72,245,0.08)" }}
           >
-            <LogIn className="size-7" style={{ color: "#5044f5" }} />
+            <LogIn className="size-7" style={{ color: "#5548F5" }} />
           </div>
-          <h2 className="font-extrabold mb-2" style={{ fontFamily: "Sora, system-ui, sans-serif", fontSize: "1.5rem" }}>
+          <h2 className="font-extrabold mb-2" style={{ fontFamily: "Syne, sans-serif", fontSize: "1.5rem" }}>
             Connexion requise
           </h2>
           <p className="text-sm mb-6" style={{ color: "#6B6B8A" }}>
@@ -562,7 +587,7 @@ export function SettingsPage() {
           <Link
             to="/login"
             className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white"
-            style={{ background: "linear-gradient(135deg, #5044f5, #6b55f7)" }}
+            style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
           >
             <LogIn className="size-4" /> Se connecter
           </Link>
@@ -575,12 +600,13 @@ export function SettingsPage() {
     <AppLayout>
       <div
         className="max-w-2xl mx-auto"
-        style={{ fontFamily: "Sora, system-ui, sans-serif" }}
+        style={{ fontFamily: "DM Sans, system-ui, sans-serif" }}
       >
-<div className="mb-8">
+       
+        <div className="mb-8">
           <h1
             className="font-extrabold mb-1"
-            style={{ fontFamily: "Sora, system-ui, sans-serif", fontSize: "1.75rem", color: "#070716" }}
+            style={{ fontFamily: "Syne, sans-serif", fontSize: "1.75rem", color: "#0C0B1A" }}
           >
             Paramètres
           </h1>
@@ -590,30 +616,33 @@ export function SettingsPage() {
         </div>
 
         <div className="space-y-6">
-<div className={card} style={cardStyle}>
+
+          
+          <div className={card} style={cardStyle}>
             <div className={sectionTitle}>
               <div
                 className="size-9 rounded-xl flex items-center justify-center"
-                style={{ background: "rgba(80,68,245,0.08)" }}
+                style={{ background: "rgba(85,72,245,0.08)" }}
               >
-                <User className="size-4" style={{ color: "#5044f5" }} />
+                <User className="size-4" style={{ color: "#5548F5" }} />
               </div>
               <div>
-                <p className="text-sm font-semibold" style={{ color: "#070716" }}>Profil</p>
+                <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Profil</p>
                 <p className="text-xs" style={{ color: "#9CA3AF" }}>Informations de ton compte</p>
               </div>
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
-<div className="flex items-center gap-4">
+              {}
+              <div className="flex items-center gap-4">
                 <div
                   className="size-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white shrink-0"
-                  style={{ background: "linear-gradient(135deg, #5044f5, #6b55f7)" }}
+                  style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
                 >
                   {name.charAt(0).toUpperCase() || "?"}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: "#070716" }}>{name || "—"}</p>
+                  <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>{name || "—"}</p>
                   <p className="text-xs" style={{ color: "#9CA3AF" }}>{email}</p>
                 </div>
               </div>
@@ -630,11 +659,11 @@ export function SettingsPage() {
                   className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all"
                   style={{
                     background: "white",
-                    border: "1.5px solid rgba(80,68,245,0.12)",
-                    color: "#070716",
+                    border: "1.5px solid rgba(85,72,245,0.12)",
+                    color: "#0C0B1A",
                   }}
-                  onFocus={(e) => (e.target.style.borderColor = "#5044f5")}
-                  onBlur={(e) => (e.target.style.borderColor = "rgba(80,68,245,0.12)")}
+                  onFocus={(e) => (e.target.style.borderColor = "#5548F5")}
+                  onBlur={(e) => (e.target.style.borderColor = "rgba(85,72,245,0.12)")}
                 />
               </div>
 
@@ -673,17 +702,19 @@ export function SettingsPage() {
                 type="submit"
                 disabled={saving}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-all hover:opacity-90"
-                style={{ background: "linear-gradient(135deg, #5044f5, #6b55f7)" }}
+                style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
               >
                 {saving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
                 {saving ? "Enregistrement…" : "Enregistrer"}
               </button>
             </form>
           </div>
-<div>
+
+         
+          <div>
             <div className="flex items-center gap-2.5 mb-3">
-              <Shield className="size-4" style={{ color: "#5044f5" }} />
-              <p className="text-sm font-semibold" style={{ color: "#070716" }}>Sécurité</p>
+              <Shield className="size-4" style={{ color: "#5548F5" }} />
+              <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Sécurité</p>
             </div>
 
             <div className="space-y-3">
@@ -691,13 +722,14 @@ export function SettingsPage() {
               <TwoFactorSection />
             </div>
           </div>
-<div className={card} style={cardStyle}>
+
+          <div className={card} style={cardStyle}>
             <div className={sectionTitle}>
-              <div className="size-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(80,68,245,0.08)" }}>
-                <Bell className="size-4" style={{ color: "#5044f5" }} />
+              <div className="size-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(85,72,245,0.08)" }}>
+                <Bell className="size-4" style={{ color: "#5548F5" }} />
               </div>
               <div>
-                <p className="text-sm font-semibold" style={{ color: "#070716" }}>Notifications</p>
+                <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Notifications</p>
                 <p className="text-xs" style={{ color: "#9CA3AF" }}>Gère tes préférences d'alertes</p>
               </div>
             </div>
@@ -707,31 +739,33 @@ export function SettingsPage() {
             ].map((n) => (
               <div key={n.label} className="flex items-center justify-between py-1">
                 <div>
-                  <p className="text-sm font-medium" style={{ color: "#070716" }}>{n.label}</p>
+                  <p className="text-sm font-medium" style={{ color: "#0C0B1A" }}>{n.label}</p>
                   <p className="text-xs" style={{ color: "#9CA3AF" }}>{n.desc}</p>
                 </div>
                 <div
                   className="text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer transition-all hover:opacity-80"
-                  style={{ background: "rgba(80,68,245,0.08)", color: "#5044f5" }}
+                  style={{ background: "rgba(85,72,245,0.08)", color: "#5548F5" }}
                 >
                   Activé
                 </div>
               </div>
             ))}
           </div>
-<div className={card} style={cardStyle}>
+
+         
+          <div className={card} style={cardStyle}>
             <div className={sectionTitle}>
-              <div className="size-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(80,68,245,0.08)" }}>
-                <CreditCard className="size-4" style={{ color: "#5044f5" }} />
+              <div className="size-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(85,72,245,0.08)" }}>
+                <CreditCard className="size-4" style={{ color: "#5548F5" }} />
               </div>
               <div>
-                <p className="text-sm font-semibold" style={{ color: "#070716" }}>Abonnement</p>
+                <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Abonnement</p>
                 <p className="text-xs" style={{ color: "#9CA3AF" }}>Plan actuel et facturation</p>
               </div>
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold" style={{ color: "#070716" }}>
+                <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>
                   Plan {user.subscription === "premium" ? "Pro" : "Gratuit"}
                 </p>
                 <p className="text-xs" style={{ color: "#9CA3AF" }}>
@@ -743,14 +777,15 @@ export function SettingsPage() {
               {user.subscription !== "premium" && (
                 <button
                   className="text-xs font-bold px-3.5 py-2 rounded-xl text-white transition-all hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg, #5044f5, #6b55f7)" }}
+                  style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
                 >
                   Passer à Pro
                 </button>
               )}
             </div>
           </div>
-<div
+
+          <div
             className={card}
             style={{ border: "1px solid rgba(239,68,68,0.2)", background: "#FFF8F8" }}
           >
@@ -760,7 +795,7 @@ export function SettingsPage() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium" style={{ color: "#070716" }}>Supprimer le compte</p>
+                <p className="text-sm font-medium" style={{ color: "#0C0B1A" }}>Supprimer le compte</p>
                 <p className="text-xs" style={{ color: "#9CA3AF" }}>Action irréversible — toutes tes données seront supprimées</p>
               </div>
               <button

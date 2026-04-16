@@ -1,7 +1,3 @@
-/**
- * Script de generation automatique des icones PWA
- * Utilise le favicon SVG centre comme source unique pour iOS et Android
- */
 
 import sharp from 'sharp';
 import { readFileSync } from 'fs';
@@ -12,10 +8,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rootDir = join(__dirname, '..');
 
-// Lire le SVG source
+
 const svgBuffer = readFileSync(join(rootDir, 'public', 'favicon.svg'));
 
-// Tailles requises pour PWA
+
 const sizes = [
   {
     size: 180,
@@ -42,7 +38,7 @@ const sizes = [
 
 console.log('🎨 Génération des icônes PWA Cadova...\n');
 
-// Generer chaque taille
+
 for (const { size, filenames, desc, iconScale, background } of sizes) {
   try {
     const iconSize = Math.round(size * iconScale);

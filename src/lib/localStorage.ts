@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
   LINKEDIN_ANALYSES: "cadova_linkedin_analyses",
 };
 
+
 export interface User {
   id: string;
   email: string;
@@ -29,13 +30,17 @@ export interface Session {
   user: User;
   expiresAt: string;
 }
+
 const getUsers = (): User[] => {
   const usersJson = localStorage.getItem(STORAGE_KEYS.USERS);
   return usersJson ? JSON.parse(usersJson) : [];
 };
+
 const saveUsers = (users: User[]) => {
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
 };
+
+
 export const signup = async (
   email: string,
   password: string,
@@ -43,6 +48,8 @@ export const signup = async (
 ): Promise<{ success: boolean; user?: User; error?: string }> => {
   try {
     const users = getUsers();
+
+    
     if (users.some((u) => u.email === email)) {
       return { success: false, error: "Un compte existe déjà avec cet email" };
     }
@@ -51,7 +58,7 @@ export const signup = async (
       id: crypto.randomUUID(),
       email,
       name,
-      password, // NOTE: Ne jamais faire ça en production !
+      password, 
       createdAt: new Date().toISOString(),
       subscription: "free",
       credits: {
@@ -70,6 +77,8 @@ export const signup = async (
     return { success: false, error: error.message };
   }
 };
+
+
 export const signin = async (
   email: string,
   password: string
@@ -81,9 +90,11 @@ export const signin = async (
     if (!user) {
       return { success: false, error: "Email ou mot de passe incorrect" };
     }
+
+    
     const session: Session = {
       user,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), 
     };
 
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
@@ -93,14 +104,19 @@ export const signin = async (
     return { success: false, error: error.message };
   }
 };
+
 export const signout = () => {
   localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
 };
+
+
 export const getSession = (): Session | null => {
   const sessionJson = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
   if (!sessionJson) return null;
 
   const session: Session = JSON.parse(sessionJson);
+
+ 
   if (new Date(session.expiresAt) < new Date()) {
     signout();
     return null;
@@ -108,10 +124,14 @@ export const getSession = (): Session | null => {
 
   return session;
 };
+
+
 export const getCurrentUser = (): User | null => {
   const session = getSession();
   return session?.user || null;
 };
+
+
 export const updateProfile = (updates: Partial<User>): boolean => {
   try {
     const session = getSession();
@@ -124,6 +144,8 @@ export const updateProfile = (updates: Partial<User>): boolean => {
 
     users[userIndex] = { ...users[userIndex], ...updates };
     saveUsers(users);
+
+  
     session.user = users[userIndex];
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
 
@@ -132,6 +154,8 @@ export const updateProfile = (updates: Partial<User>): boolean => {
     return false;
   }
 };
+
+
 
 export interface CV {
   id: string;
@@ -212,6 +236,8 @@ export const saveInterviewSession = (
   };
   return addItem(STORAGE_KEYS.INTERVIEWS, session);
 };
+
+
 const getItems = <T>(key: string, userId?: string): T[] => {
   const itemsJson = localStorage.getItem(key);
   const items = itemsJson ? JSON.parse(itemsJson) : [];
@@ -259,6 +285,8 @@ const deleteItem = <T extends { id: string }>(key: string, id: string): boolean 
   return true;
 };
 
+
+
 export const getCVs = (userId: string): CV[] => {
   return getItems<CV>(STORAGE_KEYS.CVS, userId);
 };
@@ -276,6 +304,8 @@ export const saveCV = (cvData: Omit<CV, "id" | "createdAt" | "updatedAt">): CV =
 export const deleteCV = (id: string): boolean => {
   return deleteItem(STORAGE_KEYS.CVS, id);
 };
+
+
 
 export const getCoverLetters = (userId: string): CoverLetter[] => {
   return getItems<CoverLetter>(STORAGE_KEYS.COVER_LETTERS, userId);
@@ -297,6 +327,7 @@ export const deleteCoverLetter = (id: string): boolean => {
   return deleteItem(STORAGE_KEYS.COVER_LETTERS, id);
 };
 
+
 export const getATSAnalyses = (userId: string): ATSAnalysis[] => {
   return getItems<ATSAnalysis>(STORAGE_KEYS.ATS_ANALYSES, userId);
 };
@@ -311,6 +342,8 @@ export const saveATSAnalysis = (
   };
   return addItem(STORAGE_KEYS.ATS_ANALYSES, analysis);
 };
+
+
 
 export const getApplications = (userId: string): Application[] => {
   return getItems<Application>(STORAGE_KEYS.APPLICATIONS, userId);
@@ -342,6 +375,8 @@ export const deleteApplication = (id: string): boolean => {
   return deleteItem(STORAGE_KEYS.APPLICATIONS, id);
 };
 
+
+
 export const getLinkedInAnalyses = (userId: string): LinkedInAnalysis[] => {
   return getItems<LinkedInAnalysis>(STORAGE_KEYS.LINKEDIN_ANALYSES, userId);
 };
@@ -356,6 +391,8 @@ export const saveLinkedInAnalysis = (
   };
   return addItem(STORAGE_KEYS.LINKEDIN_ANALYSES, analysis);
 };
+
+
 
 export const generateMockData = () => {
   if (getUsers().length === 0) {
