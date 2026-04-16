@@ -195,6 +195,7 @@
   grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: stretch;
   gap: 18px;
+  min-height: 1px;
 }
 
 .marketing-grid-3 {
@@ -306,10 +307,11 @@
   display: grid;
   gap: 18px;
   justify-items: start;
+  min-height: 1px;
   padding: 18px 0;
 }
 
-.marketing-floating-stat {
+.marketing-proof-stat {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -322,21 +324,21 @@
   animation: cadova-stat-fade 620ms ease both;
 }
 
-.marketing-floating-stat-1 {
+.marketing-proof-stat-1 {
   margin-left: 18px;
 }
 
-.marketing-floating-stat-2 {
+.marketing-proof-stat-2 {
   margin-left: 72px;
   animation-delay: 80ms;
 }
 
-.marketing-floating-stat-3 {
+.marketing-proof-stat-3 {
   margin-left: 34px;
   animation-delay: 160ms;
 }
 
-.marketing-floating-dot {
+.marketing-proof-dot {
   width: 10px;
   height: 10px;
   border-radius: 999px;
@@ -345,12 +347,12 @@
   flex-shrink: 0;
 }
 
-.marketing-floating-stat strong,
-.marketing-floating-stat span {
+.marketing-proof-stat strong,
+.marketing-proof-stat span {
   display: block;
 }
 
-.marketing-floating-stat strong {
+.marketing-proof-stat strong {
   color: #070716;
   font-size: 21px;
   font-weight: 800;
@@ -358,7 +360,7 @@
   line-height: 1.1;
 }
 
-.marketing-floating-stat span {
+.marketing-proof-stat span {
   margin-top: 4px;
   color: #697085;
   font-size: 13px;
@@ -380,6 +382,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
+  min-height: 1px;
   margin-top: 30px;
 }
 
@@ -547,6 +550,7 @@
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
+  min-height: 1px;
 }
 
 .marketing-recommendation-card {
@@ -759,15 +763,15 @@
     padding-top: 8px;
   }
 
-  .marketing-floating-stat,
-  .marketing-floating-stat-1,
-  .marketing-floating-stat-2,
-  .marketing-floating-stat-3 {
+  .marketing-proof-stat,
+  .marketing-proof-stat-1,
+  .marketing-proof-stat-2,
+  .marketing-proof-stat-3 {
     width: 100%;
     margin-left: 0;
   }
 
-  .marketing-floating-stat-3 {
+  .marketing-proof-stat-3 {
     grid-column: 1 / -1;
     width: min(100%, 310px);
   }
@@ -851,12 +855,12 @@
     padding: 4px 0 0;
   }
 
-  .marketing-floating-stat {
+  .marketing-proof-stat {
     padding: 16px;
     animation: none;
   }
 
-  .marketing-floating-stat-3 {
+  .marketing-proof-stat-3 {
     width: 100%;
   }
 

@@ -110,8 +110,8 @@ export function Landing() {
 
           <div className="marketing-hero-stats" aria-label="Preuves Cadova">
             {heroStats.map((stat, index) => (
-              <div key={stat.label} className={`marketing-floating-stat marketing-floating-stat-${index + 1}`}>
-                <span className="marketing-floating-dot" aria-hidden="true" />
+              <div key={stat.label} className={`marketing-proof-stat marketing-proof-stat-${index + 1}`}>
+                <span className="marketing-proof-dot" aria-hidden="true" />
                 <div>
                   <strong>{stat.value}</strong>
                   <span>{stat.label}</span>

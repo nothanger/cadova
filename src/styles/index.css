@@ -148,6 +148,42 @@ a {
   box-shadow: var(--cadova-shadow-soft);
 }
 
+.cadova-route-fallback {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--cadova-bg-soft);
+}
+
+.cadova-route-fallback-card {
+  width: min(100%, 680px);
+  display: grid;
+  gap: 22px;
+  border: 1px solid var(--cadova-border);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--cadova-shadow);
+  padding: 28px;
+}
+
+.cadova-route-fallback-card h1 {
+  margin: 10px 0 0;
+  font-size: clamp(2rem, 8vw, 3.4rem);
+}
+
+.cadova-route-fallback-card p {
+  margin: 12px 0 0;
+  color: var(--cadova-muted);
+  line-height: 1.75;
+}
+
+.cadova-route-fallback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .cadova-panel {
   border: 1px solid rgba(224, 226, 239, 0.9);
   border-radius: 8px;
@@ -281,6 +317,18 @@ a {
     width: 100%;
     min-height: 48px;
   }
+
+  .cadova-route-fallback {
+    padding: 16px;
+  }
+
+  .cadova-route-fallback-card {
+    padding: 22px;
+  }
+
+  .cadova-route-fallback-actions > * {
+    width: 100%;
+  }
 }
 
 @supports (min-height: 100dvh) {
@@ -294,5 +342,9 @@ a {
 
   .h-screen {
     height: 100dvh;
+  }
+
+  .cadova-route-fallback {
+    min-height: 100dvh;
   }
 }

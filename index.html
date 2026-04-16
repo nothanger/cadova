@@ -148,6 +148,77 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <style>
+        .cadova-static-fallback {
+          min-height: 100svh;
+          display: grid;
+          place-items: center;
+          padding: 24px;
+          background: #f7f7f9;
+          color: #070716;
+          font-family: Sora, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        .cadova-static-fallback__card {
+          width: min(100%, 720px);
+          border: 1px solid #e0e2ef;
+          border-radius: 8px;
+          background: #ffffff;
+          box-shadow: 0 24px 70px rgba(15, 16, 33, 0.08);
+          padding: 28px;
+        }
+        .cadova-static-fallback h1 {
+          margin: 18px 0 0;
+          font-size: clamp(2rem, 8vw, 3.5rem);
+          line-height: 1;
+          letter-spacing: -0.05em;
+        }
+        .cadova-static-fallback p {
+          margin: 16px 0 0;
+          color: #697085;
+          line-height: 1.75;
+        }
+        .cadova-static-fallback__actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin-top: 24px;
+        }
+        .cadova-static-fallback a {
+          min-height: 48px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          padding: 12px 18px;
+          font-weight: 700;
+          text-decoration: none;
+        }
+        .cadova-static-fallback__primary {
+          background: #5044f5;
+          color: #ffffff;
+        }
+        .cadova-static-fallback__secondary {
+          border: 1px solid #e0e2ef;
+          background: #ffffff;
+          color: #070716;
+        }
+      </style>
+      <main class="cadova-static-fallback">
+        <section class="cadova-static-fallback__card">
+          <strong>Cadova</strong>
+          <h1>Ton espace candidature reste accessible.</h1>
+          <p>
+            Active JavaScript ou desactive temporairement le bloqueur sur Cadova pour utiliser les modules,
+            les formulaires et les formules interactives.
+          </p>
+          <div class="cadova-static-fallback__actions">
+            <a class="cadova-static-fallback__primary" href="/">Recharger Cadova</a>
+            <a class="cadova-static-fallback__secondary" href="/pricing">Voir les formules</a>
+          </div>
+        </section>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

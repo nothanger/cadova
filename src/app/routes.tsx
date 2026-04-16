@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import { createBrowserRouter } from "react-router";
 import { Root } from "./pages/Root";
 import { AuthGuard } from "./components/AuthGuard";
+import { RouteErrorFallback } from "./components/RouteErrorFallback";
 
 const loadComponent = <T extends Record<string, unknown>>(loader: () => Promise<T>, exportName: keyof T) =>
   async () => {
@@ -13,6 +14,7 @@ export const router = createBrowserRouter([
   {
     path: "/",
     Component: Root,
+    ErrorBoundary: RouteErrorFallback,
     children: [
       { index: true, lazy: loadComponent(() => import("./pages/Landing"), "Landing") },
       { path: "modules", lazy: loadComponent(() => import("./pages/Modules"), "Modules") },
