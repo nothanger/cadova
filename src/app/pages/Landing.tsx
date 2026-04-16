@@ -51,8 +51,8 @@ export function Landing() {
   return (
     <MarketingShell>
       <section className="marketing-section marketing-hero">
-        <div className="marketing-container marketing-hero-grid">
-          <div>
+        <div className="marketing-container">
+          <div className="marketing-hero-content">
             <h1 className="marketing-title">
               Le style de recherche
               <br />
@@ -98,31 +98,6 @@ export function Landing() {
                 <span className="marketing-kicker">Depart</span>
                 <strong>14 jours</strong>
                 <span className="marketing-price-note">pour tester sans carte</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="marketing-panel marketing-hero-visual">
-            <div className="marketing-workspace-preview" aria-hidden="true">
-              <div className="marketing-workspace-sidebar">
-                <span />
-                <span />
-                <span />
-              </div>
-              <div className="marketing-workspace-main">
-                <div className="marketing-workspace-bar" />
-                <div className="marketing-workspace-line marketing-workspace-line-wide" />
-                <div className="marketing-workspace-line" />
-                <div className="marketing-workspace-doc">
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                </div>
-                <div className="marketing-workspace-actions">
-                  <span />
-                  <span />
-                </div>
               </div>
             </div>
           </div>
