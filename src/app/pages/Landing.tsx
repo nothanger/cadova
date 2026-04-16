@@ -11,6 +11,12 @@ const proofPoints = [
   "Un seul compte pour tous les modules",
 ];
 
+const heroStats = [
+  { value: "1200+ CV générés", label: "Candidatures structurées" },
+  { value: "Score ATS moyen : 86/100", label: "Optimisation avant envoi" },
+  { value: "3x plus de réponses", label: "Suivi plus régulier" },
+];
+
 const workflow = [
   {
     title: "Tu poses la cible",
@@ -51,7 +57,7 @@ export function Landing() {
   return (
     <MarketingShell>
       <section className="marketing-section marketing-hero">
-        <div className="marketing-container">
+        <div className="marketing-container marketing-hero-grid">
           <div className="marketing-hero-content">
             <h1 className="marketing-title">
               Le style de recherche
@@ -100,6 +106,18 @@ export function Landing() {
                 <span className="marketing-price-note">pour tester sans carte</span>
               </div>
             </div>
+          </div>
+
+          <div className="marketing-hero-stats" aria-label="Preuves Cadova">
+            {heroStats.map((stat, index) => (
+              <div key={stat.label} className={`marketing-floating-stat marketing-floating-stat-${index + 1}`}>
+                <span className="marketing-floating-dot" aria-hidden="true" />
+                <div>
+                  <strong>{stat.value}</strong>
+                  <span>{stat.label}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
