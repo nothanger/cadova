@@ -6,15 +6,15 @@ import { useSEO } from "../hooks/useSEO";
 import { cadovaModules } from "../lib/module-data";
 
 const proofPoints = [
-  "Tu peux commencer meme si ton CV est encore brouillon",
-  "14 jours pour essayer, sans carte bancaire",
-  "Un seul endroit pour ne plus tout eparpiller",
+  "Des modules adaptés à tes besoins",
+  "Un essai gratuit de 2 jours pour tous les services en illimité",
+  "Une interface simple pour avancer sans t'éparpiller",
 ];
 
 const heroStats = [
-  { value: "CV, lettre, suivi", label: "Tout ce qui part vraiment" },
-  { value: "ATS + entretien", label: "Pour comprendre avant d'envoyer" },
-  { value: "Relances au clair", label: "Moins de candidatures oubliees" },
+  { value: "Trouve ton entreprise", label: "Candidatures structurées" },
+  { value: "Ton CV prêt en quelques minutes", label: "Optimisation avant envoi" },
+  { value: "Tu suis tes candidatures", label: "Suivi plus régulier" },
 ];
 
 const workflow = [
@@ -60,23 +60,25 @@ export function Landing() {
         <div className="marketing-container marketing-hero-grid">
           <div className="marketing-hero-content">
             <h1 className="marketing-title">
-              Ta recherche
+              Tu cherches un
               <br />
-              merite mieux
+              stage ? Alors fais
               <br />
-              que le stress.
+              le bien !
             </h1>
             <p className="marketing-copy" style={{ marginTop: 22 }}>
-              Cadova t'aide a transformer le bazar des candidatures en prochaines actions claires: refaire un CV, adapter une lettre, preparer un oral, relancer au bon moment. Sans te parler comme si tu avais deja dix ans d'experience.
+              Arrête de t'éparpiller.
+              <br />
+              Avec Cadova, tu fais tout au même endroit : CV, entraînement et suivi.
             </p>
 
             <div className="marketing-actions">
               <Link to="/modules" className="marketing-button-primary">
-                Trouver par ou commencer
+                Explorer les modules
                 <ArrowRight size={18} />
               </Link>
               <Link to="/pricing" className="marketing-button-secondary">
-                Voir ce qui me correspond
+                Voir les formules
               </Link>
             </div>
 
@@ -91,19 +93,19 @@ export function Landing() {
 
             <div className="marketing-meta-grid">
               <div className="marketing-meta-card">
-                <span className="marketing-kicker">Temps gagne</span>
-                <strong>Moins d'allers-retours</strong>
-                <span className="marketing-price-note">entre notes, mails et fichiers perdus</span>
+                <span className="marketing-kicker">Temps gagné</span>
+                <strong>Tout au même endroit</strong>
+                <span className="marketing-price-note">CV, entraînement et suivi réunis</span>
               </div>
               <div className="marketing-meta-card">
                 <span className="marketing-kicker">Point fort</span>
-                <strong>Des conseils concrets</strong>
-                <span className="marketing-price-note">pas juste des scores qui font joli</span>
+                <strong>Tu sais quoi faire</strong>
+                <span className="marketing-price-note">À chaque étape de ta recherche</span>
               </div>
               <div className="marketing-meta-card">
-                <span className="marketing-kicker">Depart</span>
-                <strong>14 jours</strong>
-                <span className="marketing-price-note">pour essayer sans pression</span>
+                <span className="marketing-kicker">Ce que tu gagnes</span>
+                <strong>Tu restes organisé</strong>
+                <span className="marketing-price-note">Sans te perdre entre les onglets</span>
               </div>
             </div>
           </div>
