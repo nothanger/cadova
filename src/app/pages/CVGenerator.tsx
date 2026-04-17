@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import type { Dispatch, SetStateAction } from "react";
+import type { ChangeEvent, Dispatch, SetStateAction } from "react";
 import { useSEO } from "../hooks/useSEO";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -28,6 +28,8 @@ import {
   RefreshCw,
   Globe,
   GraduationCap,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import { AppLayout } from "../components/AppLayout";
 import { motion, AnimatePresence } from "motion/react";
@@ -45,6 +47,7 @@ import {
   ExperienceLevel,
   CandidatureType,
 } from "../lib/reussia-data";
+import { cvTemplates, getCVTemplate } from "../lib/document-templates";
 interface Experience {
   id: string;
   title: string;
@@ -72,7 +75,7 @@ interface Project {
   context: string;
   description: string;
 }
-const STEPS = ["Contexte", "Identite", "Formation", "Experience", "Projets", "Competences", "Apercu"];
+const STEPS = ["Modèle", "Contexte", "Identite", "Formation", "Experience", "Projets", "Competences", "Apercu"];
 
 const LEVEL_OPTIONS: { value: ExperienceLevel; label: string; desc: string }[] = [
   { value: "lyceen",       label: "Lyceen(ne)",      desc: "Bac en cours, premiere experience" },
@@ -139,6 +142,9 @@ export function CVGenerator() {
   ]);
   const [summaryVariantIdx, setSummaryVariantIdx] = useState(0);
   const [editedSummary, setEditedSummary] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("classic");
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const selectedTemplate = getCVTemplate(selectedTemplateId);
 const goNext = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
   const goPrev = () => setStep((s) => Math.max(s - 1, 0));
 const autoSummary = useMemo(() => {
@@ -310,6 +316,18 @@ const updateLanguage = (
   const removeLanguage = (index: number) => {
     setLanguageEntries((prev) => prev.filter((_, i) => i !== index));
   };
+  const handlePhotoChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Ajoute une image au format JPG, PNG ou WebP.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => setProfilePhoto(String(reader.result));
+    reader.readAsDataURL(file);
+  };
 const handleGoToPreview = () => {
     if (step === STEPS.length - 2) {
       setIsGenerating(true);
@@ -349,6 +367,8 @@ const handleSaveCV = () => {
         sector,
         level,
         candidatureType,
+        selectedTemplateId,
+        profilePhoto,
       },
     });
     toast.success("CV enregistre dans ton dashboard.");
@@ -356,6 +376,7 @@ const handleSaveCV = () => {
 
   const handlePrint = () => {
     handleSaveCV();
+    const template = selectedTemplate;
     const fullName = `${firstName} ${lastName}`.trim();
     const allSkills = [...selectedSkills, ...selectedSoftSkills];
     const langStr = languageEntries
@@ -406,28 +427,40 @@ const handleSaveCV = () => {
     const skillsHtml = allSkills.length
       ? allSkills.map((s) => `<span style="background:#ede9fe;color:#5b21b6;padding:3px 10px;border-radius:20px;font-size:12px;margin:3px;display:inline-block">${s}</span>`).join("")
       : "";
+    const photoHtml = template.supportsPhoto && profilePhoto
+      ? `<img src="${profilePhoto}" alt="" style="width:86px;height:86px;border-radius:${template.layoutVariant === "student" ? "24px" : "999px"};object-fit:cover;border:3px solid ${template.accentColor}22" />`
+      : "";
+    const fontFamily = template.layoutVariant === "student" ? "Trebuchet MS, Arial" : template.layoutVariant === "modern" ? "Inter, Arial" : "Arial";
+    const pageWidth = template.layoutVariant === "premium" ? "780px" : "720px";
+    const headerBg = template.layoutVariant === "premium" ? "#f8fafc" : "transparent";
+    const headerPadding = template.layoutVariant === "premium" ? "26px" : "0 0 16px";
+    const headerRadius = template.layoutVariant === "premium" ? "18px" : "0";
+    const headerBorder = template.layoutVariant === "premium" ? "0" : `2px solid ${template.accentColor}`;
 
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
     printWindow.document.write(`<!DOCTYPE html><html><head>
       <title>CV — ${fullName}</title>
       <style>
-        body{font-family:Arial,sans-serif;max-width:720px;margin:40px auto;color:#1e293b;font-size:14px;line-height:1.6}
-        h1{font-size:26px;margin:0}h2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#4f46e5;border-bottom:1px solid #e0e7ff;padding-bottom:4px;margin:20px 0 12px}
-        .header{border-bottom:2px solid #4f46e5;padding-bottom:16px;margin-bottom:20px}
+        body{font-family:${fontFamily},sans-serif;max-width:${pageWidth};margin:40px auto;color:#1e293b;font-size:14px;line-height:1.6}
+        h1{font-size:28px;margin:0;letter-spacing:-.03em}h2{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:${template.accentColor};border-bottom:1px solid ${template.accentColor}33;padding-bottom:4px;margin:20px 0 12px}
+        .header{display:flex;justify-content:space-between;gap:22px;align-items:flex-start;border-bottom:${headerBorder};padding:${headerPadding};margin-bottom:20px;background:${headerBg};border-radius:${headerRadius}}
         .contact{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:#64748b}
         @media print{body{margin:20px}}
       </style>
     </head><body>
       <div class="header">
-        <h1>${fullName}</h1>
-        <p style="color:#4f46e5;font-size:16px;margin:4px 0">${jobTitle}</p>
-        <div class="contact">
-          ${email ? `<span>${email}</span>` : ""}
-          ${phone ? `<span>${phone}</span>` : ""}
-          ${city ? `<span>${city}</span>` : ""}
-          ${linkedin ? `<span>${linkedin}</span>` : ""}
+        <div>
+          <h1>${fullName}</h1>
+          <p style="color:${template.accentColor};font-size:16px;margin:4px 0;font-weight:700">${jobTitle}</p>
+          <div class="contact">
+            ${email ? `<span>${email}</span>` : ""}
+            ${phone ? `<span>${phone}</span>` : ""}
+            ${city ? `<span>${city}</span>` : ""}
+            ${linkedin ? `<span>${linkedin}</span>` : ""}
+          </div>
         </div>
+        ${photoHtml}
       </div>
       ${summary ? `<h2>Profil</h2><p style="font-size:13px;color:#475569">${summary}</p>` : ""}
       ${expHtml ? `<h2>Experience professionnelle</h2>${expHtml}` : ""}
@@ -510,6 +543,66 @@ return (
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
+                    <CardTitle>Choisis ton modèle de CV</CardTitle>
+                    <p className="text-sm text-slate-500">
+                      Tu pourras changer de modèle jusqu'à l'export. Les modèles restent professionnels et lisibles par les recruteurs.
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                      {cvTemplates.map((template) => {
+                        const selected = selectedTemplateId === template.id;
+                        return (
+                          <button
+                            key={template.id}
+                            type="button"
+                            onClick={() => setSelectedTemplateId(template.id)}
+                            className={`rounded-2xl border bg-white p-3 text-left transition-all ${
+                              selected ? "border-indigo-500 shadow-lg shadow-indigo-100" : "border-slate-200 hover:border-indigo-200 hover:shadow-md"
+                            }`}
+                          >
+                            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                              <div className="mb-3 flex items-start justify-between gap-3">
+                                <div className="space-y-1">
+                                  <div className="h-2 w-20 rounded-full" style={{ background: template.accentColor }} />
+                                  <div className="h-2 w-14 rounded-full bg-slate-300" />
+                                </div>
+                                {template.supportsPhoto ? (
+                                  <div className="size-9 rounded-full" style={{ background: `${template.accentColor}22` }} />
+                                ) : null}
+                              </div>
+                              <div className="space-y-2">
+                                <div className="h-1.5 w-full rounded-full bg-slate-300" />
+                                <div className="h-1.5 w-10/12 rounded-full bg-slate-200" />
+                                <div className="h-1.5 w-8/12 rounded-full bg-slate-200" />
+                              </div>
+                              <div className="mt-4 grid grid-cols-2 gap-2">
+                                <div className="h-8 rounded-lg bg-white" />
+                                <div className="h-8 rounded-lg bg-white" />
+                              </div>
+                            </div>
+                            <div className="mt-4 flex items-start justify-between gap-3">
+                              <div>
+                                <p className="font-bold text-slate-950">{template.name}</p>
+                                <p className="mt-1 text-xs leading-5 text-slate-500">{template.description}</p>
+                              </div>
+                              {selected ? <CheckCircle className="size-5 shrink-0 text-indigo-600" /> : null}
+                            </div>
+                            <Badge variant="outline" className="mt-3">
+                              {template.supportsPhoto ? "Photo possible" : "ATS sans photo"}
+                            </Badge>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+{step === 1 && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
                     <CardTitle>Quel est ton secteur vise ?</CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -588,7 +681,7 @@ return (
                 </div>
               </div>
             )}
-{step === 1 && (
+{step === 2 && (
               <Card>
                 <CardHeader>
                   <CardTitle>Tes informations personnelles</CardTitle>
@@ -642,10 +735,40 @@ return (
                     </Label>
                     <Input placeholder="linkedin.com/in/marie-dupont" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} />
                   </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <Label className="flex items-center gap-2">
+                          <ImagePlus className="size-4" />
+                          Photo de profil
+                        </Label>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {selectedTemplate.supportsPhoto
+                            ? "Ce modèle peut afficher une photo. Elle sera visible dans l'aperçu et le PDF."
+                            : "Le modèle sélectionné est pensé sans photo. Ton image sera gardée, mais masquée à l'export."}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {profilePhoto ? (
+                          <img src={profilePhoto} alt="" className="size-14 rounded-full border border-slate-200 object-cover" />
+                        ) : null}
+                        <label className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:border-indigo-300">
+                          {profilePhoto ? "Remplacer" : "Ajouter"}
+                          <input type="file" accept="image/*" className="sr-only" onChange={handlePhotoChange} />
+                        </label>
+                        {profilePhoto ? (
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setProfilePhoto(null)}>
+                            <X className="size-4" />
+                          </Button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             )}
-{step === 2 && (
+{step === 3 && (
               <div className="space-y-4">
                 {education.map((edu, i) => (
                   <Card key={edu.id}>
@@ -704,7 +827,7 @@ return (
                 </Button>
               </div>
             )}
-{step === 3 && (
+{step === 4 && (
               <div className="space-y-4">
 <div className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                   <button
@@ -845,7 +968,7 @@ return (
                 )}
               </div>
             )}
-{step === 4 && (
+{step === 5 && (
               <div className="space-y-4">
                 {projects.map((proj, i) => (
                   <Card key={proj.id} className={activeBulletProj === proj.id ? "border-indigo-300" : ""}>
@@ -908,7 +1031,7 @@ return (
                 </Button>
               </div>
             )}
-{step === 5 && (
+{step === 6 && (
               <div className="space-y-6">
 <Card>
                   <CardHeader>
@@ -1011,7 +1134,7 @@ return (
                 </Card>
               </div>
             )}
-{step === 6 && (
+{step === 7 && (
               <div className="space-y-4">
                 <div className="flex flex-wrap justify-end gap-3">
                   <Button variant="outline" onClick={handleSaveCV} className="gap-2">
@@ -1023,38 +1146,59 @@ return (
                     Telecharger PDF
                   </Button>
                 </div>
+                <Card className="border-indigo-100 bg-indigo-50/60">
+                  <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-slate-950">Modèle sélectionné : {selectedTemplate.name}</p>
+                      <p className="text-xs text-slate-600">{selectedTemplate.description}</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setStep(0)}>
+                      Changer de modèle
+                    </Button>
+                  </CardContent>
+                </Card>
 <Card className="overflow-hidden">
                   <CardContent className="p-0">
-                    <div className="bg-white p-8 md:p-12 max-w-[800px] mx-auto print:p-6">
-<div className="border-b-2 border-indigo-600 pb-6 mb-6">
-                        <h1 className="text-3xl font-bold text-slate-900">
-                          {firstName || lastName ? `${firstName} ${lastName}`.trim() : "Ton Nom"}
-                        </h1>
-                        <p className="text-lg text-indigo-600 font-medium mt-1">
-                          {jobTitle || "Titre professionnel"}
-                        </p>
-                        <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-600">
-                          {email && (
-                            <span className="flex items-center gap-1">
-                              <Mail className="size-3.5" /> {email}
-                            </span>
-                          )}
-                          {phone && (
-                            <span className="flex items-center gap-1">
-                              <Phone className="size-3.5" /> {phone}
-                            </span>
-                          )}
-                          {city && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="size-3.5" /> {city}
-                            </span>
-                          )}
-                          {linkedin && (
-                            <span className="flex items-center gap-1">
-                              <Linkedin className="size-3.5" /> {linkedin}
-                            </span>
-                          )}
+                    <div className={`bg-white p-8 md:p-12 max-w-[800px] mx-auto print:p-6 ${selectedTemplate.layoutVariant === "premium" ? "rounded-none" : ""}`}>
+<div
+                        className={`mb-6 flex items-start justify-between gap-5 pb-6 ${
+                          selectedTemplate.layoutVariant === "premium" ? "rounded-2xl bg-slate-50 p-6" : "border-b-2"
+                        }`}
+                        style={{ borderColor: selectedTemplate.accentColor }}
+                      >
+                        <div>
+                          <h1 className="text-3xl font-bold text-slate-900">
+                            {firstName || lastName ? `${firstName} ${lastName}`.trim() : "Ton Nom"}
+                          </h1>
+                          <p className="text-lg font-medium mt-1" style={{ color: selectedTemplate.accentColor }}>
+                            {jobTitle || "Titre professionnel"}
+                          </p>
+                          <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-600">
+                            {email && (
+                              <span className="flex items-center gap-1">
+                                <Mail className="size-3.5" /> {email}
+                              </span>
+                            )}
+                            {phone && (
+                              <span className="flex items-center gap-1">
+                                <Phone className="size-3.5" /> {phone}
+                              </span>
+                            )}
+                            {city && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="size-3.5" /> {city}
+                              </span>
+                            )}
+                            {linkedin && (
+                              <span className="flex items-center gap-1">
+                                <Linkedin className="size-3.5" /> {linkedin}
+                              </span>
+                            )}
+                          </div>
                         </div>
+                        {selectedTemplate.supportsPhoto && profilePhoto ? (
+                          <img src={profilePhoto} alt="" className="size-20 shrink-0 rounded-full border-4 border-white object-cover shadow-md" />
+                        ) : null}
                       </div>
 <div className="mb-6">
                         <div className="flex items-center justify-between mb-2">

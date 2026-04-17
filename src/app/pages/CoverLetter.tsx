@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Copy, Download, PenTool, RefreshCw, Save, Wand2 } from "lucide-react";
+import { CheckCircle, Copy, Download, PenTool, RefreshCw, Save, Wand2 } from "lucide-react";
 import { AppLayout } from "../components/AppLayout";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { useSEO } from "../hooks/useSEO";
@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { saveCoverLetter } from "@/lib/localStorage";
 import { toast } from "sonner";
+import { coverLetterTemplates, getCoverLetterTemplate } from "../lib/document-templates";
 
 const tones: Array<{ value: LetterTone; label: string }> = [
   { value: "professionnel", label: "Professionnel" },
@@ -51,6 +52,8 @@ export function CoverLetter() {
   const [type, setType] = useState<CandidatureType>("stage");
   const [tone, setTone] = useState<LetterTone>("professionnel");
   const [content, setContent] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("formal");
+  const selectedTemplate = getCoverLetterTemplate(selectedTemplateId);
 
   const canGenerate = companyName.trim().length > 1 && jobTitle.trim().length > 1;
 
@@ -80,6 +83,7 @@ export function CoverLetter() {
       company: companyName,
       position: jobTitle,
       content,
+      templateId: selectedTemplateId,
     });
     toast.success("Lettre enregistree dans ton dashboard.");
   };
@@ -103,6 +107,7 @@ export function CoverLetter() {
         company: companyName,
         position: jobTitle,
         content: draft,
+        templateId: selectedTemplateId,
       });
     }
     toast.success("Lettre generee et sauvegardee.");
@@ -116,9 +121,14 @@ export function CoverLetter() {
 
   const handlePrint = () => {
     if (!content) return;
+    const template = selectedTemplate;
+    const fontFamily = template.layoutVariant === "student" ? "Trebuchet MS, Arial" : template.layoutVariant === "modern" ? "Inter, Arial" : "Georgia";
+    const headerHtml = template.layoutVariant === "formal"
+      ? ""
+      : `<div style="border-bottom:2px solid ${template.accentColor};padding-bottom:18px;margin-bottom:26px"><strong style="font-size:22px;color:#111827">${firstName || "Candidat"}</strong><div style="margin-top:4px;color:${template.accentColor};font-weight:700">${jobTitle || "Candidature"}</div></div>`;
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Lettre</title><style>body{font-family:Georgia,serif;max-width:760px;margin:48px auto;line-height:1.8;color:#1f2937;padding:0 24px}pre{white-space:pre-wrap;font-family:Georgia,serif}</style></head><body><pre>${content}</pre></body></html>`);
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Lettre</title><style>body{font-family:${fontFamily},serif;max-width:760px;margin:48px auto;line-height:1.8;color:#1f2937;padding:0 24px;background:#fff}pre{white-space:pre-wrap;font-family:${fontFamily},serif;font-size:14px}.page{border:${template.layoutVariant === "student" ? "1px solid #ede9fe" : "0"};padding:${template.layoutVariant === "student" ? "28px" : "0"};border-radius:18px}</style></head><body><main class="page">${headerHtml}<pre>${content}</pre></main></body></html>`);
     printWindow.document.close();
     printWindow.print();
   };
@@ -150,6 +160,46 @@ export function CoverLetter() {
             </h1>
             <p className="text-slate-600 mt-2">Genere, modifie et sauvegarde une lettre a partir de ton contexte.</p>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Choisis un modèle de lettre</CardTitle>
+              <p className="text-sm text-slate-500">Le style choisi sera utilisé dans l'aperçu et dans le PDF.</p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {coverLetterTemplates.map((template) => {
+                  const selected = selectedTemplateId === template.id;
+                  return (
+                    <button
+                      key={template.id}
+                      type="button"
+                      onClick={() => setSelectedTemplateId(template.id)}
+                      className={`rounded-2xl border bg-white p-3 text-left transition-all ${
+                        selected ? "border-violet-500 shadow-lg shadow-violet-100" : "border-slate-200 hover:border-violet-200 hover:shadow-md"
+                      }`}
+                    >
+                      <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                        <div className="h-2 w-20 rounded-full" style={{ background: template.accentColor }} />
+                        <div className="mt-4 space-y-2">
+                          <div className="h-1.5 w-full rounded-full bg-slate-300" />
+                          <div className="h-1.5 w-10/12 rounded-full bg-slate-200" />
+                          <div className="h-1.5 w-8/12 rounded-full bg-slate-200" />
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-bold text-slate-950">{template.name}</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-500">{template.description}</p>
+                        </div>
+                        {selected ? <CheckCircle className="size-4 shrink-0 text-violet-600" /> : null}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
@@ -280,6 +330,26 @@ export function CoverLetter() {
                   </CardHeader>
                   <CardContent>
                     <Textarea value={content} onChange={(event) => setContent(event.target.value)} rows={28} className="resize-none" />
+                    <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-bold text-slate-950">Aperçu : {selectedTemplate.name}</p>
+                          <p className="text-xs text-slate-500">{selectedTemplate.description}</p>
+                        </div>
+                        <span className="h-2 w-16 rounded-full" style={{ background: selectedTemplate.accentColor }} />
+                      </div>
+                      <div className="rounded-xl bg-white p-5 text-sm leading-7 text-slate-700 shadow-sm">
+                        {selectedTemplate.layoutVariant !== "formal" ? (
+                          <div className="mb-4 border-b pb-3" style={{ borderColor: `${selectedTemplate.accentColor}44` }}>
+                            <strong className="text-base text-slate-950">{firstName || "Candidat"}</strong>
+                            <p className="mt-1 font-semibold" style={{ color: selectedTemplate.accentColor }}>
+                              {jobTitle || "Candidature"}
+                            </p>
+                          </div>
+                        ) : null}
+                        <div className="whitespace-pre-wrap">{content}</div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>

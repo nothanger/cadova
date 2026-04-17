@@ -173,6 +173,7 @@ export interface CoverLetter {
   company: string;
   position: string;
   content: string;
+  templateId?: string;
   createdAt: string;
   updatedAt: string;
 }
