@@ -8,10 +8,10 @@ const rows = [
     label: "Role principal",
     getValue: (slug: string) =>
       ({
-        reussia: "Construire les candidatures",
-        oralia: "Preparer l'oral",
-        trackia: "Suivre les candidatures",
-        skillia: "Clarifier le profil",
+        reussia: "Mettre le dossier au propre",
+        oralia: "S'entrainer avant l'entretien",
+        trackia: "Ne plus perdre le fil",
+        skillia: "Rendre le profil lisible",
       }[slug] || ""),
   },
   {
@@ -35,7 +35,7 @@ const rows = [
 export function ModulesComparison() {
   useSEO({
     title: "Comparaison des modules Cadova",
-    description: "Compare ReussIA, OralIA, TrackIA et SkillIA selon usage, cible et pricing.",
+    description: "Compare les modules Cadova selon ce qui te bloque maintenant dans ta recherche.",
     noindex: false,
   });
 
@@ -45,9 +45,9 @@ export function ModulesComparison() {
         <div className="marketing-container marketing-panel" style={{ padding: 30 }}>
           <div style={{ maxWidth: 800 }}>
             <div className="marketing-kicker">Comparaison</div>
-            <h1 className="marketing-title-section">Le bon module depend du moment, pas du bruit autour.</h1>
+            <h1 className="marketing-title-section">Le bon module depend de ce qui te bloque aujourd'hui.</h1>
             <p className="marketing-copy" style={{ marginTop: 16 }}>
-              Cette vue sert a trancher vite. Tu vois ce que chaque module fait, a qui il sert le plus et a quel niveau de prix il commence.
+              Si ton CV est faible, commence par ReussIA. Si un entretien approche, prends OralIA. Si tu ne sais plus qui relancer, TrackIA. Si ton profil ne raconte rien, SkillIA.
             </p>
           </div>
         </div>
@@ -79,11 +79,11 @@ export function ModulesComparison() {
             ))}
 
             <div className="marketing-table-row">
-              <div className="marketing-table-cell">Voir le detail</div>
+              <div className="marketing-table-cell">Prochaine etape</div>
               {cadovaModules.map((module) => (
                 <div key={`cta-${module.slug}`} className="marketing-table-cell">
                   <Link to={module.route} className="marketing-link" style={{ color: module.accentColor }}>
-                    Ouvrir la page module
+                    Voir si ca me correspond
                   </Link>
                 </div>
               ))}

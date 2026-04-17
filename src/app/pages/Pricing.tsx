@@ -12,46 +12,46 @@ const pricingItems = [
 const recommendations = [
   {
     title: "Lyceen / premier stage",
-    need: "Premier dossier a rendre lisible rapidement.",
+    need: "Tu dois rendre un premier dossier propre, sans trop savoir ce qu'on attend.",
     recommendation: "ReussIA",
-    reason: "Tu construis ton CV, ta lettre et ton score ATS sans partir d'une page blanche.",
-    ctaLabel: "Choisir ReussIA",
+    reason: "Tu poses un CV lisible, une lettre correcte et tu verifies les mots importants avant d'envoyer.",
+    ctaLabel: "Commencer par ReussIA",
     ctaHref: "/signup",
     accentColor: "#5044f5",
   },
   {
     title: "Etudiant / alternance",
-    need: "Recherche active avec plusieurs candidatures en parallele.",
+    need: "Tu as plusieurs offres, plusieurs dates, et ca commence a partir dans tous les sens.",
     recommendation: "Cadova Complet",
-    reason: "Tu relies candidature, entretien, suivi et profil dans un meme rythme.",
+    reason: "Tu gardes le dossier, l'entretien, le suivi et ton profil dans le meme espace.",
     ctaLabel: "Choisir Cadova Complet",
     ctaHref: "/signup",
     accentColor: "#5044f5",
   },
   {
-    title: "Besoin principal : entretien",
-    need: "Un oral approche et tu veux structurer tes reponses.",
+    title: "Entretien qui arrive",
+    need: "Tu as peur de bloquer, de parler trop vite ou de repondre trop vague.",
     recommendation: "OralIA",
-    reason: "Tu t'entraines sur des questions concretes avec un feedback directement exploitable.",
-    ctaLabel: "Tester OralIA",
+    reason: "Tu t'entraines avant le jour J et tu vois quelles reponses manquent de structure.",
+    ctaLabel: "Preparer mon entretien",
     ctaHref: "/signup",
     accentColor: "#d946ef",
   },
   {
-    title: "Besoin principal : suivi",
-    need: "Tu envoies beaucoup et tu perds le fil.",
+    title: "Candidatures a suivre",
+    need: "Tu ne sais plus qui tu as contacte, qui relancer, ni ce qui est encore actif.",
     recommendation: "TrackIA",
-    reason: "Tu gardes une vue claire sur tes statuts, relances et opportunites actives.",
-    ctaLabel: "Decouvrir TrackIA",
+    reason: "Tu remets tes envois, statuts et relances dans un ordre simple a tenir.",
+    ctaLabel: "Mettre de l'ordre",
     ctaHref: "/signup",
     accentColor: "#14b8a6",
   },
   {
     title: "Profil / LinkedIn / competences",
-    need: "Ton positionnement doit devenir plus net.",
+    need: "Ton profil existe, mais il ne dit pas clairement ce que tu cherches.",
     recommendation: "SkillIA",
-    reason: "Tu rends ton profil public plus coherent avec les postes que tu vises.",
-    ctaLabel: "Lancer SkillIA",
+    reason: "Tu rends ton profil plus coherent avec les postes que tu veux vraiment viser.",
+    ctaLabel: "Clarifier mon profil",
     ctaHref: "/signup",
     accentColor: "#2563eb",
   },
@@ -59,8 +59,8 @@ const recommendations = [
 
 export function Pricing() {
   useSEO({
-    title: "Pricing Cadova",
-    description: "Tarifs des modules Cadova et formule complete.",
+    title: "Formules Cadova",
+    description: "Choisis le module Cadova qui correspond a ton besoin du moment ou garde tout dans la formule complete.",
     noindex: false,
   });
 
@@ -69,10 +69,10 @@ export function Pricing() {
       <section className="marketing-section marketing-hero">
         <div className="marketing-container marketing-panel" style={{ padding: 30 }}>
           <div style={{ maxWidth: 760 }}>
-            <div className="marketing-kicker">Pricing</div>
-            <h1 className="marketing-title-section">Des formules plus nettes, sans theatre inutile.</h1>
+            <div className="marketing-kicker">Formules</div>
+            <h1 className="marketing-title-section">Prends seulement ce qui t'aide maintenant.</h1>
             <p className="marketing-copy" style={{ marginTop: 16 }}>
-              Tu peux demarrer petit avec un besoin unique ou prendre la formule complete si tu veux produire, preparer et suivre sans changer d'outil ni de rythme.
+              Si tu as juste un CV a remettre au propre, prends un module. Si ta recherche part sur plusieurs semaines avec entretiens, relances et profil a tenir, Cadova Complet sera plus confortable.
             </p>
           </div>
         </div>
@@ -88,16 +88,16 @@ export function Pricing() {
                   title={cadovaBundle.name}
                   price={cadovaBundle.priceMonthly}
                   note="par mois"
-                  badge="Le plus choisi"
-                  subtitle="Acces complet aux 4 modules"
-                  summary="La formule la plus complete si tu veux relier production, preparation et suivi dans le meme espace."
+                  badge="Le plus pratique"
+                  subtitle="Les 4 modules ensemble"
+                  summary="Pour garder toute ta recherche au meme endroit, surtout quand les candidatures s'enchainent."
                   highlights={[
-                    "Tout Cadova dans un seul espace",
-                    "CV, ATS, entretien et suivi unifies",
-                    "Ideal pour une recherche active",
+                    "CV, lettre, ATS, entretien, suivi et profil",
+                    "Un dashboard qui garde la memoire",
+                    "Plus simple pour une recherche active",
                   ]}
                   accentColor="#5044F5"
-                  ctaLabel="Commencer avec Cadova"
+                  ctaLabel="Me simplifier la recherche"
                   ctaHref="/signup"
                   featured
                 />
@@ -125,11 +125,11 @@ export function Pricing() {
         <div className="marketing-container">
           <div className="marketing-section-head">
             <div>
-              <div className="marketing-kicker">Recommandation</div>
+              <div className="marketing-kicker">Petit repere</div>
               <h2 className="marketing-title-section">Quelle formule te correspond ?</h2>
             </div>
             <p className="marketing-copy marketing-section-intro">
-              Choisis selon ton profil, ton besoin principal et l'urgence de ta recherche.
+              Pars de ta situation reelle. Le bon choix, c'est celui qui enleve le blocage le plus urgent.
             </p>
           </div>
 
@@ -146,7 +146,7 @@ export function Pricing() {
                   <p className="marketing-recommendation-need">{item.need}</p>
                 </div>
                 <div className="marketing-recommendation-result">
-                  <span>Module conseille</span>
+                  <span>Je te conseille</span>
                   <strong style={{ color: item.accentColor }}>{item.recommendation}</strong>
                 </div>
                 <p className="marketing-card-copy">{item.reason}</p>

@@ -24,31 +24,31 @@ const navSections = [
     accent: "#14b8a6",
     items: [
       { icon: LayoutDashboard, label: "Dashboard", sub: "Vue d'ensemble", path: "/dashboard" },
-      { icon: MapPin, label: "Carte Entreprises", sub: "Trouver un poste", path: "/company-finder" },
+      { icon: MapPin, label: "Entreprises", sub: "Pistes a explorer", path: "/company-finder" },
     ],
   },
   {
     module: "ReussIA",
     accent: "#5044f5",
     items: [
-      { icon: FileText, label: "Generateur CV", sub: "Optimise ATS", path: "/cv-generator" },
-      { icon: PenTool, label: "Lettre de motivation", sub: "Sur-mesure IA", path: "/cover-letter" },
-      { icon: Search, label: "Analyse ATS", sub: "Score & gaps", path: "/ats-analysis" },
+      { icon: FileText, label: "Mon CV", sub: "A rendre plus clair", path: "/cv-generator" },
+      { icon: PenTool, label: "Ma lettre", sub: "A adapter sans galere", path: "/cover-letter" },
+      { icon: Search, label: "Analyse ATS", sub: "Ce qui manque", path: "/ats-analysis" },
     ],
   },
   {
     module: "OralIA",
     accent: "#d946ef",
     items: [
-      { icon: MessageSquare, label: "Simulation entretien", sub: "Questions realistes", path: "/interview" },
+      { icon: MessageSquare, label: "Entretien", sub: "S'entrainer avant", path: "/interview" },
     ],
   },
   {
     module: "SkillIA",
     accent: "#2563eb",
     items: [
-      { icon: Linkedin, label: "LinkedIn", sub: "Profil optimise", path: "/linkedin" },
-      { icon: Lightbulb, label: "Competences", sub: "Roadmap IA", path: "/skills" },
+      { icon: Linkedin, label: "LinkedIn", sub: "Profil plus lisible", path: "/linkedin" },
+      { icon: Lightbulb, label: "Competences", sub: "Quoi mettre en avant", path: "/skills" },
     ],
   },
 ];
@@ -61,10 +61,10 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const handleLogout = async () => {
     try {
       await signOut();
-      toast.success("Deconnexion reussie");
+      toast.success("A bientot");
       navigate("/");
     } catch {
-      toast.error("Erreur lors de la deconnexion");
+      toast.error("La deconnexion a bloque.");
     }
   };
 
@@ -162,7 +162,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[12px] font-bold text-white/80">{firstName}</p>
-            <p className="text-[10px] text-white/32">Plan gratuit</p>
+            <p className="text-[10px] text-white/32">Espace candidature</p>
           </div>
           <button
             onClick={handleLogout}

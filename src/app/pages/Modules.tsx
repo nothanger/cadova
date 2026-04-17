@@ -9,7 +9,7 @@ import { cadovaBundle, cadovaModules, moduleHighlights } from "../lib/module-dat
 export function Modules() {
   useSEO({
     title: "Modules Cadova",
-    description: "Vue d'ensemble des modules Cadova: ReussIA, OralIA, TrackIA et SkillIA.",
+    description: "Choisis le module Cadova qui t'aide selon ton blocage du moment: dossier, entretien, suivi ou profil.",
     noindex: false,
   });
 
@@ -19,19 +19,19 @@ export function Modules() {
         <div className="marketing-container marketing-panel" style={{ padding: 30 }}>
           <div className="marketing-section-head">
             <div style={{ maxWidth: 760 }}>
-              <div className="marketing-kicker">Catalogue produit</div>
-              <h1 className="marketing-title-section">Des modules qui couvrent un moment reel du parcours candidat.</h1>
+              <div className="marketing-kicker">Par ou commencer</div>
+              <h1 className="marketing-title-section">Chaque module repond a un blocage precis.</h1>
               <p className="marketing-copy" style={{ marginTop: 16 }}>
-                Chaque bloc Cadova a un role net. Tu peux entrer par l'urgence du moment, puis etendre ton espace quand ta recherche devient plus dense.
+                Tu n'as pas besoin de tout utiliser d'un coup. Commence par ce qui te bloque aujourd'hui, puis ajoute le reste si ta recherche devient plus dense.
               </p>
             </div>
             <div className="marketing-actions" style={{ marginTop: 0 }}>
               <Link to="/modules/comparaison" className="marketing-button-primary">
-                Comparer les modules
+                M'aider a choisir
                 <ArrowRight size={18} />
               </Link>
               <Link to="/pricing" className="marketing-button-secondary">
-                Voir les formules
+                Voir les options
               </Link>
             </div>
           </div>
@@ -62,13 +62,13 @@ export function Modules() {
         <div className="marketing-container marketing-grid-2">
           <div className="marketing-panel" style={{ padding: 28 }}>
             <div className="marketing-kicker">
-              Vue d'ensemble
+              Vue simple
             </div>
             <h2 className="marketing-title-section" style={{ marginTop: 14 }}>
-              Modulaire dans l'entree, coherent dans l'ensemble.
+              Tu peux avancer morceau par morceau.
             </h2>
             <p className="marketing-copy" style={{ marginTop: 16 }}>
-              Le but n'est pas d'empiler des outils. Le but est de garder une ligne claire entre candidature, entretien, visibilite et suivi.
+              Un jour tu as besoin d'un CV propre. Le lendemain, d'un entrainement a l'oral. La semaine suivante, d'un suivi de relances. Cadova garde tout dans le meme fil.
             </p>
           </div>
 
@@ -76,10 +76,10 @@ export function Modules() {
             title={cadovaBundle.name}
             price={cadovaBundle.priceMonthly}
             note={cadovaBundle.note}
-            summary="La formule la plus simple si tu veux tout piloter dans le meme environnement."
+            summary="Le choix le plus confortable si tu veux garder toute ta recherche au meme endroit."
             highlights={cadovaBundle.highlights}
             accentColor="#161426"
-            ctaLabel="Voir le pricing"
+            ctaLabel="Voir les formules"
             ctaHref="/pricing"
             featured
           />

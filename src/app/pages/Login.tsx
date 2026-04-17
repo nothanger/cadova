@@ -9,7 +9,7 @@ import { AuthShell } from "../components/AuthShell";
 export function Login() {
   useSEO({
     title: "Connexion | Cadova",
-    description: "Connecte-toi a Cadova pour retrouver ton espace de candidature.",
+    description: "Retrouve tes candidatures, tes documents et tes prochaines actions dans Cadova.",
     noindex: false,
   });
 
@@ -55,28 +55,28 @@ export function Login() {
         return;
       }
 
-      setSuccessMessage("Connexion validee. Ouverture de ton espace...");
-      toast.success("Connexion securisee");
+      setSuccessMessage("C'est bon, on rouvre ton espace.");
+      toast.success("Bon retour");
       setAwaitingRedirect(true);
     } catch {
-      setErrorMessage("Impossible de se connecter pour le moment.");
-      toast.error("Impossible de se connecter pour le moment.");
+      setErrorMessage("La connexion bloque pour le moment. Reessaie dans quelques instants.");
+      toast.error("Connexion impossible pour le moment.");
       setLoading(false);
     }
   };
 
   return (
-    <AuthShell title="Retrouve ton espace de travail sans friction.">
+    <AuthShell title="Reprends la ou tu t'etais arrete.">
       <div className="mb-8">
         <div className="mb-4 inline-flex items-center gap-2 rounded-[8px] border border-[var(--cadova-border)] bg-white px-3 py-2 text-[13px] font-semibold text-[var(--cadova-muted)]">
           <ShieldCheck className="size-4 text-[var(--cadova-primary)]" />
-          Connexion securisee
+          Espace personnel
         </div>
         <h1 className="text-[34px] font-extrabold leading-[1.05] tracking-[-0.055em] text-[var(--cadova-text)]">
-          Bon retour.
+          Content de te revoir.
         </h1>
         <p className="mt-3 text-sm leading-7 text-[var(--cadova-muted)]">
-          Connecte-toi pour retrouver ton tableau de bord, tes analyses ATS et tes simulations.
+          Connecte-toi pour retrouver tes CV, tes relances, tes simulations et les petites choses a finir.
         </p>
       </div>
 
@@ -117,7 +117,7 @@ export function Login() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Entrez votre mot de passe"
+              placeholder="Ton mot de passe"
               disabled={loading}
               className="cadova-input w-full pl-11 pr-12"
             />
@@ -142,7 +142,7 @@ export function Login() {
             />
             Rester connecte
           </label>
-          <span className="text-xs text-[#a6abc0]">{rememberMe ? "Session memorisee" : "Session standard"}</span>
+          <span className="text-xs text-[#a6abc0]">{rememberMe ? "On garde la porte ouverte" : "Connexion ponctuelle"}</span>
         </div>
 
         <div
@@ -154,14 +154,14 @@ export function Login() {
                 : "border-[var(--cadova-border)] bg-white text-[var(--cadova-muted)]"
           }`}
         >
-          {errorMessage || successMessage || "Accede a tes documents, ton suivi et tes modules depuis un seul espace."}
+          {errorMessage || successMessage || "Tu retrouves ton espace exactement la ou tu l'as laisse."}
         </div>
 
         <button type="submit" disabled={!canSubmit} className="cadova-button-primary w-full disabled:bg-[#b8bcd3] disabled:shadow-none">
           {loading ? (
             <>
               <Loader2 className="size-4 animate-spin" />
-              Verification...
+              On verifie...
             </>
           ) : (
             <>
@@ -175,7 +175,7 @@ export function Login() {
       <div className="mt-8 border-t border-[var(--cadova-border)] pt-6 text-sm text-[var(--cadova-muted)]">
         Pas encore de compte ?{" "}
         <Link to="/signup" className="font-bold text-[var(--cadova-primary)]">
-          Creer un compte
+          Commencer tranquille
         </Link>
       </div>
       <Link to="/" className="mt-3 inline-flex text-xs text-[#a6abc0] hover:text-[var(--cadova-primary)]">

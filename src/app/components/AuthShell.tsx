@@ -4,15 +4,15 @@ import { Link } from "react-router";
 import { CadovaLogo } from "./CadovaLogo";
 
 const defaultPerks = [
-  "14 jours d'essai gratuit, sans carte bancaire",
-  "CV optimise ATS en moins de 2 minutes",
-  "Simulation d'entretien avec feedback IA",
-  "Annulation a tout moment",
+  "14 jours pour essayer sans carte bancaire",
+  "Un CV plus clair, meme si tu pars d'un brouillon",
+  "Des entrainements d'entretien sans pression",
+  "Tu arretes quand tu veux",
 ];
 
 export function AuthShell({
   children,
-  title = "Tout ce dont tu as besoin pour decrocher ton job.",
+  title = "Un endroit calme pour reprendre tes candidatures.",
   perks = defaultPerks,
 }: {
   children: ReactNode;
@@ -52,7 +52,7 @@ export function AuthShell({
         </div>
 
         <div className="relative z-10 rounded-[18px] border border-white/10 bg-white/[0.045] p-5">
-          <p className="mb-4 text-xs text-white/40">Rejoins nos utilisateurs satisfaits</p>
+          <p className="mb-4 text-xs text-white/40">Des candidats qui avancent, chacun a son rythme</p>
           <div className="flex items-center gap-3">
             <div className="-space-x-2 flex">
               {["M", "T", "S", "A"].map((letter, index) => (
@@ -66,10 +66,10 @@ export function AuthShell({
               ))}
             </div>
             <div>
-              <p className="text-sm font-extrabold text-white">10 000+ etudiants</p>
+              <p className="text-sm font-extrabold text-white">Lyceens, etudiants, jeunes diplomes</p>
               <p className="flex items-center gap-2 text-xs text-white/36">
                 <Star className="size-4" />
-                <span>Note moyenne 4.8/5</span>
+                <span>Un espace pour retrouver le fil</span>
               </p>
             </div>
           </div>

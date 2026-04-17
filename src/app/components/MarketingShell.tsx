@@ -53,7 +53,7 @@ export function MarketingShell({
               Comparer
             </NavLink>
             <NavLink to="/pricing" className={({ isActive }) => getNavClass(isActive)} onClick={closeMenu}>
-              Pricing
+              Formules
             </NavLink>
             <NavLink to="/login" className={({ isActive }) => getNavClass(isActive)} onClick={closeMenu}>
               Connexion

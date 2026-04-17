@@ -6,29 +6,29 @@ import { useSEO } from "../hooks/useSEO";
 import { cadovaModules } from "../lib/module-data";
 
 const proofPoints = [
-  "Creation de CV en quelques minutes",
-  "Essai gratuit de 14 jours sans carte bancaire",
-  "Un seul compte pour tous les modules",
+  "Tu peux commencer meme si ton CV est encore brouillon",
+  "14 jours pour essayer, sans carte bancaire",
+  "Un seul endroit pour ne plus tout eparpiller",
 ];
 
 const heroStats = [
-  { value: "1200+ CV générés", label: "Candidatures structurées" },
-  { value: "Score ATS moyen : 86/100", label: "Optimisation avant envoi" },
-  { value: "3x plus de réponses", label: "Suivi plus régulier" },
+  { value: "CV, lettre, suivi", label: "Tout ce qui part vraiment" },
+  { value: "ATS + entretien", label: "Pour comprendre avant d'envoyer" },
+  { value: "Relances au clair", label: "Moins de candidatures oubliees" },
 ];
 
 const workflow = [
   {
-    title: "Tu poses la cible",
-    body: "Stage, alternance ou premier CDI. Cadova ajuste ensuite ton angle, tes priorites et tes outils.",
+    title: "Tu dis ou tu en es",
+    body: "Premier stage, alternance ou poste junior. On part de ta situation, pas d'un parcours parfait.",
   },
   {
-    title: "Tu produis sans casser le rythme",
-    body: "CV, lettre, ATS et entretien avancent ensemble au lieu de repartir de zero a chaque etape.",
+    title: "Tu avances par petits blocs",
+    body: "Un CV plus lisible, une lettre moins vide, une analyse qui dit quoi corriger. Pas besoin de tout refaire d'un coup.",
   },
   {
-    title: "Tu pilotes ce qui compte",
-    body: "Le suivi garde une memoire claire de tes envois, relances et points a retravailler.",
+    title: "Tu gardes le fil",
+    body: "Tu sais ce que tu as envoye, qui relancer, et ce qu'il faut retravailler avant la prochaine candidature.",
   },
 ];
 
@@ -36,20 +36,20 @@ const testimonials = [
   {
     name: "Marie",
     role: "Alternance marketing",
-    quote: "Le score ATS m'a aidee a comprendre pourquoi mes candidatures restaient sans reponse.",
+    quote: "J'avais l'impression d'envoyer dans le vide. La, j'ai enfin vu ce qui manquait dans mon CV.",
   },
   {
     name: "Yanis",
     role: "Premier poste tech",
-    quote: "Le fait d'avoir le CV, l'entretien et le suivi dans le meme outil m'a fait gagner un temps fou.",
+    quote: "Ce n'est pas magique, mais ca m'a remis dans une routine. Je savais quoi faire apres chaque envoi.",
   },
 ];
 
 export function Landing() {
   useSEO({
-    title: "Cadova - IA pour CV, entretiens et suivi de candidatures",
+    title: "Cadova - Un coup de main pour tes candidatures",
     description:
-      "Cadova aide les etudiants et jeunes diplomes a creer leurs candidatures, preparer leurs entretiens et suivre leurs opportunites dans un seul espace.",
+      "Cadova aide les lyceens, etudiants et jeunes diplomes a construire leurs candidatures, preparer leurs entretiens et garder le fil de leur recherche.",
     canonical: "https://cadova.fr/",
     noindex: false,
   });
@@ -60,23 +60,23 @@ export function Landing() {
         <div className="marketing-container marketing-hero-grid">
           <div className="marketing-hero-content">
             <h1 className="marketing-title">
-              Le style de recherche
+              Ta recherche
               <br />
-              qui te remet
+              merite mieux
               <br />
-              en mouvement.
+              que le stress.
             </h1>
             <p className="marketing-copy" style={{ marginTop: 22 }}>
-              Cadova rassemble ce qu'un candidat disperse souvent entre trop d'onglets: produire, affiner, s'entrainer et suivre. Tu gardes une trajectoire claire sans perdre ton energie dans l'organisation.
+              Cadova t'aide a transformer le bazar des candidatures en prochaines actions claires: refaire un CV, adapter une lettre, preparer un oral, relancer au bon moment. Sans te parler comme si tu avais deja dix ans d'experience.
             </p>
 
             <div className="marketing-actions">
               <Link to="/modules" className="marketing-button-primary">
-                Explorer les modules
+                Trouver par ou commencer
                 <ArrowRight size={18} />
               </Link>
               <Link to="/pricing" className="marketing-button-secondary">
-                Voir les formules
+                Voir ce qui me correspond
               </Link>
             </div>
 
@@ -92,18 +92,18 @@ export function Landing() {
             <div className="marketing-meta-grid">
               <div className="marketing-meta-card">
                 <span className="marketing-kicker">Temps gagne</span>
-                <strong>4 modules</strong>
-                <span className="marketing-price-note">dans le meme espace de travail</span>
+                <strong>Moins d'allers-retours</strong>
+                <span className="marketing-price-note">entre notes, mails et fichiers perdus</span>
               </div>
               <div className="marketing-meta-card">
                 <span className="marketing-kicker">Point fort</span>
-                <strong>Process net</strong>
-                <span className="marketing-price-note">du brouillon au suivi reel</span>
+                <strong>Des conseils concrets</strong>
+                <span className="marketing-price-note">pas juste des scores qui font joli</span>
               </div>
               <div className="marketing-meta-card">
                 <span className="marketing-kicker">Depart</span>
                 <strong>14 jours</strong>
-                <span className="marketing-price-note">pour tester sans carte</span>
+                <span className="marketing-price-note">pour essayer sans pression</span>
               </div>
             </div>
           </div>
@@ -127,10 +127,10 @@ export function Landing() {
           <div className="marketing-section-head">
             <div>
               <div className="marketing-kicker">Les modules</div>
-              <h2 className="marketing-title-section">Entre par le bon besoin, pas par le chaos.</h2>
+              <h2 className="marketing-title-section">Choisis le probleme du moment.</h2>
             </div>
             <Link to="/modules/comparaison" className="marketing-link">
-              Comparer les modules
+              M'aider a choisir
             </Link>
           </div>
           <div className="marketing-grid-4">
@@ -146,7 +146,7 @@ export function Landing() {
           <div className="marketing-section-head">
             <div>
               <div className="marketing-kicker">Le parcours</div>
-              <h2 className="marketing-title-section">Simple dans la forme, solide dans le fond.</h2>
+              <h2 className="marketing-title-section">On avance sans te noyer.</h2>
             </div>
           </div>
           <div className="marketing-grid-3">
@@ -182,18 +182,18 @@ export function Landing() {
                 Donnees sous controle
               </div>
               <h2 className="marketing-title-section" style={{ marginTop: 16 }}>
-                Cree ton compte et avance sans casser ton elan.
+                Reprends ta recherche par un bout simple.
               </h2>
               <p className="marketing-copy-muted" style={{ marginTop: 16 }}>
-                Tu peux commencer par un besoin precis ou choisir la formule complete si tu veux tout garder sous le meme cap visuel et pratique.
+                Pas besoin d'avoir un plan parfait. Tu peux commencer par le CV, l'entretien, le suivi ou ton profil, puis construire le reste autour.
               </p>
             </div>
             <div className="marketing-actions" style={{ marginTop: 0 }}>
               <Link to="/pricing" className="marketing-button-secondary">
-                Voir la formule complete
+                Voir les options
               </Link>
               <Link to="/modules/comparaison" className="marketing-button-light">
-                Comparer les modules
+                Comparer tranquillement
               </Link>
             </div>
           </div>

@@ -132,17 +132,17 @@ export function Dashboard() {
   }, [data]);
 
   const quickActions = [
-    { label: "Generer un CV", href: "/cv-generator", icon: FileText },
-    { label: "Lancer une analyse ATS", href: "/ats-analysis", icon: Search },
-    { label: "Simuler un entretien", href: "/interview", icon: MessageSquare },
-    { label: "Suivre mes candidatures", href: "/company-finder", icon: Briefcase },
+    { label: "Remettre mon CV au propre", href: "/cv-generator", icon: FileText },
+    { label: "Voir si mon CV tient la route", href: "/ats-analysis", icon: Search },
+    { label: "M'entrainer a l'entretien", href: "/interview", icon: MessageSquare },
+    { label: "Ranger mes candidatures", href: "/company-finder", icon: Briefcase },
   ];
 
   const cards = [
-    { label: "CV enregistres", value: data?.cvs.length ?? 0, hint: "Chaque nouvelle version apparait ici.", icon: FileText, color: "#5044f5" },
-    { label: "Candidatures actives", value: summary.activeApplications, hint: "Candidatures encore en cours ou a relancer.", icon: Briefcase, color: "#14b8a6" },
-    { label: "Score ATS moyen", value: summary.avgAts, suffix: "/100", hint: summary.avgAts ? "Base sur tes analyses sauvegardees." : "Aucune analyse pour l'instant.", icon: Search, color: "#2563eb" },
-    { label: "Score entretien moyen", value: summary.avgInterview, suffix: "/100", hint: summary.avgInterview ? "Moyenne de tes simulations." : "Lance une simulation pour commencer.", icon: MessageSquare, color: "#d946ef" },
+    { label: "CV gardes ici", value: data?.cvs.length ?? 0, hint: "Chaque version utile reste sous la main.", icon: FileText, color: "#5044f5" },
+    { label: "Pistes encore ouvertes", value: summary.activeApplications, hint: "Celles qui meritent encore ton attention.", icon: Briefcase, color: "#14b8a6" },
+    { label: "Lisibilite ATS", value: summary.avgAts, suffix: "/100", hint: summary.avgAts ? "Moyenne de tes analyses sauvegardees." : "Pas encore d'analyse. On peut commencer par la.", icon: Search, color: "#2563eb" },
+    { label: "Entrainement oral", value: summary.avgInterview, suffix: "/100", hint: summary.avgInterview ? "Moyenne de tes simulations." : "Une simulation suffit pour poser une premiere base.", icon: MessageSquare, color: "#d946ef" },
   ];
 
   return (
@@ -151,16 +151,16 @@ export function Dashboard() {
         <section className="cadova-panel p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="cadova-kicker">Tableau de bord</p>
+              <p className="cadova-kicker">Ton point de controle</p>
               <h1 className="cadova-title">Bonjour, {firstName}.</h1>
               <p className="cadova-subtitle">
-                Ici, seules tes vraies actions comptent: documents enregistres, analyses lancees, simulations terminees et candidatures suivies.
+                Ici, on regarde ce qui avance vraiment: les documents que tu as gardes, les pistes encore ouvertes, les analyses faites et les entretiens prepares.
               </p>
             </div>
             <div className="cadova-card min-w-[250px] p-5">
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <div className="text-xs font-semibold text-[var(--cadova-muted)]">Progression globale</div>
+                  <div className="text-xs font-semibold text-[var(--cadova-muted)]">Recherche structuree</div>
                   <div className="mt-1 text-4xl font-extrabold tracking-[-0.05em] text-[var(--cadova-text)]">{summary.completion}%</div>
                 </div>
                 <TrendingUp className="size-5 text-[var(--cadova-primary)]" />
@@ -193,14 +193,14 @@ export function Dashboard() {
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="cadova-card p-6">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-2xl font-extrabold tracking-[-0.045em]">Activite recente</h2>
+              <h2 className="text-2xl font-extrabold tracking-[-0.045em]">Ce qui a bouge recemment</h2>
               <Clock3 className="size-5 text-[var(--cadova-muted)]" />
             </div>
 
             {summary.activity.length === 0 ? (
               <div className="mt-5 rounded-[8px] border border-[var(--cadova-border)] bg-[var(--cadova-bg-alt)] p-5">
                 <p className="m-0 text-sm leading-7 text-[var(--cadova-muted)]">
-                  Ton dashboard s'alimente quand tu enregistres un CV, une lettre, une analyse ATS, une simulation d'entretien ou une candidature.
+                  Rien a afficher pour l'instant. Des que tu gardes un CV, une lettre, une analyse, une simulation ou une candidature, on te remet le fil ici.
                 </p>
               </div>
             ) : (
@@ -220,7 +220,7 @@ export function Dashboard() {
 
           <div className="space-y-6">
             <div className="cadova-card p-6">
-              <h2 className="text-2xl font-extrabold tracking-[-0.045em]">Actions rapides</h2>
+              <h2 className="text-2xl font-extrabold tracking-[-0.045em]">Je veux avancer sur...</h2>
               <div className="mt-5 grid gap-3">
                 {quickActions.map((action) => (
                   <Link key={action.href} to={action.href} className="flex items-center justify-between gap-3 rounded-[8px] border border-[var(--cadova-border)] bg-white px-4 py-3 no-underline transition hover:bg-[var(--cadova-primary-soft)]">
@@ -235,7 +235,7 @@ export function Dashboard() {
             </div>
 
             <div className="cadova-card p-6">
-              <h2 className="text-2xl font-extrabold tracking-[-0.045em]">Etat des modules</h2>
+              <h2 className="text-2xl font-extrabold tracking-[-0.045em]">Ce que tu as deja touche</h2>
               <div className="mt-5 grid gap-3">
                 {[
                   { label: "ReussIA", value: (data?.cvs.length ?? 0) + (data?.letters.length ?? 0) + (data?.ats.length ?? 0), icon: FileText },

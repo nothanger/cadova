@@ -59,7 +59,7 @@ export function ModuleDetail() {
                 <ArrowRight size={18} />
               </Link>
               <Link to="/modules/comparaison" className="marketing-button-secondary">
-                Comparer avec les autres modules
+                Comparer avec les autres options
               </Link>
             </div>
           </div>
@@ -145,7 +145,7 @@ export function ModuleDetail() {
             {module.useCases.map((item, index) => (
               <div key={item} className="marketing-detail-block">
                 <div className="marketing-kicker" style={{ color: module.accentColor }}>
-                  Use case {index + 1}
+                  Situation {index + 1}
                 </div>
                 <p className="marketing-card-copy" style={{ marginTop: 12 }}>
                   {item}
@@ -160,11 +160,11 @@ export function ModuleDetail() {
         <div className="marketing-container">
           <div className="marketing-section-head">
             <div>
-              <div className="marketing-kicker">Pricing</div>
+              <div className="marketing-kicker">Formules</div>
               <h2 className="marketing-title-section">Formules pour {module.name}</h2>
             </div>
             <Link to="/pricing" className="marketing-link">
-              Voir tous les prix
+              Voir toutes les options
             </Link>
           </div>
           <div className="marketing-grid-3">
@@ -186,10 +186,10 @@ export function ModuleDetail() {
               title={cadovaBundle.name}
               price={cadovaBundle.priceMonthly}
               note={cadovaBundle.note}
-              summary="Si ce module est central pour ta recherche, la formule complete garde la suite du parcours dans le meme espace."
+              summary="Si ce module devient central dans ta recherche, la formule complete garde la suite du parcours au meme endroit."
               highlights={cadovaBundle.highlights}
               accentColor="#161426"
-              ctaLabel="Voir la formule complete"
+              ctaLabel="Voir Cadova Complet"
               ctaHref="/pricing"
             />
           </div>
@@ -204,7 +204,7 @@ export function ModuleDetail() {
               <h2 className="marketing-title-section">Voir les autres modules</h2>
             </div>
             <Link to="/modules" className="marketing-link">
-              Retour au catalogue
+              Retour aux modules
             </Link>
           </div>
           <div className="marketing-grid-3">
