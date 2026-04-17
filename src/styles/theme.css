@@ -2,80 +2,87 @@
 
 :root {
   --font-size: 16px;
-  --background: #FAFAFA;
-  --foreground: #0C0B1A;
+  --font-family: "Sora", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --background: #f7f7f9;
+  --foreground: #070716;
   --card: #ffffff;
-  --card-foreground: #0C0B1A;
+  --card-foreground: #070716;
   --popover: #ffffff;
-  --popover-foreground: #0C0B1A;
-  --primary: #5548F5;
+  --popover-foreground: #070716;
+
+  --primary: #5044f5;
+  --primary-hover: #6b55f7;
   --primary-foreground: #ffffff;
-  --secondary: #F1F0FF;
-  --secondary-foreground: #0C0B1A;
-  --muted: #F4F3FF;
-  --muted-foreground: #6B6B8A;
-  --accent: #8B5CF6;
+  --secondary: #efedff;
+  --secondary-foreground: #151032;
+  --muted: #f1f2f6;
+  --muted-foreground: #697085;
+  --accent: #6b55f7;
   --accent-foreground: #ffffff;
-  --destructive: #ef4444;
+
+  --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: #E8E6FF;
-  --input: transparent;
+  --border: #e0e2ef;
+  --input: #e0e2ef;
   --input-background: #ffffff;
-  --switch-background: #cbd5e1;
-  --font-weight-medium: 500;
+  --switch-background: #c8ccdc;
+  --ring: #5044f5;
+
+  --cadova-navy: #080719;
+  --cadova-navy-2: #0e0b24;
+  --cadova-navy-3: #151032;
+  --cadova-bg-soft: #f7f7f9;
+  --cadova-bg-alt: #f1f2f6;
+  --cadova-surface: #ffffff;
+  --cadova-surface-soft: #fbfbfd;
+  --cadova-primary: #5044f5;
+  --cadova-primary-hover: #6b55f7;
+  --cadova-primary-soft: #efedff;
+  --cadova-text: #070716;
+  --cadova-muted: #697085;
+  --cadova-border: #e0e2ef;
+  --cadova-shadow: 0 24px 70px rgba(15, 16, 33, 0.08);
+  --cadova-shadow-soft: 0 14px 38px rgba(15, 16, 33, 0.055);
+
+  --font-weight-medium: 600;
   --font-weight-normal: 400;
-  --ring: #5548F5;
-  --chart-1: #5548F5;
-  --chart-2: #8B5CF6;
-  --chart-3: #A78BFA;
-  --chart-4: #38bdf8;
-  --chart-5: #34d399;
-  --radius: 0.875rem;
-  --sidebar: #0C0B1A;
-  --sidebar-foreground: #E8E6FF;
-  --sidebar-primary: #5548F5;
+  --radius: 0.5rem;
+
+  --chart-1: #5044f5;
+  --chart-2: #6b55f7;
+  --chart-3: #0ea5e9;
+  --chart-4: #14b8a6;
+  --chart-5: #d946ef;
+
+  --sidebar: #080719;
+  --sidebar-foreground: #f7f7f9;
+  --sidebar-primary: #5044f5;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1A1830;
-  --sidebar-accent-foreground: #E8E6FF;
-  --sidebar-border: #1E1B3A;
-  --sidebar-ring: #5548F5;
+  --sidebar-accent: #151032;
+  --sidebar-accent-foreground: #f7f7f9;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #6b55f7;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --font-weight-medium: 500;
-  --font-weight-normal: 400;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --background: #080719;
+  --foreground: #f7f7f9;
+  --card: #0e0b24;
+  --card-foreground: #f7f7f9;
+  --popover: #0e0b24;
+  --popover-foreground: #f7f7f9;
+  --primary: #6b55f7;
+  --primary-foreground: #ffffff;
+  --secondary: #151032;
+  --secondary-foreground: #ffffff;
+  --muted: #151032;
+  --muted-foreground: #a6abc0;
+  --accent: #5044f5;
+  --accent-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #6b55f7;
 }
 
 @theme inline {
@@ -105,8 +112,8 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --color-sidebar: var(--sidebar);
@@ -124,55 +131,46 @@
     @apply border-border outline-ring/50;
   }
 
-  body {
-    @apply bg-background text-foreground;
-  }
-
-
-
   html {
     font-size: var(--font-size);
   }
 
-  h1 {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-family);
+    -webkit-font-smoothing: antialiased;
   }
 
-  h2 {
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--cadova-text);
+    font-family: var(--font-family);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.08;
   }
 
-  h3 {
-    font-size: var(--text-lg);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+  p,
+  label,
+  button,
+  input,
+  textarea,
+  select {
+    font-family: var(--font-family);
   }
 
-  h4 {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+  input,
+  textarea,
+  select {
+    font-size: 16px;
   }
 
-  label {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
+  label,
   button {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  input {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-normal);
-    line-height: 1.5;
+    font-weight: 600;
   }
 }
