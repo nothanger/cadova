@@ -33,63 +33,33 @@ export function ModuleDetail() {
   return (
     <MarketingShell ctaHref={module.ctaHref} ctaLabel={module.ctaLabel}>
       <section className="marketing-section marketing-hero">
-        <div className="marketing-container marketing-hero-grid marketing-detail-hero">
-          <div className="marketing-panel" style={{ padding: 30 }}>
-            <span
-              className="marketing-tag"
-              style={{
-                color: module.accentColor,
-                background: module.hoverBackground,
-                border: `1px solid ${module.hoverBorder}`,
-              }}
-            >
-              <module.icon size={14} />
-              {module.name}
-            </span>
-            <h1 className="marketing-title-section" style={{ marginTop: 18 }}>
-              {module.tagline}
-            </h1>
-            <p className="marketing-copy" style={{ marginTop: 18 }}>
-              {module.fullDescription}
-            </p>
-
-            <div className="marketing-actions">
-              <Link to={module.ctaHref} className="marketing-button-primary" style={{ background: module.accentColor }}>
-                {module.ctaLabel}
-                <ArrowRight size={18} />
-              </Link>
-              <Link to="/modules/comparaison" className="marketing-button-secondary">
-                Comparer avec les autres options
-              </Link>
-            </div>
-          </div>
-
+        <div className="marketing-container marketing-detail-hero">
           <div className="marketing-panel" style={{ padding: 28 }}>
-            <div className="marketing-kicker">
-              {module.previewTitle}
-            </div>
-            <h2 className="marketing-title-section" style={{ marginTop: 14, fontSize: "clamp(1.8rem, 4vw, 3rem)" }}>
-              {module.shortDescription}
-            </h2>
-            <div className="marketing-list" style={{ marginTop: 22 }}>
-              {module.previewMetrics.map((metric) => (
-                <div
-                  key={metric.label}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 12,
-                    paddingBottom: 12,
-                    borderBottom: "1px solid rgba(255,255,255,0.08)",
-                    color: "#697085",
-                  }}
-                >
-                  <span>{metric.label}</span>
-                  <strong style={{ color: module.accentColor }}>{metric.value}</strong>
-                </div>
-              ))}
-            </div>
-          </div>
+  <div className="marketing-kicker">
+    {module.previewTitle}
+  </div>
+  <h2 className="marketing-title-section" style={{ marginTop: 14, fontSize: "clamp(1.8rem, 4vw, 3rem)" }}>
+    {module.shortDescription}
+  </h2>
+  <div className="marketing-list" style={{ marginTop: 22 }}>
+    {module.previewMetrics.map((metric) => (
+      <div
+        key={metric.label}
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 12,
+          paddingBottom: 12,
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          color: "#697085",
+        }}
+      >
+        <span>{metric.label}</span>
+        <strong style={{ color: module.accentColor }}>{metric.value}</strong>
+      </div>
+    ))}
+  </div>
+</div>
         </div>
       </section>
 

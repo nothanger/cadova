@@ -1,186 +1,268 @@
-import { Link, useLocation, useNavigate } from "react-router";
-import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router";
+import { Input } from "../components/ui/input";
+import { Loader2, ArrowRight, Lock, Mail, Star } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { CadovaLogo } from "../components/CadovaLogo";
 import { useSEO } from "../hooks/useSEO";
-import { AuthShell } from "../components/AuthShell";
 
 export function Login() {
   useSEO({
-    title: "Connexion | Cadova",
-    description: "Retrouve tes candidatures, tes documents et tes prochaines actions dans Cadova.",
+    title: "Connexion — Cadova",
+    description: "Connecte-toi à Cadova pour accéder à tes outils IA : CV, lettres, entretiens, candidatures.",
     noindex: false,
   });
-
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, user } = useAuth();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [awaitingRedirect, setAwaitingRedirect] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/dashboard";
+  const from =
+    (location.state as { from?: { pathname: string } })?.from?.pathname ||
+    "/dashboard";
 
+ 
   useEffect(() => {
     if (awaitingRedirect && user) {
       navigate(from, { replace: true });
     }
-  }, [awaitingRedirect, from, navigate, user]);
+  }, [user, awaitingRedirect, navigate, from]);
 
-  const canSubmit = email.trim().length > 3 && password.trim().length > 0 && !loading;
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit) return;
-
     setLoading(true);
-    setErrorMessage("");
-    setSuccessMessage("");
-
     try {
-      const { error } = await signIn(email.trim(), password);
-
+      const { error } = await signIn(email, password);
       if (error) {
-        const message = error.message || "Email ou mot de passe incorrect. Verifie tes acces.";
-        setErrorMessage(message);
-        toast.error(message);
+        toast.error(error.message || "Email ou mot de passe incorrect");
         setLoading(false);
-        return;
+      } else {
+        toast.success("Connexion réussie !");
+       
+        setAwaitingRedirect(true);
       }
-
-      setSuccessMessage("C'est bon, on rouvre ton espace.");
-      toast.success("Bon retour");
-      setAwaitingRedirect(true);
     } catch {
-      setErrorMessage("La connexion bloque pour le moment. Reessaie dans quelques instants.");
-      toast.error("Connexion impossible pour le moment.");
+      toast.error("Erreur inattendue lors de la connexion");
       setLoading(false);
     }
   };
 
   return (
-    <AuthShell title="Reprends la ou tu t'etais arrete.">
-      <div className="mb-8">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-[8px] border border-[var(--cadova-border)] bg-white px-3 py-2 text-[13px] font-semibold text-[var(--cadova-muted)]">
-          <ShieldCheck className="size-4 text-[var(--cadova-primary)]" />
-          Espace personnel
-        </div>
-        <h1 className="text-[34px] font-extrabold leading-[1.05] tracking-[-0.055em] text-[var(--cadova-text)]">
-          Content de te revoir.
-        </h1>
-        <p className="mt-3 text-sm leading-7 text-[var(--cadova-muted)]">
-          Connecte-toi pour retrouver tes CV, tes relances, tes simulations et les petites choses a finir.
-        </p>
-      </div>
+    <div className="min-h-screen flex" style={{ fontFamily: "DM Sans, system-ui, sans-serif" }}>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label htmlFor="email" className="mb-2 block text-sm font-bold text-[var(--cadova-text)]">
-            Email
-          </label>
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#8c91a3]" />
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="vous@exemple.com"
-              disabled={loading}
-              className="cadova-input w-full pl-11 pr-4"
-            />
+      <div
+        className="hidden lg:flex lg:w-[42%] xl:w-[38%] flex-col justify-between p-12 relative overflow-hidden"
+        style={{ background: "#0C0B1A" }}
+      >
+     
+        <div
+          className="absolute top-0 left-0 w-80 h-80 rounded-full blur-3xl opacity-25 pointer-events-none"
+          style={{ background: "radial-gradient(circle, #5548F5, transparent)" }}
+        />
+        <div
+          className="absolute bottom-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-15 pointer-events-none"
+          style={{ background: "radial-gradient(circle, #8B5CF6, transparent)" }}
+        />
+       
+        <div
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{
+            backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+            backgroundSize: "50px 50px",
+          }}
+        />
+
+        <div className="relative z-10">
+          <CadovaLogo width={80} white />
+        </div>
+
+        <div className="relative z-10">
+          <blockquote
+            className="text-xl font-semibold leading-relaxed mb-6 text-white"
+            style={{ fontFamily: "Syne, sans-serif" }}
+          >
+            "J'ai décroché mon alternance en 2 semaines grâce à Cadova. Le score ATS a tout changé."
+          </blockquote>
+          <div className="flex items-center gap-3">
+            <div
+              className="size-10 rounded-xl flex items-center justify-center text-sm font-bold text-white"
+              style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
+            >
+              ML
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Marie L.</p>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                Étudiante Marketing · Lyon
+              </p>
+            </div>
           </div>
         </div>
 
-        <div>
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <label htmlFor="password" className="text-sm font-bold text-[var(--cadova-text)]">
-              Mot de passe
-            </label>
-            <Link to="/forgot-password" className="text-sm font-semibold text-[var(--cadova-primary)]">
-              Mot de passe oublie ?
+        <div className="relative z-10 flex gap-6">
+          {[
+            { value: "10K+", label: "Étudiants" },
+            { value: "89%", label: "Réussite" },
+            { value: "4.8", label: "Note", icon: Star },
+          ].map((s) => (
+            <div key={s.label}>
+              <div
+                className="text-xl font-extrabold text-white flex items-center gap-2"
+                style={{ fontFamily: "Syne, sans-serif" }}
+              >
+                {"icon" in s && s.icon ? <s.icon className="w-5 h-5 text-current" /> : null}
+                {s.value}
+              </div>
+              <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                {s.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      
+      <div className="flex-1 flex items-center justify-center p-6 md:p-12" style={{ background: "#FAFAFA" }}>
+        <div className="w-full max-w-md">
+          
+          <div className="lg:hidden flex justify-center mb-10">
+            <CadovaLogo width={80} />
+          </div>
+
+          <div className="mb-10">
+            <h1
+              className="font-extrabold mb-2"
+              style={{ fontFamily: "Syne, sans-serif", fontSize: "2rem", color: "#0C0B1A" }}
+            >
+              Bon retour !
+            </h1>
+            <p className="text-sm" style={{ color: "#6B6B8A" }}>
+              Connecte-toi pour accéder à ton espace Cadova.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-semibold mb-2" style={{ color: "#0C0B1A" }}>
+                Email
+              </label>
+              <div className="relative">
+                <Mail
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4"
+                  style={{ color: "#9CA3AF" }}
+                />
+                <input
+                  type="email"
+                  placeholder="vous@exemple.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl text-sm outline-none transition-all"
+                  style={{
+                    background: "white",
+                    border: "1.5px solid rgba(85,72,245,0.15)",
+                    color: "#0C0B1A",
+                    fontFamily: "DM Sans, sans-serif",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = "#5548F5")}
+                  onBlur={(e) => (e.target.style.borderColor = "rgba(85,72,245,0.15)")}
+                />
+              </div>
+            </div>
+
+        
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>
+                  Mot de passe
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-medium transition-opacity hover:opacity-70"
+                  style={{ color: "#5548F5" }}
+                >
+                  Mot de passe oublié ?
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4"
+                  style={{ color: "#9CA3AF" }}
+                />
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl text-sm outline-none transition-all"
+                  style={{
+                    background: "white",
+                    border: "1.5px solid rgba(85,72,245,0.15)",
+                    color: "#0C0B1A",
+                    fontFamily: "DM Sans, sans-serif",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = "#5548F5")}
+                  onBlur={(e) => (e.target.style.borderColor = "rgba(85,72,245,0.15)")}
+                />
+              </div>
+            </div>
+
+            
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{
+                background: "linear-gradient(135deg, #5548F5, #8B5CF6)",
+                boxShadow: "0 6px 24px rgba(85,72,245,0.4)",
+              }}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Connexion…
+                </>
+              ) : (
+                <>
+                  Se connecter
+                  <ArrowRight className="size-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-sm" style={{ color: "#9CA3AF" }}>
+              Pas encore de compte ?{" "}
+              <Link
+                to="/signup"
+                className="font-semibold transition-opacity hover:opacity-70"
+                style={{ color: "#5548F5" }}
+              >
+                Créer un compte gratuit
+              </Link>
+            </p>
+          </div>
+
+          <div className="mt-8 text-center">
+            <Link
+              to="/"
+              className="text-xs transition-opacity hover:opacity-70"
+              style={{ color: "#C4C4D4" }}
+            >
+              ← Retour à l'accueil
             </Link>
           </div>
-          <div className="relative">
-            <Lock className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#8c91a3]" />
-            <input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Ton mot de passe"
-              disabled={loading}
-              className="cadova-input w-full pl-11 pr-12"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((current) => !current)}
-              className="absolute right-3 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-[8px] text-[#697085] transition hover:bg-[var(--cadova-primary-soft)] hover:text-[var(--cadova-text)]"
-              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-            >
-              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            </button>
-          </div>
         </div>
-
-        <div className="flex items-center justify-between gap-4">
-          <label className="inline-flex items-center gap-3 text-sm text-[var(--cadova-muted)]">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="size-4 rounded border-[var(--cadova-border)] text-[var(--cadova-primary)] focus:ring-[var(--cadova-primary)]/20"
-            />
-            Rester connecte
-          </label>
-          <span className="text-xs text-[#a6abc0]">{rememberMe ? "On garde la porte ouverte" : "Connexion ponctuelle"}</span>
-        </div>
-
-        <div
-          className={`rounded-[8px] border px-4 py-3 text-sm leading-6 ${
-            errorMessage
-              ? "border-red-200 bg-red-50 text-red-700"
-              : successMessage
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                : "border-[var(--cadova-border)] bg-white text-[var(--cadova-muted)]"
-          }`}
-        >
-          {errorMessage || successMessage || "Tu retrouves ton espace exactement la ou tu l'as laisse."}
-        </div>
-
-        <button type="submit" disabled={!canSubmit} className="cadova-button-primary w-full disabled:bg-[#b8bcd3] disabled:shadow-none">
-          {loading ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              On verifie...
-            </>
-          ) : (
-            <>
-              Continuer
-              <ArrowRight className="size-4" />
-            </>
-          )}
-        </button>
-      </form>
-
-      <div className="mt-8 border-t border-[var(--cadova-border)] pt-6 text-sm text-[var(--cadova-muted)]">
-        Pas encore de compte ?{" "}
-        <Link to="/signup" className="font-bold text-[var(--cadova-primary)]">
-          Commencer tranquille
-        </Link>
       </div>
-      <Link to="/" className="mt-3 inline-flex text-xs text-[#a6abc0] hover:text-[var(--cadova-primary)]">
-        Retour a l'accueil
-      </Link>
-    </AuthShell>
+    </div>
   );
 }

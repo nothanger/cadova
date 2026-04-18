@@ -20,6 +20,8 @@ import {
 import { saveInterviewSession } from "@/lib/localStorage";
 import { useAuth } from "@/contexts/AuthContext";
 
+
+
 interface MessageEntry {
   id: string;
   role: "interviewer" | "user";
@@ -27,6 +29,7 @@ interface MessageEntry {
   question?: InterviewQuestion;
   feedback?: AnswerFeedback;
 }
+
 
 const TYPE_LABELS: Record<InterviewType, string> = {
   stage: "Stage",
@@ -50,6 +53,8 @@ const SECTORS = [
   "Autre",
 ];
 
+
+
 function WordCountBar({ count }: { count: number }) {
   const optimal = count >= 80 && count <= 220;
   const tooShort = count < 40;
@@ -62,14 +67,14 @@ function WordCountBar({ count }: { count: number }) {
           className="h-full rounded-full transition-all duration-300"
           style={{
             width: `${pct}%`,
-            background: tooShort ? "#F59E0B" : optimal ? "#10B981" : "#5044f5",
+            background: tooShort ? "#F59E0B" : optimal ? "#10B981" : "#5548F5",
           }}
         />
       </div>
       <span
         className="text-[10px] tabular-nums flex-shrink-0"
         style={{
-          color: tooShort ? "#F59E0B" : optimal ? "#10B981" : "#5044f5",
+          color: tooShort ? "#F59E0B" : optimal ? "#10B981" : "#5548F5",
           fontFamily: "ui-monospace, monospace",
         }}
       >
@@ -85,10 +90,11 @@ function FeedbackCard({ feedback }: { feedback: AnswerFeedback }) {
       initial={{ opacity: 0, y: 6, height: 0 }}
       animate={{ opacity: 1, y: 0, height: "auto" }}
       className="mt-2 mx-2 rounded-xl overflow-hidden"
-      style={{ background: "#f7f7ff", border: "1px solid rgba(80,68,245,0.1)" }}
+      style={{ background: "#F8F7FF", border: "1px solid rgba(85,72,245,0.1)" }}
     >
       <div className="p-4">
-<div className="flex items-center justify-between mb-3">
+        {/* Score header */}
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Zap className="size-4" style={{ color: feedback.scoreColor }} />
             <span className="text-[12px] font-bold" style={{ color: feedback.scoreColor }}>
@@ -97,12 +103,14 @@ function FeedbackCard({ feedback }: { feedback: AnswerFeedback }) {
           </div>
           <div
             className="px-3 py-1 rounded-full text-[11px] font-black tabular-nums"
-            style={{ background: `${feedback.scoreColor}15`, color: feedback.scoreColor, fontFamily: "Sora, system-ui, sans-serif" }}
+            style={{ background: `${feedback.scoreColor}15`, color: feedback.scoreColor, fontFamily: "Syne, sans-serif" }}
           >
             {feedback.score}/100
           </div>
         </div>
-<div className="flex gap-1.5 mb-3">
+
+        {/* STAR indicators */}
+        <div className="flex gap-1.5 mb-3">
           {(["situation", "task", "action", "result"] as const).map((part) => {
             const labels = { situation: "S", task: "T", action: "A", result: "R" };
             const detected = feedback.starDetected[part];
@@ -111,8 +119,8 @@ function FeedbackCard({ feedback }: { feedback: AnswerFeedback }) {
                 key={part}
                 className="size-6 rounded flex items-center justify-center text-[10px] font-bold"
                 style={{
-                  background: detected ? "#5044f520" : "rgba(0,0,0,0.05)",
-                  color: detected ? "#5044f5" : "#C4C4D4",
+                  background: detected ? "#5548F520" : "rgba(0,0,0,0.05)",
+                  color: detected ? "#5548F5" : "#C4C4D4",
                   fontFamily: "ui-monospace, monospace",
                 }}
                 title={detected ? `${part} détecté` : `${part} non détecté`}
@@ -125,7 +133,8 @@ function FeedbackCard({ feedback }: { feedback: AnswerFeedback }) {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-<div>
+          {/* Points forts */}
+          <div>
             <p className="text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-1" style={{ color: "#10B981" }}>
               <ThumbsUp className="size-3" /> Points forts
             </p>
@@ -135,7 +144,8 @@ function FeedbackCard({ feedback }: { feedback: AnswerFeedback }) {
               </p>
             ))}
           </div>
-<div>
+          
+          <div>
             <p className="text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-1" style={{ color: "#F59E0B" }}>
               <AlertCircle className="size-3" /> À améliorer
             </p>
@@ -146,8 +156,10 @@ function FeedbackCard({ feedback }: { feedback: AnswerFeedback }) {
             ))}
           </div>
         </div>
-<div className="mt-3 p-2 rounded-lg" style={{ background: "rgba(80,68,245,0.06)" }}>
-          <p className="text-[11px] leading-snug flex items-center gap-2" style={{ color: "#5044f5" }}>
+
+       
+        <div className="mt-3 p-2 rounded-lg" style={{ background: "rgba(85,72,245,0.06)" }}>
+          <p className="text-[11px] leading-snug flex items-center gap-2" style={{ color: "#5548F5" }}>
             <Sparkles className="w-5 h-5 text-current flex-shrink-0" />
             <span>{feedback.tip}</span>
           </p>
@@ -164,9 +176,10 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
       animate={{ opacity: 1, y: 0 }}
       className="max-w-2xl mx-auto"
     >
-<div
+      {/* Score global */}
+      <div
         className="rounded-2xl p-8 mb-6 text-center relative overflow-hidden"
-        style={{ background: "#080719", border: "1px solid rgba(80,68,245,0.15)" }}
+        style={{ background: "#0A0914", border: "1px solid rgba(85,72,245,0.15)" }}
       >
         <div
           className="absolute inset-0 rounded-full blur-3xl pointer-events-none"
@@ -178,7 +191,7 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
           </p>
           <div
             className="text-8xl font-black tabular-nums mb-2"
-            style={{ fontFamily: "Sora, system-ui, sans-serif", color: report.scoreColor, letterSpacing: "-0.04em" }}
+            style={{ fontFamily: "Syne, sans-serif", color: report.scoreColor, letterSpacing: "-0.04em" }}
           >
             {report.averageScore}
           </div>
@@ -191,7 +204,9 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
           </div>
         </div>
       </div>
-<div
+
+     
+      <div
         className="grid grid-cols-2 gap-px mb-6 rounded-2xl overflow-hidden"
         style={{ background: "rgba(0,0,0,0.06)" }}
       >
@@ -201,7 +216,7 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
             <div className="flex items-end gap-2 mb-2">
               <span
                 className="text-2xl font-black tabular-nums leading-none"
-                style={{ fontFamily: "Sora, system-ui, sans-serif", color: "#070716" }}
+                style={{ fontFamily: "Syne, sans-serif", color: "#0C0B1A" }}
               >
                 {cat.score}
               </span>
@@ -219,7 +234,9 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
           </div>
         ))}
       </div>
-<div className="grid md:grid-cols-2 gap-4 mb-6">
+
+     
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
         {report.topStrengths.length > 0 && (
           <div className="rounded-xl p-5" style={{ background: "#F0FDF4", border: "1px solid #D1FAE5" }}>
             <p className="text-[10px] uppercase tracking-wider mb-3 flex items-center gap-1" style={{ color: "#10B981" }}>
@@ -241,8 +258,10 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
           </div>
         )}
       </div>
-<div className="rounded-xl p-5 mb-6" style={{ background: "#efedff", border: "1px solid rgba(80,68,245,0.12)" }}>
-        <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "#5044f5" }}>
+
+      
+      <div className="rounded-xl p-5 mb-6" style={{ background: "#F5F3FF", border: "1px solid rgba(85,72,245,0.12)" }}>
+        <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "#5548F5" }}>
           Conseil OralIA
         </p>
         <p className="text-[13px] leading-relaxed" style={{ color: "#3730A3" }}>
@@ -253,7 +272,7 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
       <button
         onClick={onReset}
         className="w-full py-3 rounded-xl font-semibold text-sm transition-all hover:opacity-90 flex items-center justify-center gap-2"
-        style={{ background: "#080719", color: "white" }}
+        style={{ background: "#0A0914", color: "white" }}
       >
         <RotateCcw className="size-4" />
         Nouvelle simulation
@@ -262,12 +281,17 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
   );
 }
 
+
 export function Interview() {
   useSEO({ title: "Simulation entretien OralIA — Cadova", noindex: true });
   const { user } = useAuth();
+
+ 
   const [interviewType, setInterviewType] = useState<InterviewType>("stage");
   const [sector, setSector] = useState("");
   const [pressureMode, setPressureMode] = useState(false);
+
+  
   const [phase, setPhase] = useState<"setup" | "interview" | "report">("setup");
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [messages, setMessages] = useState<MessageEntry[]>([]);
@@ -286,10 +310,14 @@ export function Interview() {
 
   const wordCount = currentAnswer.trim().split(/\s+/).filter(Boolean).length;
 
+  
+
   const handleStart = () => {
     const sessionQuestions = buildInterviewSession(interviewType, sector);
     setQuestions(sessionQuestions);
     setPhase("interview");
+
+    
     setTimeout(() => {
       setMessages([
         {
@@ -302,6 +330,8 @@ export function Interview() {
       setQuestionIdx(0);
     }, 200);
   };
+
+ 
 
   const handleSend = () => {
     if (!currentAnswer.trim() || isTyping) return;
@@ -325,6 +355,7 @@ export function Interview() {
     const nextIdx = questionIdx + 1;
 
     if (nextIdx < questions.length) {
+      
       setIsTyping(true);
       const delay = pressureMode ? 600 : 1200 + Math.random() * 800;
       setTimeout(() => {
@@ -341,8 +372,11 @@ export function Interview() {
         setQuestionIdx(nextIdx);
       }, delay);
     } else {
+      // End of session
       const finalReport = buildSessionReport(newFeedbacks);
       setReport(finalReport);
+
+      // Save to localStorage
       if (user?.id) {
         saveInterviewSession({
           userId: user.id,
@@ -357,6 +391,7 @@ export function Interview() {
     }
   };
 
+ 
   const handleReset = () => {
     setPhase("setup");
     setQuestions([]);
@@ -374,8 +409,10 @@ export function Interview() {
 
   return (
     <AppLayout>
-      <div className="max-w-5xl mx-auto" style={{ fontFamily: "Sora, system-ui, sans-serif" }}>
-<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+      <div className="max-w-5xl mx-auto" style={{ fontFamily: "DM Sans, system-ui, sans-serif" }}>
+
+        {/* Header éditorial */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <div className="flex items-center gap-3 mb-1">
             <div className="size-9 rounded-xl flex items-center justify-center" style={{ background: "#EC489910" }}>
               <Mic className="size-4" style={{ color: "#EC4899" }} />
@@ -384,7 +421,7 @@ export function Interview() {
               <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "#EC4899" }}>
                 OralIA
               </p>
-              <h1 className="font-black leading-none" style={{ fontFamily: "Sora, system-ui, sans-serif", color: "#070716", fontSize: "clamp(1.4rem, 3vw, 2rem)", letterSpacing: "-0.025em" }}>
+              <h1 className="font-black leading-none" style={{ fontFamily: "Syne, sans-serif", color: "#0C0B1A", fontSize: "clamp(1.4rem, 3vw, 2rem)", letterSpacing: "-0.025em" }}>
                 Simulation d'entretien
               </h1>
             </div>
@@ -393,7 +430,9 @@ export function Interview() {
             Réponds aux questions et reçois un feedback détaillé basé sur la méthode STAR.
           </p>
         </motion.div>
-<AnimatePresence mode="wait">
+
+        {/* ══ SETUP ══ */}
+        <AnimatePresence mode="wait">
           {phase === "setup" && (
             <motion.div
               key="setup"
@@ -402,14 +441,17 @@ export function Interview() {
               exit={{ opacity: 0, y: -8 }}
               className="grid lg:grid-cols-3 gap-6"
             >
-<div className="lg:col-span-2 rounded-2xl overflow-hidden" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
+              {/* Config card */}
+              <div className="lg:col-span-2 rounded-2xl overflow-hidden" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
                 <div className="px-6 py-4" style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
                   <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "#C4C4D4" }}>
                     Configuration
                   </p>
                 </div>
                 <div className="p-6 space-y-5">
-<div>
+
+                  {/* Type */}
+                  <div>
                     <label className="text-[11px] uppercase tracking-wider block mb-2" style={{ color: "#9CA3AF" }}>
                       Type d'entretien
                     </label>
@@ -430,7 +472,9 @@ export function Interview() {
                       ))}
                     </div>
                   </div>
-<div>
+
+                 
+                  <div>
                     <label className="text-[11px] uppercase tracking-wider block mb-2" style={{ color: "#9CA3AF" }}>
                       Secteur (optionnel)
                     </label>
@@ -441,9 +485,9 @@ export function Interview() {
                           onClick={() => setSector(sector === s ? "" : s)}
                           className="px-3 py-1.5 rounded-lg text-[11px] transition-all"
                           style={{
-                            background: sector === s ? "#5044f515" : "rgba(0,0,0,0.03)",
-                            color: sector === s ? "#5044f5" : "#9CA3AF",
-                            border: sector === s ? "1px solid #5044f530" : "1px solid transparent",
+                            background: sector === s ? "#5548F515" : "rgba(0,0,0,0.03)",
+                            color: sector === s ? "#5548F5" : "#9CA3AF",
+                            border: sector === s ? "1px solid #5548F530" : "1px solid transparent",
                           }}
                         >
                           {s}
@@ -451,12 +495,14 @@ export function Interview() {
                       ))}
                     </div>
                   </div>
-<div
+
+                  
+                  <div
                     className="flex items-center justify-between p-4 rounded-xl"
                     style={{ background: pressureMode ? "#EC489910" : "rgba(0,0,0,0.02)", border: `1px solid ${pressureMode ? "#EC489930" : "transparent"}` }}
                   >
                     <div>
-                      <p className="text-[13px] font-semibold" style={{ color: "#070716" }}>Mode pression</p>
+                      <p className="text-[13px] font-semibold" style={{ color: "#0C0B1A" }}>Mode pression</p>
                       <p className="text-[11px]" style={{ color: "#9CA3AF" }}>Questions enchaînées plus rapidement — simule un vrai entretien</p>
                     </div>
                     <button
@@ -470,11 +516,13 @@ export function Interview() {
                       />
                     </button>
                   </div>
-<div className="flex items-start gap-3 p-4 rounded-xl" style={{ background: "#efedff" }}>
-                    <Lightbulb className="size-4 flex-shrink-0 mt-0.5" style={{ color: "#5044f5" }} />
+
+                  {/* Info box */}
+                  <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background: "#F5F3FF" }}>
+                    <Lightbulb className="size-4 flex-shrink-0 mt-0.5" style={{ color: "#5548F5" }} />
                     <div>
                       <p className="text-[12px] font-semibold mb-1" style={{ color: "#3730A3" }}>Comment ça marche ?</p>
-                      <p className="text-[12px] leading-relaxed" style={{ color: "#5044f5" }}>
+                      <p className="text-[12px] leading-relaxed" style={{ color: "#5548F5" }}>
                         7 questions progressives (présentation → motivation → situations → compétences). Chaque réponse est analysée selon la méthode STAR : Situation, Tâche, Action, Résultat.
                       </p>
                     </div>
@@ -490,7 +538,9 @@ export function Interview() {
                   </button>
                 </div>
               </div>
-<div className="rounded-2xl overflow-hidden" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
+
+              
+              <div className="rounded-2xl overflow-hidden" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
                 <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
                   <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "#C4C4D4" }}>
                     Exemples de questions
@@ -498,11 +548,11 @@ export function Interview() {
                 </div>
                 <div className="p-5 space-y-3">
                   {[
-                    { cat: "Présentation", q: "Présentez-vous en 2 minutes.", color: "#5044f5" },
+                    { cat: "Présentation", q: "Présentez-vous en 2 minutes.", color: "#5548F5" },
                     { cat: "Motivation", q: "Pourquoi cette entreprise ?", color: "#EC4899" },
                     { cat: "Situation", q: "Parlez-moi d'un problème résolu.", color: "#10B981" },
                     { cat: "Compétence", q: "Vos outils maîtrisés ?", color: "#F59E0B" },
-                    { cat: "Finale", q: "Avez-vous des questions ?", color: "#6b55f7" },
+                    { cat: "Finale", q: "Avez-vous des questions ?", color: "#8B5CF6" },
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <span
@@ -525,7 +575,9 @@ export function Interview() {
               </div>
             </motion.div>
           )}
-{phase === "interview" && (
+
+         
+          {phase === "interview" && (
             <motion.div
               key="interview"
               initial={{ opacity: 0 }}
@@ -533,18 +585,20 @@ export function Interview() {
               exit={{ opacity: 0 }}
               className="grid lg:grid-cols-3 gap-6"
             >
-<div className="lg:col-span-2">
+              
+              <div className="lg:col-span-2">
                 <div
                   className="rounded-2xl overflow-hidden flex flex-col"
                   style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)", minHeight: "580px" }}
                 >
-<div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
+                  
+                  <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
                     <div className="flex items-center gap-3">
                       <div className="size-8 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #EC4899, #BE185D)" }}>
                         <Bot className="size-4 text-white" />
                       </div>
                       <div>
-                        <p className="text-[13px] font-semibold" style={{ color: "#070716" }}>Recruteur OralIA</p>
+                        <p className="text-[13px] font-semibold" style={{ color: "#0C0B1A" }}>Recruteur OralIA</p>
                         <p className="text-[11px]" style={{ color: "#9CA3AF" }}>
                           Question {Math.min(questionIdx + 1, questions.length)}/{questions.length}
                         </p>
@@ -555,14 +609,18 @@ export function Interview() {
                       <span className="text-[11px]" style={{ color: "#C4C4D4" }}>~15 min</span>
                     </div>
                   </div>
-<div style={{ height: "3px", background: "rgba(0,0,0,0.04)" }}>
+
+                 
+                  <div style={{ height: "3px", background: "rgba(0,0,0,0.04)" }}>
                     <motion.div
                       animate={{ width: `${((questionIdx) / questions.length) * 100}%` }}
                       transition={{ duration: 0.5 }}
                       style={{ height: "100%", background: "linear-gradient(90deg, #EC4899, #BE185D)" }}
                     />
                   </div>
-<div className="flex-1 overflow-y-auto p-5 space-y-4">
+
+                  
+                  <div className="flex-1 overflow-y-auto p-5 space-y-4">
                     <AnimatePresence>
                       {messages.map((msg) => (
                         <motion.div
@@ -572,23 +630,26 @@ export function Interview() {
                           transition={{ duration: 0.3 }}
                         >
                           <div className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-<div
+                            
+                            <div
                               className="size-8 rounded-full flex items-center justify-center flex-shrink-0"
                               style={{
                                 background: msg.role === "interviewer"
                                   ? "linear-gradient(135deg, #EC4899, #BE185D)"
-                                  : "linear-gradient(135deg, #5044f5, #6b55f7)",
+                                  : "linear-gradient(135deg, #5548F5, #8B5CF6)",
                               }}
                             >
                               {msg.role === "interviewer"
                                 ? <Bot className="size-4 text-white" />
                                 : <User className="size-4 text-white" />}
                             </div>
-<div
+
+                            
+                            <div
                               className="max-w-[78%] rounded-2xl px-4 py-3"
                               style={{
-                                background: msg.role === "interviewer" ? "#F9FAFB" : "#5044f5",
-                                color: msg.role === "interviewer" ? "#070716" : "white",
+                                background: msg.role === "interviewer" ? "#F9FAFB" : "#5548F5",
+                                color: msg.role === "interviewer" ? "#0C0B1A" : "white",
                                 borderRadius: msg.role === "interviewer" ? "4px 16px 16px 16px" : "16px 4px 16px 16px",
                               }}
                             >
@@ -601,13 +662,17 @@ export function Interview() {
                               )}
                             </div>
                           </div>
-{msg.role === "user" && msg.feedback && showFeedback && (
+
+                         
+                          {msg.role === "user" && msg.feedback && showFeedback && (
                             <FeedbackCard feedback={msg.feedback} />
                           )}
                         </motion.div>
                       ))}
                     </AnimatePresence>
-{isTyping && (
+
+                    
+                    {isTyping && (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -632,7 +697,9 @@ export function Interview() {
 
                     <div ref={chatEndRef} />
                   </div>
-<div className="p-4" style={{ borderTop: "1px solid rgba(0,0,0,0.05)" }}>
+
+                  {/* Input */}
+                  <div className="p-4" style={{ borderTop: "1px solid rgba(0,0,0,0.05)" }}>
                     <WordCountBar count={wordCount} />
                     <div className="flex gap-3 mt-2">
                       <textarea
@@ -644,8 +711,8 @@ export function Interview() {
                         style={{
                           background: "rgba(0,0,0,0.02)",
                           border: "1px solid rgba(0,0,0,0.08)",
-                          color: "#070716",
-                          fontFamily: "Sora, system-ui, sans-serif",
+                          color: "#0C0B1A",
+                          fontFamily: "DM Sans, system-ui, sans-serif",
                         }}
                         disabled={isTyping}
                         onKeyDown={(e) => {
@@ -667,15 +734,19 @@ export function Interview() {
                   </div>
                 </div>
               </div>
-<div className="space-y-4">
-<div className="rounded-2xl overflow-hidden" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
+
+              
+              <div className="space-y-4">
+
+                
+                <div className="rounded-2xl overflow-hidden" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
                   <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
                     <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "#C4C4D4" }}>Score en direct</p>
                   </div>
                   <div className="p-5 text-center">
                     <div
                       className="text-5xl font-black tabular-nums mb-1"
-                      style={{ fontFamily: "Sora, system-ui, sans-serif", color: avgScore ? (avgScore >= 70 ? "#10B981" : avgScore >= 50 ? "#F59E0B" : "#EF4444") : "#E5E7EB", letterSpacing: "-0.04em" }}
+                      style={{ fontFamily: "Syne, sans-serif", color: avgScore ? (avgScore >= 70 ? "#10B981" : avgScore >= 50 ? "#F59E0B" : "#EF4444") : "#E5E7EB", letterSpacing: "-0.04em" }}
                     >
                       {avgScore ?? "—"}
                     </div>
@@ -693,19 +764,23 @@ export function Interview() {
                     </div>
                   </div>
                 </div>
-<button
+
+                
+                <button
                   onClick={() => setShowFeedback(!showFeedback)}
                   className="w-full px-4 py-3 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-2 transition-all"
                   style={{
-                    background: showFeedback ? "#5044f510" : "rgba(0,0,0,0.04)",
-                    color: showFeedback ? "#5044f5" : "#9CA3AF",
-                    border: `1px solid ${showFeedback ? "#5044f530" : "transparent"}`,
+                    background: showFeedback ? "#5548F510" : "rgba(0,0,0,0.04)",
+                    color: showFeedback ? "#5548F5" : "#9CA3AF",
+                    border: `1px solid ${showFeedback ? "#5548F530" : "transparent"}`,
                   }}
                 >
                   <Star className="size-4" />
                   {showFeedback ? "Feedback affiché" : "Afficher le feedback"}
                 </button>
-<div className="rounded-2xl p-5" style={{ background: "#080719", border: "1px solid rgba(80,68,245,0.12)" }}>
+
+                
+                <div className="rounded-2xl p-5" style={{ background: "#0A0914", border: "1px solid rgba(85,72,245,0.12)" }}>
                   <p className="text-[10px] uppercase tracking-[0.15em] mb-3" style={{ color: "rgba(255,255,255,0.25)" }}>
                     Méthode STAR
                   </p>
@@ -718,7 +793,7 @@ export function Interview() {
                     <div key={item.letter} className="flex items-start gap-3 mb-2.5">
                       <span
                         className="size-5 rounded flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
-                        style={{ background: "#5044f520", color: "#6b55f7", fontFamily: "ui-monospace, monospace" }}
+                        style={{ background: "#5548F520", color: "#8B5CF6", fontFamily: "ui-monospace, monospace" }}
                       >
                         {item.letter}
                       </span>
@@ -745,7 +820,9 @@ export function Interview() {
               </div>
             </motion.div>
           )}
-{phase === "report" && report && (
+
+         
+          {phase === "report" && report && (
             <motion.div
               key="report"
               initial={{ opacity: 0 }}
