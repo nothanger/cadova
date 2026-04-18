@@ -225,9 +225,9 @@ export const cadovaModules: CadovaModule[] = [
     fullDescription:
       "SkillIA t'aide a clarifier ce que tu montres aux recruteurs. Tu colles ton profil, tu identifies ce qui manque, tu ajustes ton resume et tes competences pour que ton parcours soit plus facile a comprendre.",
     targetAudience: [
-      "Candidats qui ont un LinkedIn vide ou flou",
-      "Profils en reconversion ou repositionnement",
       "Etudiants qui ne savent pas quelles competences mettre en avant",
+      "Profils en reconversion ou repositionnement",
+      "Ou juste raffraichir leur profil avant de candidater",
     ],
     features: [
       "Analyse de profil LinkedIn",

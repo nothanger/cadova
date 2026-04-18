@@ -6,21 +6,23 @@ export interface InterviewQuestion {
   id: string;
   category: QuestionCategory;
   text: string;
-  tip: string;          // Conseil affiché avant de répondre
-  keywords: string[];   // Mots-clés attendus pour le scoring
-  starRequired: boolean; // True = on attend une structure STAR
+  tip: string;        
+  keywords: string[];   
+  starRequired: boolean;
 }
 
 export interface AnswerFeedback {
-  score: number;              // 0-100
-  scoreLabel: string;         // "Excellent" | "Bon" | "A améliorer" | "Insuffisant"
+  score: number;              
+  scoreLabel: string;       
   scoreColor: string;
   strengths: string[];
   improvements: string[];
-  tip: string;                // Conseil personnalisé
+  tip: string;               
   wordCount: number;
   starDetected: { situation: boolean; task: boolean; action: boolean; result: boolean };
 }
+
+
 
 const PRESENTATION_QUESTIONS: InterviewQuestion[] = [
   {
@@ -353,6 +355,8 @@ const FINALE_QUESTIONS: InterviewQuestion[] = [
   },
 ];
 
+
+
 function pickRandom<T>(arr: T[], n: number): T[] {
   const shuffled = [...arr].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, n);
@@ -363,16 +367,28 @@ export function buildInterviewSession(
   _sector?: string
 ): InterviewQuestion[] {
   const session: InterviewQuestion[] = [];
+
+ 
   session.push(pickRandom(PRESENTATION_QUESTIONS, 1)[0]);
+
+
   const motivations = MOTIVATION_QUESTIONS[type] || MOTIVATION_QUESTIONS.stage;
   session.push(...pickRandom(motivations, 2));
+
+ 
   session.push(...pickRandom(SITUATION_QUESTIONS, 2));
+
+ 
   const competences = COMPETENCE_QUESTIONS[type] || COMPETENCE_QUESTIONS.stage;
   session.push(pickRandom(competences, 1)[0]);
+
+
   session.push(pickRandom(FINALE_QUESTIONS, 1)[0]);
 
   return session;
 }
+
+
 
 const STAR_KEYWORDS = {
   situation: ["situation", "contexte", "lors", "quand", "lorsque", "pendant", "etais", "travaillais", "j'etudiais", "face a"],
@@ -431,6 +447,9 @@ export function analyzeAnswer(
   const hasExamples = detectExamples(answer);
   const keywordMatches = detectKeywords(answer, question.keywords);
   const hasFirstPerson = firstPersonVerbs(answer);
+
+
+
   let lengthScore = 0;
   if (wordCount < 15) lengthScore = 5;
   else if (wordCount < 40) lengthScore = 18;
@@ -438,26 +457,35 @@ export function analyzeAnswer(
   else if (wordCount < 180) lengthScore = 40;
   else if (wordCount < 280) lengthScore = 35;
   else lengthScore = 22; // trop long
+
+
   let starScore = 0;
   if (question.starRequired) {
     const starParts = [star.situation, star.task, star.action, star.result];
     const starCount = starParts.filter(Boolean).length;
     starScore = starCount * 7.5; // 7.5 pts par élément STAR
   } else {
+    // Question non-STAR : récompense quand même la structure
     const starCount = [star.situation, star.task, star.action, star.result].filter(Boolean).length;
     starScore = Math.min(starCount * 5, 20);
   }
+
+
   let contentScore = 0;
   contentScore += hasNumbers ? 10 : 0;
   contentScore += hasExamples ? 8 : 0;
   contentScore += hasFirstPerson ? 4 : 0;
-  contentScore += Math.min(keywordMatches * 4, 8); // max 8 pts pour les keywords
+  contentScore += Math.min(keywordMatches * 4, 8); 
 
   const rawScore = lengthScore + starScore + contentScore;
   const score = Math.min(100, Math.max(10, Math.round(rawScore)));
 
+
+
   const strengths: string[] = [];
   const improvements: string[] = [];
+
+
   if (wordCount >= 80 && wordCount <= 250) {
     strengths.push("Bonne longueur de réponse — ni trop courte, ni trop longue");
   } else if (wordCount < 40) {
@@ -465,6 +493,8 @@ export function analyzeAnswer(
   } else if (wordCount > 280) {
     improvements.push("Réponse trop longue — entraînez-vous à être plus concis et percutant");
   }
+
+
   if (question.starRequired) {
     if (star.situation) strengths.push("Contexte / situation bien posé(e)");
     else improvements.push("Manque le contexte initial (Situation) — posez la scène en 1-2 phrases");
@@ -480,21 +510,29 @@ export function analyzeAnswer(
       strengths.push("Bonne articulation des actions et résultats");
     }
   }
+
+
   if (hasNumbers) {
     strengths.push("Excellente utilisation de chiffres — ça crédibilise votre discours");
   } else if (question.starRequired) {
     improvements.push("Ajoutez des chiffres ou métriques pour illustrer l'impact (%, délais, volumes...)");
   }
+
+
   if (hasExamples) {
     strengths.push("Bons exemples concrets utilisés");
   } else if (wordCount > 40 && improvements.length < 3) {
     improvements.push("Utilisez 'par exemple', 'notamment', 'concrètement' pour ancrer votre discours dans le réel");
   }
+
+
   if (keywordMatches >= 3) {
     strengths.push("Vous utilisez les bons mots-clés pour ce type de question");
   } else if (keywordMatches === 0 && improvements.length < 3) {
     improvements.push("Essayez d'utiliser des mots directement liés à la question posée");
   }
+
+ 
   let tip: string;
   if (score >= 85) {
     tip = "Excellent ! Cette réponse est de niveau professionnel. Gardez ce niveau tout au long de l'entretien.";
@@ -505,12 +543,16 @@ export function analyzeAnswer(
   } else {
     tip = "Prenez le temps de bien structurer votre réponse avec la méthode STAR. Pratiquez à voix haute plusieurs fois.";
   }
+
+
   let scoreLabel: string;
   let scoreColor: string;
   if (score >= 85) { scoreLabel = "Excellent"; scoreColor = "#10B981"; }
-  else if (score >= 70) { scoreLabel = "Bon"; scoreColor = "#5044f5"; }
+  else if (score >= 70) { scoreLabel = "Bon"; scoreColor = "#5548F5"; }
   else if (score >= 50) { scoreLabel = "Moyen"; scoreColor = "#F59E0B"; }
   else { scoreLabel = "À améliorer"; scoreColor = "#EF4444"; }
+
+
   if (strengths.length === 0) {
     strengths.push(wordCount > 15 ? "Vous avez répondu à la question" : "Vous avez tenté une réponse");
   }
@@ -529,6 +571,10 @@ export function analyzeAnswer(
     starDetected: star,
   };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RAPPORT FINAL DE SESSION
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface SessionReport {
   averageScore: number;
@@ -559,6 +605,8 @@ export function buildSessionReport(
 
   const allStrengths = feedbacks.flatMap((f) => f.strengths);
   const allImprovements = feedbacks.flatMap((f) => f.improvements);
+
+
   const countMap = (arr: string[]) => {
     const map = new Map<string, number>();
     arr.forEach((s) => map.set(s, (map.get(s) || 0) + 1));
@@ -574,16 +622,16 @@ export function buildSessionReport(
   };
 
   const categoryScores = [
-    { label: "Score global", score: avg, color: avg >= 70 ? "#5044f5" : "#F59E0B" },
+    { label: "Score global", score: avg, color: avg >= 70 ? "#5548F5" : "#F59E0B" },
     { label: "Méthode STAR", score: starScores.Action, color: "#EC4899" },
     { label: "Exemples concrets", score: starScores.Résultat, color: "#10B981" },
-    { label: "Richesse du contenu", score: starScores.Structure, color: "#6b55f7" },
+    { label: "Richesse du contenu", score: starScores.Structure, color: "#8B5CF6" },
   ];
 
   let scoreLabel: string;
   let scoreColor: string;
   if (avg >= 85) { scoreLabel = "Excellent"; scoreColor = "#10B981"; }
-  else if (avg >= 70) { scoreLabel = "Bon niveau"; scoreColor = "#5044f5"; }
+  else if (avg >= 70) { scoreLabel = "Bon niveau"; scoreColor = "#5548F5"; }
   else if (avg >= 50) { scoreLabel = "Moyen"; scoreColor = "#F59E0B"; }
   else { scoreLabel = "À travailler"; scoreColor = "#EF4444"; }
 

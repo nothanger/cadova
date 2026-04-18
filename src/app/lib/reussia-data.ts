@@ -1,3 +1,5 @@
+
+
 import type { LucideIcon } from "lucide-react";
 import {
   BookOpen,
@@ -33,6 +35,8 @@ export type SectorId =
 export type ExperienceLevel = "lyceen" | "etudiant" | "junior" | "intermediaire";
 export type CandidatureType = "stage" | "alternance" | "emploi" | "parcoursup";
 export type LetterTone = "professionnel" | "dynamique" | "formel" | "creatif";
+
+
 export const SECTORS: { id: SectorId; label: string; icon: LucideIcon }[] = [
   { id: "marketing",    label: "Marketing / Communication", icon: Megaphone },
   { id: "commerce",     label: "Commerce / Vente",           icon: Briefcase },
@@ -47,6 +51,7 @@ export const SECTORS: { id: SectorId; label: string; icon: LucideIcon }[] = [
   { id: "education",    label: "Education / Formation",      icon: BookOpen },
   { id: "autre",        label: "Autre / General",            icon: Wrench },
 ];
+
 export const BULLETS: Record<SectorId, string[]> = {
   marketing: [
     "Animation des reseaux sociaux et creation de contenus (Instagram, LinkedIn, TikTok)",
@@ -160,6 +165,8 @@ export const BULLETS: Record<SectorId, string[]> = {
     "Classement, archivage et gestion documentaire",
   ],
 };
+
+
 export const SKILLS_BY_SECTOR: Record<SectorId, string[]> = {
   marketing: [
     "Community management", "Reseaux sociaux", "Content marketing",
@@ -222,12 +229,18 @@ export const SKILLS_BY_SECTOR: Record<SectorId, string[]> = {
     "Adaptabilite", "Rigueur",
   ],
 };
+
+
+
 export const SOFT_SKILLS = [
   "Travail en equipe", "Autonomie", "Rigueur", "Adaptabilite",
   "Sens des responsabilites", "Force de proposition", "Ecoute active",
   "Gestion du stress", "Ponctualite", "Curiosite intellectuelle",
   "Creativite", "Sens du detail", "Organisation", "Leadership",
 ];
+
+
+
 export const LANGUAGES = [
   { lang: "Anglais", levels: ["Notions (A2)", "Scolaire (B1)", "Courant (B2)", "Bilingue (C1)", "Langue maternelle"] },
   { lang: "Espagnol", levels: ["Notions (A2)", "Scolaire (B1)", "Courant (B2)", "Bilingue (C1)"] },
@@ -237,6 +250,9 @@ export const LANGUAGES = [
   { lang: "Portugais", levels: ["Notions", "Courant", "Bilingue", "Langue maternelle"] },
   { lang: "Italien", levels: ["Notions", "Courant", "Bilingue"] },
 ];
+
+
+
 interface SummaryParams {
   firstName?: string;
   sector: SectorId;
@@ -248,32 +264,32 @@ interface SummaryParams {
 
 const SUMMARY_BANK: Record<ExperienceLevel, Record<SectorId, string>> = {
   lyceen: {
-    marketing:    "{prenom}Lyceen(ne) motive(e) et curieux(se), je recherche un {type} pour decouvrir le marketing et la communication dans un cadre concret. Interesse(e) par les reseaux sociaux, la creation de contenu et la facon dont les marques parlent a leur public, je souhaite apprendre aux cotes d'une equipe et comprendre les bases du metier. Serieux(se), a l'ecoute et volontaire, je suis pret(e) a m'investir avec application.",
-    commerce:     "{prenom}Lyceen(ne) serieux(se) et motive(e), je recherche un {type} pour decouvrir le secteur du commerce et developper une premiere experience au contact d'une equipe. A l'aise dans la relation avec les autres et attentif(ve) aux consignes, je souhaite apprendre les bases de l'accueil, du conseil et du fonctionnement d'un point de vente. Curieux(se) et ponctuel(le), je suis determine(e) a bien faire.",
-    rh:           "{prenom}Lyceen(ne) curieux(se) et applique(e), je recherche un {type} pour decouvrir le fonctionnement des ressources humaines au sein d'une organisation. Interesse(e) par les relations de travail, l'organisation et l'accompagnement des personnes, je souhaite observer, apprendre et comprendre les missions quotidiennes d'une equipe RH. Discret(e), rigoureux(se) et a l'ecoute, je m'investirai avec serieux.",
-    finance:      "{prenom}Lyceen(ne) rigoureux(se) et a l'aise avec les chiffres, je recherche un {type} pour decouvrir le domaine de la finance et de la comptabilite. J'apprecie les matieres demandant de la methode et de la precision, et je souhaite comprendre comment ces competences sont utilisees dans un cadre professionnel. Serieux(se), organise(e) et volontaire, je suis motive(e) pour apprendre.",
-    droit:        "{prenom}Lyceen(ne) interesse(e) par les questions juridiques et le fonctionnement des organisations, je recherche un {type} pour decouvrir le domaine du droit. J'aime comprendre les regles, analyser des situations et m'exprimer de facon claire a l'ecrit comme a l'oral. Rigoureux(se), curieux(se) et attentif(ve), je souhaite apprendre dans un cadre professionnel serieux.",
-    sante:        "{prenom}Lyceen(ne) motive(e) par les metiers utiles aux autres, je recherche un {type} pour decouvrir le secteur de la sante ou du social. Sensible a l'entraide, au respect des personnes et a la qualite de l'accompagnement, je souhaite mieux comprendre les realites du terrain. Serieux(se), respectueux(se) et a l'ecoute, je suis pret(e) a m'investir avec application.",
-    informatique: "{prenom}Lyceen(ne) interesse(e) par l'informatique et les nouvelles technologies, je recherche un {type} pour decouvrir le fonctionnement d'une equipe technique. J'aime comprendre comment fonctionnent les outils numeriques et je realise de petits projets ou exercices pour progresser. Curieux(se), rigoureux(se) et motive(e), je souhaite apprendre dans un cadre concret.",
-    hotellerie:   "{prenom}Lyceen(ne) motive(e) et souriant(e), je recherche un {type} pour decouvrir les metiers de l'accueil, du service ou de la restauration. J'apprecie le contact avec le public et je souhaite apprendre les bases d'un service de qualite au sein d'une equipe professionnelle. Ponctuel(le), poli(e) et volontaire, je m'investirai avec serieux.",
-    design:       "{prenom}Lyceen(ne) creatif(ve) et curieux(se), je recherche un {type} pour decouvrir le design et la communication visuelle. J'aime realiser des supports simples dans un cadre scolaire ou personnel et comprendre comment transmettre une idee de facon claire et soignee. Attentif(ve), ouvert(e) aux retours et motive(e), je souhaite progresser au contact de professionnels.",
-    btp:          "{prenom}Lyceen(ne) attire(e) par les metiers techniques et concrets, je recherche un {type} pour decouvrir le secteur du BTP et de la construction. J'apprecie les activites pratiques, le travail bien fait et l'idee de voir un projet avancer sur le terrain. Serieux(se), motive(e) et attentif(ve) aux consignes, je souhaite apprendre dans de bonnes conditions.",
-    education:    "{prenom}Lyceen(ne) patient(e) et motive(e), je recherche un {type} pour decouvrir le secteur de l'education et de la formation. J'aime aider, expliquer simplement et participer a des activites utiles aux autres. Curieux(se), bienveillant(e) et serieux(se), je souhaite apprendre au sein d'une structure ou l'accompagnement a du sens.",
-    autre:        "{prenom}Lyceen(ne) serieux(se), curieux(se) et motive(e), je recherche un {type} pour decouvrir le monde professionnel et developper une premiere experience concrete. J'ai envie d'apprendre, d'observer le fonctionnement d'une equipe et de contribuer de facon simple et efficace aux missions confiees. Ponctuel(le) et applique(e), je m'investirai pleinement dans cette opportunite.",
+    marketing:    "{prenom}Lyceen(ne) en terminale, passionne(e) par la communication digitale et les reseaux sociaux, je recherche un {type} pour developper mes premieres competences professionnelles en marketing. Habitue(e) a creer du contenu sur Instagram et TikTok dans un cadre personnel, j'ai developpe un sens aigu de l'audience et de l'engagement. Curieux(se), investi(e) et force(e) de proposition, je suis pret(e) a m'impliquer pleinement dans les projets de l'equipe et a apporter un regard neuf et motive.",
+    commerce:     "{prenom}Lyceen(ne) dynamique avec un sens naturel du contact humain et de la relation client, je recherche un {type} pour decouvrir le monde du commerce professionnel. A l'aise dans les situations de communication et de negociation au quotidien, j'ai developpe une capacite d'ecoute et de conviction que je souhaite mettre au service d'une equipe commerciale. Serieux(se), ponctuel(le) et motive(e) par les objectifs, je m'engage a donner le meilleur de moi-meme.",
+    rh:           "{prenom}Lyceen(ne) curieux(se) et naturellement attentif(ve) aux relations humaines, je recherche un {type} pour decouvrir le metier des ressources humaines et le fonctionnement interne d'une organisation. Concerne(e) par les questions de bien-etre et de communication au travail, je souhaite comprendre comment une equipe RH accompagne les collaborateurs. Rigoureux(se), discret(e) et a l'ecoute, je suis pret(e) a apporter mon enthousiasme et mon serieux.",
+    finance:      "{prenom}Lyceen(ne) rigoureux(se), passionne(e) par les mathematiques et a l'aise avec les chiffres, je recherche un {type} pour decouvrir le monde de la finance et de la comptabilite en situation reelle. Habitue(e) a analyser des donnees de facon methodique dans le cadre scolaire, je souhaite confronter ces competences a des problematiques professionnelles concretes. Ponctuel(le), organise(e) et desireux(se) d'apprendre, je m'engage avec serieux.",
+    droit:        "{prenom}Lyceen(ne) interesse(e) par les questions juridiques et la vie en societe, je recherche un {type} pour decouvrir le fonctionnement d'une structure juridique et developper mes competences en recherche documentaire et redaction. Lecteur(trice) assidu(e) de l'actualite legislative, j'ai developpe un esprit d'analyse et de synthese que je souhaite mettre en pratique. Rigoureux(se) et soucieux(se) du detail, je suis determine(e) a progresser.",
+    sante:        "{prenom}Lyceen(ne) profondement motive(e) par les metiers du soin et de l'aide a la personne, je recherche un {type} pour m'initier au secteur de la sante et confirmer ma vocation. Empathique et a l'ecoute dans mes relations quotidiennes, je suis sensible aux besoins des autres et desire m'engager dans un environnement ou chaque action a un impact humain reel. Serieux(se), discret(e) et investi(e), je m'engage pleinement.",
+    informatique: "{prenom}Lyceen(ne) passionne(e) d'informatique, de programmation et de nouvelles technologies depuis plusieurs annees, je recherche un {type} pour mettre en pratique mes premieres competences techniques dans un cadre professionnel. Autodidacte, j'ai appris les bases du developpement web et de la resolution de problemes algorithmiques en dehors du cadre scolaire. Curieux(se), rigoureux(se) et avide d'apprendre au contact d'une equipe technique, je suis pret(e) a m'impliquer pleinement.",
+    hotellerie:   "{prenom}Lyceen(ne) passionne(e) par l'univers de l'accueil, de la gastronomie et du service, je recherche un {type} pour developper mon sens du service et m'immerger dans un environnement professionnel exigeant. Attentif(ve) aux details, a l'aise avec le public et naturellement souriant(e), je souhaite decouvrir les standards d'excellence du secteur. Ponctuel(le), rigoureux(se) et desireux(se) de bien faire, je m'engage avec enthousiasme.",
+    design:       "{prenom}Lyceen(ne) passionne(e) par la creation visuelle, la photographie et le design graphique, je recherche un {type} pour mettre en pratique mes premiers projets dans un cadre professionnel. Habitue(e) a utiliser Canva et les outils Adobe dans un cadre personnel et scolaire, je suis sensible a l'esthetique et a l'impact des images. Curieux(se), creatif(ve) et ouvert(e) aux retours, je suis pret(e) a progresser rapidement.",
+    btp:          "{prenom}Lyceen(ne) attire(e) par les metiers techniques du batiment et de la construction, je recherche un {type} pour decouvrir le terrain et m'initier aux exigences du secteur. A l'aise dans les activites techniques et manuelles, j'ai le sens du concret et l'envie de voir des projets prendre forme. Serieux(se), motive(e) et attentif(ve) aux consignes de securite, je suis pret(e) a apprendre sur le terrain.",
+    education:    "{prenom}Lyceen(ne) a l'aise avec les enfants et les adolescents, passionne(e) par la transmission et l'accompagnement pedagogique, je recherche un {type} pour decouvrir le monde de l'education. Habitue(e) a aider mes camarades et a expliquer des notions complexes de facon accessible, j'ai developpe une reelle capacite de communication et de patience. Patient(e), bienveillant(e) et motive(e), je m'engage pleinement dans cette experience.",
+    autre:        "{prenom}Lyceen(ne) serieux(se), motive(e) et desireux(se) de decouvrir le monde professionnel, je recherche un {type} pour contribuer activement a une equipe et developper mes premieres competences pratiques. Rigoureux(se), ponctuel(le) et curieux(se), j'apprends vite et je m'adapte facilement a de nouveaux contextes. Implique(e) dans ma scolarite et dans mes activites extra-scolaires, je suis pret(e) a m'investir pleinement dans cette experience et a en faire une etape marquante.",
   },
   etudiant: {
-    marketing:    "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le domaine du marketing et de la communication. Ma formation m'a permis d'aborder les bases de la communication digitale, de la creation de contenu et de l'analyse simple de performances. Curieux(se), serieux(se) et motive(e), je souhaite mettre en pratique mes connaissances sur des missions concretes tout en continuant a apprendre.",
-    commerce:     "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le secteur commercial. J'apprecie le contact avec les clients, le travail en equipe et les missions qui demandent de l'ecoute, de la rigueur et de la reactivite. Motive(e) pour progresser sur le terrain, je souhaite developper une experience concrete dans un environnement professionnel formateur.",
-    rh:           "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le domaine des ressources humaines. Ma formation m'a sensibilise(e) aux bases du recrutement, de l'organisation administrative et de l'accompagnement des collaborateurs. Rigoureux(se), a l'ecoute et motive(e), je souhaite contribuer a des missions utiles tout en consolidant mes competences au contact du terrain.",
-    finance:      "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le domaine de la finance ou de la comptabilite. J'ai acquis des bases solides en comptabilite, en analyse de donnees et en outils bureautiques au cours de ma formation. Serieux(se), organise(e) et volontaire, je souhaite mettre ces acquis en pratique dans un cadre professionnel exigeant mais formateur.",
-    droit:        "{prenom}Etudiant(e) en {formation}, je recherche un {type} pour approfondir mes connaissances juridiques dans un cadre concret. Ma formation m'a appris a rechercher l'information, a structurer une analyse et a rediger avec precision. Rigoureux(se), curieux(se) et motive(e), je souhaite progresser sur des dossiers reels au sein d'une equipe qui pourra m'accompagner.",
-    sante:        "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le secteur de la sante ou du medico-social. Au cours de ma formation, j'ai developpe des bases techniques et relationnelles utiles pour travailler avec serieux, respect et attention aux personnes. Empathique, rigoureux(se) et motive(e), je souhaite m'investir dans un environnement ou je pourrai apprendre et etre utile.",
-    informatique: "{prenom}Etudiant(e) en {formation}, je recherche un {type} pour mettre en pratique mes competences techniques dans un cadre professionnel. J'ai travaille sur plusieurs projets scolaires ou personnels qui m'ont permis de consolider mes bases en developpement, en logique et en resolution de problemes. Curieux(se), autonome dans mon apprentissage et ouvert(e) aux retours, je souhaite continuer a progresser au sein d'une equipe technique.",
-    hotellerie:   "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le secteur de l'hotellerie-restauration. Ma formation m'a sensibilise(e) a la qualite de service, a l'organisation et au respect des standards du secteur. Souriant(e), rigoureux(se) et motive(e), je souhaite contribuer au bon fonctionnement d'un etablissement tout en gagnant en experience.",
-    design:       "{prenom}Etudiant(e) en {formation}, je recherche un {type} pour mettre en pratique mes competences en design dans un contexte professionnel. J'ai realise des projets scolaires et personnels qui m'ont permis de travailler ma methode, mon sens du detail et ma maitrise de plusieurs outils de creation. Curieux(se), creatif(ve) et receptif(ve) aux retours, je souhaite continuer a progresser sur des projets concrets.",
-    btp:          "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le secteur du BTP pour appliquer mes connaissances sur le terrain. Ma formation m'a permis d'aborder les bases techniques du secteur, la lecture de documents et l'importance de l'organisation et de la securite. Serieux(se), motive(e) et a l'aise dans le travail en equipe, je souhaite developper une experience concrete.",
-    education:    "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le secteur de l'education ou de la formation. J'apprecie la transmission, l'accompagnement et les missions qui demandent de la patience, de l'organisation et de l'adaptation. Motive(e), bienveillant(e) et serieux(se), je souhaite contribuer a des activites utiles tout en developpant mon experience de terrain.",
-    autre:        "{prenom}Etudiant(e) en {formation}, je recherche un {type} pour mettre en pratique mes connaissances et developper une experience professionnelle concrete. Rigoureux(se), curieux(se) et motive(e), je m'investis serieusement dans les missions confiees et j'apprends rapidement dans un nouvel environnement. Mon objectif est de progresser tout en apportant une contribution utile a l'equipe.",
+    marketing:    "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le domaine du marketing et de la communication digitale. Forme(e) aux fondamentaux du marketing mix, de la strategie de contenu et de l'analyse de donnees, je maitrise les principaux outils du secteur (Canva, Google Analytics, Meta Business Suite) et suis en veille permanente sur les nouvelles tendances. Force(e) de proposition, curieux(se) et oriente(e) resultats, mon objectif est de contribuer concretement a des projets ambitieux tout en progressant au contact d'une equipe experte.",
+    commerce:     "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le secteur commercial. Dote(e) d'un excellent relationnel, d'une bonne capacite d'ecoute et d'un gout prononce pour la negociation, je m'investis pleinement dans les objectifs confies et j'apprecie les environnements ou la performance est recompensee. Habitue(e) a travailler en equipe et sous pression, je fais preuve de perseverance et de rigueur dans chaque opportunite commerciale.",
+    rh:           "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le domaine des ressources humaines. Sensible aux dynamiques humaines et organisationnelles, j'ai developpe une bonne maitrise des processus RH (recrutement, onboarding, gestion administrative) dans le cadre de ma formation. Curieux(se), empathique et rigoureux(se), je souhaite me confronter aux realites du terrain et contribuer a des projets RH concrets au sein d'une equipe dynamique.",
+    finance:      "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le domaine de la finance et de la comptabilite. Forme(e) aux fondamentaux de la comptabilite generale, de l'analyse financiere et du reporting, je suis a l'aise avec les outils de gestion (Excel, Sage) et j'ai developpe un esprit analytique et une grande rigueur dans le traitement des donnees. Determine(e) a progresser en situation professionnelle, je recherche un environnement stimulant pour approfondir mon expertise.",
+    droit:        "{prenom}Etudiant(e) en {formation}, je recherche un {type} afin de consolider mes connaissances juridiques dans un cadre professionnel reel. Habitue(e) a la recherche documentaire, a la redaction d'analyses et a l'utilisation de bases de donnees specialisees (LexisNexis, Doctrine), je suis rigoureux(se), precis(e) et capable de travailler sur des dossiers varies. Mon objectif est de contribuer efficacement tout en developpant une expertise operationnelle solide.",
+    sante:        "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le secteur de la sante ou du medico-social. Profondement motive(e) par le service aux autres et la prise en charge globale des patients, j'ai acquis dans le cadre de ma formation une bonne maitrise des protocoles de soins et des pratiques de communication avec les patients. Empathique, rigoureux(se) et capable de travailler en equipe pluridisciplinaire, je suis pret(e) a m'integrer pleinement dans votre structure.",
+    informatique: "{prenom}Etudiant(e) en {formation}, je recherche un {type} pour mettre en pratique mes competences techniques dans un cadre professionnel stimulant. A l'aise en developpement web (HTML, CSS, JavaScript, Python), en gestion de bases de donnees et dans les methodologies Agile, j'ai realise plusieurs projets personnels et scolaires temoignant de ma capacite a produire du code propre et maintenable. Curieux(se), autonome et bon(ne) communiquant(e), je m'integre rapidement dans une equipe technique.",
+    hotellerie:   "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le secteur de l'hotellerie-restauration. Forme(e) aux standards de service, a la gestion des reservations et aux normes HACCP, je suis attache(e) a la qualite de l'experience client et a l'excellence operationnelle. Rigoureux(se) en situation de forte activite, souriant(e) et capable de gerer plusieurs taches simultanement, je suis pret(e) a contribuer activement au bon fonctionnement de votre etablissement.",
+    design:       "{prenom}Etudiant(e) en {formation}, je recherche un {type} pour confronter mes productions a des enjeux professionnels reels. A l'aise sous Figma, Adobe Photoshop et Illustrator, j'ai realise plusieurs projets de conception graphique et d'interface temoignant de mon sens de l'esthetique et de ma rigueur. Attentif(ve) aux details, sensible a l'experience utilisateur et ouvert(e) aux retours, je suis pret(e) a m'integrer dans une equipe creative exigeante.",
+    btp:          "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le secteur du BTP pour appliquer mes connaissances techniques sur le terrain. Forme(e) a la lecture de plans, aux methodes de calcul de structures et aux normes de securite, j'ai developpe lors de projets en groupe mon sens de l'organisation et du travail en equipe. Rigoureux(se), reactif(ve) et a l'aise dans des environnements exigeants, je suis pret(e) a apporter ma contribution.",
+    education:    "{prenom}Etudiant(e) en {formation}, je recherche un {type} dans le secteur de l'education et de la formation. Passionne(e) par la pedagogie, la transmission et l'accompagnement des apprenants, j'ai developpe des competences en animation de groupes, en conception de supports et en evaluation formative. Patient(e), adaptable et a l'ecoute, je suis capable d'ajuster ma posture et mes methodes en fonction du public et des objectifs.",
+    autre:        "{prenom}Etudiant(e) en {formation}, je recherche un {type} pour confronter mes connaissances theoriques aux realites d'un environnement professionnel exigeant. Rigoureux(se), curieux(se) et force(e) de proposition, je m'adapte rapidement a de nouveaux contextes et m'investis pleinement dans les missions confiees. Habitue(e) a travailler en equipe et a gerer plusieurs projets en parallele, je suis determine(e) a faire de cette experience une etape structurante de mon parcours.",
   },
   junior: {
     marketing:    "{prenom}Jeune diplome(e) en marketing et communication avec une premiere experience significative, je maitrise la gestion des reseaux sociaux, la creation de contenu editorial et l'analyse de performances digitales. Habitue(e) a travailler avec Google Analytics, Meta Ads et Canva, j'ai contribue a des campagnes ayant genere des resultats mesurables. Reactif(ve), oriente(e) donnees et force(e) de proposition, je recherche {type} pour contribuer a des projets ambitieux au sein d'une equipe marketing dynamique.",
@@ -326,6 +342,9 @@ export function buildSummary(params: {
     .replace("{type}", typeLabel[params.type] || "stage")
     .replace("{entreprise}", params.company || "votre entreprise");
 }
+
+
+
 type IntroKey = `${CandidatureType}_${LetterTone}`;
 
 const INTRO_BLOCKS: Partial<Record<IntroKey, string>> = {
@@ -499,6 +518,7 @@ export function buildCoverLetter(params: {
     .filter((l) => l !== undefined && l !== null)
     .join("\n");
 }
+
 const STOP_WORDS_FR = new Set([
   "le","la","les","de","du","des","un","une","et","est","en","au","aux",
   "par","pour","sur","avec","dans","ce","qui","que","vous","nous","votre",
@@ -568,6 +588,8 @@ export interface ATSResult {
   mode: ATSMode;
   hasJobDesc: boolean;
 }
+
+
 const WEIGHTS: Record<ATSMode, Record<string, number>> = {
   pro:         { coordonnees: 0.15, formation: 0.15, experience: 0.20, competences: 0.20, chiffres: 0.15, linkedin: 0.10, longueur: 0.05 },
   stage:       { coordonnees: 0.20, formation: 0.20, experience: 0.20, competences: 0.15, chiffres: 0.08, linkedin: 0.05, longueur: 0.12 },
@@ -581,7 +603,8 @@ export function runATSAnalysis(
 ): ATSResult {
   const cvNorm = normalize(cvText);
   const hasJobDesc = jobDesc.trim().length > 30;
-const jobTokens = hasJobDesc ? tokenize(jobDesc) : [];
+
+  const jobTokens = hasJobDesc ? tokenize(jobDesc) : [];
   const cvTokens = new Set(tokenize(cvText));
 
   const freq = new Map<string, number>();
@@ -599,16 +622,22 @@ const jobTokens = hasJobDesc ? tokenize(jobDesc) : [];
     freq: freq.get(word) || 1,
     found: cvTokens.has(word),
   }));
-const hasEmail    = cvNorm.includes("@") || cvNorm.includes("email") || cvNorm.includes("mail");
+
+
+  const hasEmail    = cvNorm.includes("@") || cvNorm.includes("email") || cvNorm.includes("mail");
   const hasPhone    = /06|07|01|02|03|04|05|\+33/.test(cvText);
   const hasLinkedIn = cvNorm.includes("linkedin");
   const hasMetrics  = /\d+%|\d+\s?k|\d+\s?clients|\d+\s?projets|\+\d/.test(cvText);
   const wordCount   = cvText.trim() ? cvText.trim().split(/\s+/).length : 0;
+
+
   const hasFormation = mode === "observation"
     ? ["college", "lycee", "troisieme", "3eme", "seconde", "premiere", "terminale",
        "classe", "ecole", "sixieme", "cinquieme", "quatrieme", "bac", "brevet", "section"].some((k) => cvNorm.includes(k))
     : ["licence", "master", "bts", "dut", "bac", "diplome", "universite", "ecole",
        "iut", "bep", "cap", "lycee", "terminale", "seconde", "premiere", "mba"].some((k) => cvNorm.includes(k));
+
+
   const hasExperience = mode === "observation"
     ? ["interet", "loisir", "passion", "hobby", "club", "sport", "musique",
        "benevolat", "association", "projet", "aide", "babysitting", "cuisine",
@@ -616,12 +645,16 @@ const hasEmail    = cvNorm.includes("@") || cvNorm.includes("email") || cvNorm.i
     : ["stage", "mission", "poste", "assistant", "charge", "cdi", "cdd",
        "interim", "benevolat", "association", "emploi", "experience",
        "apprenti", "alternance"].some((k) => cvNorm.includes(k));
+
+
   const hasSkills = mode === "observation"
     ? ["competence", "maitrise", "informatique", "bureautique", "langue",
        "anglais", "espagnol", "sport", "musique", "art", "creation"].some((k) => cvNorm.includes(k))
     : ["competence", "maitrise", "connaissance", "logiciel", "outil",
        "microsoft", "excel", "word", "canva", "photoshop", "javascript",
        "python", "pack office"].some((k) => cvNorm.includes(k));
+
+
   const targetWords = { observation: 120, stage: 250, pro: 380 }[mode];
   const longueurScore = wordCount >= targetWords
     ? 90
@@ -630,13 +663,17 @@ const hasEmail    = cvNorm.includes("@") || cvNorm.includes("email") || cvNorm.i
     : wordCount >= targetWords * 0.35
     ? 40
     : 20;
-const sCoord   = hasEmail && hasPhone ? 95 : hasEmail ? 65 : hasPhone ? 50 : 20;
+
+  const sCoord   = hasEmail && hasPhone ? 95 : hasEmail ? 65 : hasPhone ? 50 : 20;
   const sFormation  = hasFormation ? 90 : 30;
   const sExperience = hasExperience ? 85 : (mode === "observation" ? 45 : 30);
   const sCompetences= hasSkills ? 82 : (mode === "observation" ? 55 : 32);
+  // Pour les critères non exigés selon mode : score neutre
   const sChiffres   = hasMetrics ? 90 : (mode === "pro" ? 30 : mode === "stage" ? 55 : 85);
   const sLinkedIn   = hasLinkedIn ? 90 : (mode === "pro" ? 35 : mode === "stage" ? 65 : 85);
-const w = WEIGHTS[mode];
+
+
+  const w = WEIGHTS[mode];
   const structureScore = Math.round(
     sCoord       * w.coordonnees +
     sFormation   * w.formation   +
@@ -646,15 +683,19 @@ const w = WEIGHTS[mode];
     sLinkedIn    * w.linkedin    +
     longueurScore * w.longueur
   );
-let score: number;
+
+  
+  let score: number;
   if (hasJobDesc && importantWords.length > 0) {
     const keywordScore = Math.round((matched.length / importantWords.length) * 100);
+    // 40% structure + 60% compatibilité mots-clés
     score = Math.round(structureScore * 0.4 + keywordScore * 0.6);
   } else {
     score = structureScore;
   }
   score = Math.min(Math.max(score, 0), 98);
-const sections: ATSResult["sections"] = [];
+
+  const sections: ATSResult["sections"] = [];
 
   sections.push({
     name: "Coordonnees",
@@ -738,7 +779,9 @@ const sections: ATSResult["sections"] = [];
       ? `Bonne longueur (${wordCount} mots) — le recruteur a assez d'elements pour te juger.`
       : `Dossier un peu court (${wordCount} mots). Vise ${targetWords}+ mots pour un contenu complet.`,
   });
-const suggestions: string[] = [];
+
+
+  const suggestions: string[] = [];
 
   if (mode === "observation") {
     if (!hasExperience)
