@@ -221,7 +221,7 @@ export const cadovaModules: CadovaModule[] = [
     slug: "skillia",
     name: "SkillIA",
     tagline: "Pour que ton profil raconte enfin la meme histoire que ton CV.",
-    shortDescription: "LinkedIn, competences et positionnement pour etre plus lisible avant meme l'entretien.",
+    shortDescription: "Pour rendre ton profil linkedin plus lisible et plus clair pour les recruteurs.",
     fullDescription:
       "SkillIA t'aide a clarifier ce que tu montres aux recruteurs. Tu colles ton profil, tu identifies ce qui manque, tu ajustes ton resume et tes competences pour que ton parcours soit plus facile a comprendre.",
     targetAudience: [

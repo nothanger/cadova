@@ -1,3 +1,5 @@
+
+
 import { useEffect } from "react";
 
 interface SEOProps {
@@ -5,13 +7,14 @@ interface SEOProps {
   description?: string;
   canonical?: string;
   ogImage?: string;
+ 
   noindex?: boolean;
 }
 
 const BASE_URL = "https://cadova.fr";
-const DEFAULT_TITLE = "Cadova - Un coup de main pour tes candidatures";
+const DEFAULT_TITLE = "Cadova — L'écosystème IA pour l'emploi des jeunes";
 const DEFAULT_DESC =
-  "Cadova aide les lyceens, etudiants et jeunes diplomes a construire leurs candidatures, preparer leurs entretiens et garder le fil de leur recherche.";
+  "Cadova t'aide à trouver un emploi ou un stage grâce à l'IA : génère ton CV et ta lettre de motivation, analyse ATS, simule des entretiens et suis tes candidatures.";
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.png`;
 
 function setMeta(name: string, content: string, attr: "name" | "property" = "name") {
@@ -47,14 +50,25 @@ export function useSEO({
     const resolvedImage = ogImage || DEFAULT_IMAGE;
     const resolvedCanonical = canonical || `${BASE_URL}${window.location.pathname}`;
 
+    
     document.title = resolvedTitle;
+
+   
     setMeta("description", resolvedDesc);
+
+    
     setMeta("robots", noindex ? "noindex, nofollow" : "index, follow, max-snippet:-1, max-image-preview:large");
+
+    
     setLink("canonical", resolvedCanonical);
+
+    
     setMeta("og:title", resolvedTitle, "property");
     setMeta("og:description", resolvedDesc, "property");
     setMeta("og:url", resolvedCanonical, "property");
     setMeta("og:image", resolvedImage, "property");
+
+    
     setMeta("twitter:title", resolvedTitle);
     setMeta("twitter:description", resolvedDesc);
     setMeta("twitter:image", resolvedImage);

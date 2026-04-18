@@ -1,295 +1,516 @@
-import { useMemo, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import {
-  AlertTriangle,
-  ArrowRight,
-  BarChart2,
-  CheckCircle2,
-  FileText,
-  Search,
-  Target,
-  XCircle,
-} from "lucide-react";
-import { AppLayout } from "../components/AppLayout";
-import { LoadingScreen } from "../components/LoadingScreen";
+import { useState } from "react";
+import { runATSAnalysis, ATSResult, ATSMode, ATS_MODES } from "../lib/reussia-data";
 import { useSEO } from "../hooks/useSEO";
-import { ATSMode, ATS_MODES, ATSResult, runATSAnalysis } from "../lib/reussia-data";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
+import { LoadingScreen } from "../components/LoadingScreen";
+import { AppLayout } from "../components/AppLayout";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Search, FileText, Target, CheckCircle, XCircle,
+  AlertTriangle, TrendingUp, Zap, ArrowRight, Info, BarChart2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Progress } from "../components/ui/progress";
+import { Button } from "../components/ui/button";
 import { Textarea } from "../components/ui/textarea";
-import { useAuth } from "@/contexts/AuthContext";
-import { saveATSAnalysis } from "@/lib/localStorage";
-import { toast } from "sonner";
-
-function getScoreTone(score: number) {
-  if (score >= 75) return { text: "text-green-600", bg: "from-green-500 to-emerald-500" };
-  if (score >= 55) return { text: "text-amber-600", bg: "from-amber-500 to-orange-500" };
-  return { text: "text-red-600", bg: "from-red-500 to-rose-500" };
-}
+import { Badge } from "../components/ui/badge";
+import { Progress } from "../components/ui/progress";
 
 export function ATSAnalysis() {
-  useSEO({ title: "Analyse ATS - Cadova", noindex: false });
-  const { user } = useAuth();
+useSEO({ title: "Analyse ATS — Cadova", noindex: false });
   const [cvText, setCvText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [mode, setMode] = useState<ATSMode>("stage");
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<ATSResult | null>(null);
 
-  const selectedMode = useMemo(() => ATS_MODES.find((item) => item.value === mode)!, [mode]);
-  const canAnalyze = cvText.trim().length > 40;
-
-  const startAnalysis = () => {
-    if (!canAnalyze) {
-      toast.error("Ajoute un peu plus de contenu avant de lancer l'analyse.");
-      return;
-    }
+  const handleAnalyze = () => {
+    if (!cvText.trim()) return;
     setAnalyzing(true);
   };
 
-  const finishAnalysis = () => {
-    const analysis = runATSAnalysis(cvText, jobDescription, mode);
-    setResult(analysis);
-
-    if (user?.id) {
-      saveATSAnalysis({
-        userId: user.id,
-        score: analysis.score,
-        strengths: analysis.matchedKeywords.slice(0, 10),
-        weaknesses: analysis.sections.filter((section) => section.status !== "good").map((section) => section.feedback),
-        missingKeywords: analysis.missingKeywords,
-        matchedKeywords: analysis.matchedKeywords,
-        suggestions: analysis.suggestions,
-      });
-    }
-
+  const handleAnalyzeComplete = () => {
+    const res = runATSAnalysis(cvText, jobDescription, mode);
+    setResult(res);
     setAnalyzing(false);
-    toast.success("Analyse ATS enregistree dans ton dashboard.");
   };
 
-  const tone = result ? getScoreTone(result.score) : null;
+  const getScoreColor = (score: number) => {
+    if (score >= 72) return "text-green-600";
+    if (score >= 48) return "text-amber-600";
+    return "text-red-600";
+  };
+
+  const getScoreGradient = (score: number) => {
+    if (score >= 72) return "from-green-500 to-emerald-500";
+    if (score >= 48) return "from-amber-500 to-orange-500";
+    return "from-red-500 to-rose-500";
+  };
+
+  const getScoreLabel = (score: number) => {
+    if (score >= 82) return "Excellent";
+    if (score >= 68) return "Bon";
+    if (score >= 50) return "Moyen";
+    if (score >= 35) return "A améliorer";
+    return "Insuffisant";
+  };
+
+  const getStatusIcon = (status: string) => {
+    if (status === "good") return <CheckCircle className="size-4 text-green-600" />;
+    if (status === "warning") return <AlertTriangle className="size-4 text-amber-600" />;
+    return <XCircle className="size-4 text-red-600" />;
+  };
+
+  const cvWordCount = cvText.trim() ? cvText.trim().split(/\s+/).length : 0;
+  const canAnalyze = cvText.trim().length > 30;
+  const selectedMode = ATS_MODES.find((m) => m.value === mode)!;
 
   return (
     <AppLayout>
-      {analyzing ? (
+      {analyzing && (
         <LoadingScreen
-          label="Analyse ATS"
-          accent="#06b6d4"
+          label="Analyse ATS en cours"
+          accent="#10B981"
           steps={[
-            { label: "Lecture du CV", duration: 500 },
-            { label: "Extraction des mots-cles", duration: 600 },
-            { label: "Comparaison avec l'offre", duration: 700 },
-            { label: "Calcul du score final", duration: 500 },
+            { label: "Lecture et tokenisation du CV", duration: 600 },
+            { label: "Extraction des mots-clés critiques", duration: 700 },
+            { label: "Comparaison avec l'offre d'emploi", duration: 800 },
+            { label: "Calcul des scores par catégorie", duration: 700 },
+            { label: "Génération des recommandations", duration: 600 },
+            { label: "Compilation du rapport final", duration: 500 },
           ]}
-          onComplete={finishAnalysis}
+          onComplete={handleAnalyzeComplete}
         />
-      ) : null}
-
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <span className="size-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
+      )}
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+            <div className="size-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
               <Search className="size-5 text-white" />
-            </span>
+            </div>
             Analyse ATS
           </h1>
-          <p className="text-slate-600 mt-2">
-            Compare ton CV a un poste cible et conserve le resultat dans ton espace.
+          <p className="text-slate-600 mt-1">
+            Score instantané par règles logiques — adapté à ton profil.
           </p>
-        </div>
+        </motion.div>
 
         <AnimatePresence mode="wait">
           {!result ? (
-            <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid gap-6 lg:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="size-5 text-cyan-600" />
-                    Type de candidature
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-3">
-                  {ATS_MODES.map((item) => (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
+            >
+              {/* Sélecteur de mode */}
+              <div>
+                <p className="text-sm font-medium text-slate-700 mb-3">
+                  Quel type de dossier analyses-tu ?
+                </p>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  {ATS_MODES.map((m) => (
                     <button
-                      key={item.value}
-                      type="button"
-                      onClick={() => setMode(item.value)}
-                      className={`rounded-lg border p-4 text-left transition-colors ${
-                        item.value === mode ? "border-cyan-300 bg-cyan-50" : "border-slate-200 hover:bg-slate-50"
+                      key={m.value}
+                      onClick={() => setMode(m.value)}
+                      className={`flex flex-col gap-1.5 p-4 rounded-xl border-2 text-left transition-all ${
+                        mode === m.value
+                          ? "border-cyan-500 bg-cyan-50"
+                          : "border-slate-200 hover:border-cyan-200 hover:bg-slate-50"
                       }`}
                     >
-                      <div className="flex items-center gap-2 font-semibold">
-                        <item.icon className="size-4 text-cyan-600" />
-                        {item.label}
+                      <div className="flex items-center gap-2">
+                        <m.icon className="w-5 h-5 text-gray-500" />
+                        <span className={`text-sm font-semibold ${mode === m.value ? "text-cyan-700" : "text-slate-800"}`}>
+                          {m.label}
+                        </span>
+                        {mode === m.value && (
+                          <CheckCircle className="size-4 text-cyan-600 ml-auto" />
+                        )}
                       </div>
-                      <p className="text-sm text-slate-500 mt-1">{item.desc}</p>
+                      <p className="text-xs text-slate-500 leading-snug">{m.desc}</p>
                     </button>
                   ))}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="size-5 text-cyan-600" />
-                    Ton CV
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    rows={14}
-                    value={cvText}
-                    onChange={(event) => setCvText(event.target.value)}
-                    placeholder="Colle ici le texte integral de ton CV."
-                    className="resize-none"
-                  />
-                </CardContent>
-              </Card>
+              {/* Explication contextuelle */}
+              <div className="flex items-start gap-3 p-4 bg-cyan-50 border border-cyan-100 rounded-xl">
+                <Info className="size-4 text-cyan-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm text-cyan-800">
+                    {mode === "observation" && (
+                      <>Mode <strong>Stage d'observation</strong> — Le score évalue ton dossier sur la structure, la présentation et les motivations. Pas besoin de chiffres ni de LinkedIn. L'offre est optionnelle.</>
+                    )}
+                    {mode === "stage" && (
+                      <>Mode <strong>Stage / Alternance</strong> — Le score combine la structure de ton CV (60%) et sa compatibilité avec l'offre (40% si tu en colles une).</>
+                    )}
+                    {mode === "pro" && (
+                      <>Mode <strong>Emploi</strong> — Analyse exigeante : chiffres, LinkedIn, mots-clés de l'offre, impact de chaque mission. Colle l'offre d'emploi pour un score de compatibilité complet.</>
+                    )}
+                  </p>
+                </div>
+              </div>
 
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="size-5 text-cyan-600" />
-                    Offre cible
-                    <Badge variant="secondary">{selectedMode.value === "observation" ? "Optionnel" : "Recommande"}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Textarea
-                    rows={10}
-                    value={jobDescription}
-                    onChange={(event) => setJobDescription(event.target.value)}
-                    placeholder="Colle ici l'offre pour une comparaison plus precise."
-                    className="resize-none"
-                  />
-                  <Button onClick={startAnalysis} disabled={!canAnalyze} className="gap-2 bg-cyan-600 hover:bg-cyan-700">
-                    <Search className="size-4" />
-                    Lancer l'analyse
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* CV */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2">
+                        <FileText className="size-5 text-cyan-600" />
+                        {mode === "observation" ? "Ton dossier / CV" : "Ton CV"}
+                      </span>
+                      {cvWordCount > 0 && (
+                        <span className="text-xs font-normal text-slate-500">
+                          {cvWordCount} mots
+                        </span>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Textarea
+                      placeholder={
+                        mode === "observation"
+                          ? "Copie-colle le texte de ton dossier...\n\nExemple :\nThomas Dupont — 06 12 34 56 78 — thomas@email.com\nEleve en 3eme B au College Victor Hugo, Paris\n\nMOTIVATION\nJe souhaite découvrir le secteur de la communication...\n\nCENTRES D'INTERET\nBasket, création de contenus YouTube, lecture..."
+                          : mode === "stage"
+                          ? "Copie-colle le texte de ton CV...\n\nExemple :\nMarie Dupont — marie@email.com — 06 12 34 56 78\nEtudiante en BTS Communication, Paris\n\nFORMATION\nBTS Communication — IUT Paris-Nord (2023-2025)\n\nEXPERIENCE\nStage marketing — Agence XYZ (juin-aout 2024)..."
+                          : "Copie-colle le texte de ton CV...\n\nExemple :\nJean Dupont — jean@email.com — 06 12 34 56 78\nCharge de marketing digital\nlinkedin.com/in/jean-dupont\n\nEXPERIENCE\nCharge de communication — Agence XYZ (2022-2024)\n• Gestion de 4 réseaux sociaux, +35% d'engagement..."
+                      }
+                      value={cvText}
+                      onChange={(e) => setCvText(e.target.value)}
+                      rows={16}
+                      className="resize-none text-sm"
+                    />
+                    {cvWordCount > 0 && cvWordCount < { observation: 60, stage: 120, pro: 200 }[mode] && (
+                      <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                        <AlertTriangle className="size-3" />
+                        Dossier court pour ce mode. Ajoute plus de contenu pour un score fiable.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Offre */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="size-5 text-cyan-600" />
+                      Offre / Annonce cible
+                      <Badge variant="secondary" className="text-xs font-normal">
+                        {mode === "observation" ? "Optionnel" : "Recommandé"}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Textarea
+                      placeholder={
+                        mode === "observation"
+                          ? "Colle ici la description de l'entreprise ou la demande de stage...\n\nSans ce texte, on analyse uniquement la structure de ton dossier — ce qui est suffisant pour ce mode."
+                          : "Colle ici la description du poste ou de l'offre d'alternance...\n\nAvec l'offre, on calcule ta compatibilité en mots-clés et on t'indique ce qu'il manque."
+                      }
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      rows={16}
+                      className="resize-none text-sm"
+                    />
+                  </CardContent>
+                </Card>
+
+                <div className="lg:col-span-2">
+                  <Button
+                    onClick={handleAnalyze}
+                    disabled={analyzing || !canAnalyze}
+                    className="w-full gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 shadow-lg shadow-cyan-500/25"
+                    size="lg"
+                  >
+                    {analyzing ? (
+                      <>
+                        <span className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Analyse en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Search className="size-5" />
+                        <span className="flex items-center gap-2">
+                          <span>Analyser mon {mode === "observation" ? "dossier" : "CV"}</span>
+                          <selectedMode.icon className="w-5 h-5 text-current" />
+                          <span>{selectedMode.label}</span>
+                        </span>
+                      </>
+                    )}
                   </Button>
-                </CardContent>
-              </Card>
+                  {!canAnalyze && cvText.length > 0 && (
+                    <p className="text-xs text-slate-500 text-center mt-2">
+                      Ajoute plus de contenu pour lancer l'analyse.
+                    </p>
+                  )}
+                </div>
+              </div>
             </motion.div>
           ) : (
-            <motion.div key="result" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-[320px_1fr]">
-                <Card>
-                  <CardContent className="pt-8 text-center">
-                    <div className={`size-32 mx-auto rounded-full bg-gradient-to-br ${tone?.bg} p-1`}>
-                      <div className="size-full rounded-full bg-white flex flex-col items-center justify-center">
-                        <div className={`text-4xl font-bold ${tone?.text}`}>{result.score}</div>
-                        <div className="text-xs text-slate-400">/100</div>
-                      </div>
-                    </div>
-                    <p className="mt-4 text-sm text-slate-500">
-                      {result.hasJobDesc ? "Score structure + compatibilite" : "Score structure uniquement"}
-                    </p>
-                  </CardContent>
-                </Card>
+            <motion.div
+              key="result"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              {/* Badge mode */}
+              <div className="flex items-center gap-2">
+                <Badge className="bg-cyan-100 text-cyan-800 border-cyan-200 gap-1.5">
+                  {(() => {
+                    const currentMode = ATS_MODES.find((m) => m.value === result.mode);
+                    if (!currentMode) return null;
+                    const Icon = currentMode.icon;
+                    return (
+                      <>
+                        <Icon className="w-5 h-5 text-current" />
+                        {currentMode.label}
+                      </>
+                    );
+                  })()}
+                </Badge>
+                {!result.hasJobDesc && (
+                  <Badge variant="secondary" className="text-xs text-slate-500">
+                    Score structure uniquement — sans offre
+                  </Badge>
+                )}
+                {result.hasJobDesc && (
+                  <Badge variant="secondary" className="text-xs text-green-700 bg-green-50 border-green-200">
+                    Score avec compatibilité offre
+                  </Badge>
+                )}
+              </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Analyse par critere</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {result.sections.map((section) => (
-                      <div key={section.name}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium">{section.name}</span>
-                          <span className="text-sm text-slate-500">{section.score}%</span>
+              {/* Score + Sections */}
+              <div className="grid md:grid-cols-3 gap-6">
+                <Card className="md:col-span-1">
+                  <CardContent className="p-8 text-center">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+                      className="relative inline-flex items-center justify-center mb-4"
+                    >
+                      <div
+                        className={`size-32 rounded-full bg-gradient-to-br ${getScoreGradient(result.score)} p-1`}
+                      >
+                        <div className="size-full rounded-full bg-white flex flex-col items-center justify-center">
+                          <span className={`text-4xl font-bold ${getScoreColor(result.score)}`}>
+                            {result.score}
+                          </span>
+                          <span className="text-xs text-slate-400">/100</span>
                         </div>
-                        <Progress value={section.score} className="h-2 mb-1" />
-                        <p className="text-sm text-slate-500">{section.feedback}</p>
                       </div>
-                    ))}
+                    </motion.div>
+                    <h3 className="text-lg font-semibold">Score ATS</h3>
+                    <p className={`text-sm font-medium mt-0.5 ${getScoreColor(result.score)}`}>
+                      {getScoreLabel(result.score)}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                      {result.score >= 72
+                        ? result.mode === "observation"
+                          ? "Excellent dossier pour un stage d'observation !"
+                          : "Ton CV est bien optimisé pour ce type de candidature."
+                        : result.score >= 48
+                        ? "Quelques ajustements vont nettement améliorer ton score."
+                        : "Des points importants sont à corriger — consulte les recommandations."}
+                    </p>
+
+                    {/* Composition du score */}
+                    <div className="mt-4 p-3 bg-slate-50 rounded-xl text-left space-y-1.5">
+                      <p className="text-xs font-medium text-slate-600 mb-2">Composition du score :</p>
+                      <div className="flex justify-between text-xs text-slate-500">
+                        <span>Structure du dossier</span>
+                        <span className="font-medium">{result.hasJobDesc ? "40%" : "100%"}</span>
+                      </div>
+                      {result.hasJobDesc && (
+                        <div className="flex justify-between text-xs text-slate-500">
+                          <span>Compatibilité offre</span>
+                          <span className="font-medium">60%</span>
+                        </div>
+                      )}
+                      {!result.hasJobDesc && result.mode !== "observation" && (
+                        <p className="text-xs text-amber-600 mt-1 pt-1 border-t border-slate-200">
+                          Colle une offre pour activer l'analyse de compatibilité.
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="md:col-span-2">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="size-5 text-cyan-600" />
+                      Analyse par critère
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {result.sections.map((section, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.07 }}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(section.status)}
+                              <span className="text-sm font-medium">{section.name}</span>
+                            </div>
+                            <span className={`text-sm font-bold ${getScoreColor(section.score)}`}>
+                              {section.score}%
+                            </span>
+                          </div>
+                          <Progress value={section.score} className="h-1.5 mb-1" />
+                          <p className="text-xs text-slate-500">{section.feedback}</p>
+                        </motion.div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
+              
+              {result.topJobKeywords.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <CheckCircle2 className="size-5 text-green-600" />
-                      Mots-cles presents
+                      <BarChart2 className="size-5 text-cyan-600" />
+                      Mots-clés de l'offre ({result.topJobKeywords.length})
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="flex flex-wrap gap-2">
-                    {result.matchedKeywords.length ? (
-                      result.matchedKeywords.map((word) => (
-                        <Badge key={word} className="bg-green-50 text-green-700 border border-green-200">
-                          {word}
-                        </Badge>
-                      ))
-                    ) : (
-                      <p className="text-sm text-slate-500">Aucun mot-cle commun detecte pour l'instant.</p>
-                    )}
+                  <CardContent>
+                    <p className="text-xs text-slate-500 mb-3">
+                      Vert = présent dans ton CV · Rouge = absent
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {result.topJobKeywords.map((kw, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.03 }}
+                        >
+                          <Badge
+                            variant="secondary"
+                            className={
+                              kw.found
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : "bg-red-50 text-red-700 border-red-200"
+                            }
+                          >
+                            {kw.found ? (
+                              <CheckCircle className="size-3 mr-1" />
+                            ) : (
+                              <XCircle className="size-3 mr-1" />
+                            )}
+                            {kw.word}
+                            {kw.freq > 1 && (
+                              <span className="ml-1 opacity-60 text-[10px]">×{kw.freq}</span>
+                            )}
+                          </Badge>
+                        </motion.div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
+              )}
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <XCircle className="size-5 text-red-600" />
-                      Mots-cles a integrer
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-wrap gap-2">
-                    {result.missingKeywords.length ? (
-                      result.missingKeywords.map((word) => (
-                        <Badge key={word} className="bg-red-50 text-red-700 border border-red-200">
-                          {word}
-                        </Badge>
-                      ))
-                    ) : (
-                      <p className="text-sm text-slate-500">Rien de bloquant detecte ici.</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+             
+              {(result.matchedKeywords.length > 0 || result.missingKeywords.length > 0) && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {result.matchedKeywords.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <CheckCircle className="size-5 text-green-600" />
+                          Mots-clés présents ({result.matchedKeywords.length})
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-2">
+                          {result.matchedKeywords.map((kw, i) => (
+                            <Badge
+                              key={i}
+                              variant="secondary"
+                              className="bg-green-50 text-green-700 border-green-200"
+                            >
+                              <CheckCircle className="size-3 mr-1" />
+                              {kw}
+                            </Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
-              <Card>
+                  {result.missingKeywords.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <XCircle className="size-5 text-red-600" />
+                          Mots-clés à intégrer ({result.missingKeywords.length})
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-2">
+                          {result.missingKeywords.map((kw, i) => (
+                            <Badge
+                              key={i}
+                              variant="secondary"
+                              className="bg-red-50 text-red-700 border-red-200"
+                            >
+                              <XCircle className="size-3 mr-1" />
+                              {kw}
+                            </Badge>
+                          ))}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-3">
+                          Si tu possèdes ces compétences, intégre-les naturellement dans tes descriptions.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              
+              <Card className="bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-100">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <BarChart2 className="size-5 text-cyan-600" />
+                    <Zap className="size-5 text-cyan-600" />
                     Recommandations Cadova
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  {result.suggestions.map((suggestion) => (
-                    <div key={suggestion} className="flex items-start gap-2 rounded-lg border border-slate-200 p-3">
-                      <ArrowRight className="size-4 text-cyan-600 mt-0.5" />
-                      <p className="text-sm text-slate-700">{suggestion}</p>
-                    </div>
-                  ))}
+                <CardContent>
+                  <div className="space-y-3">
+                    {result.suggestions.map((suggestion, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 + i * 0.1 }}
+                        className="flex items-start gap-3 p-3 bg-white/80 rounded-lg border border-cyan-100"
+                      >
+                        <ArrowRight className="size-4 text-cyan-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-slate-700">{suggestion}</p>
+                      </motion.div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
 
-              {result.topJobKeywords.length ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Mots-cles dominants dans l'offre</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-wrap gap-2">
-                    {result.topJobKeywords.map((item) => (
-                      <Badge
-                        key={item.word}
-                        className={
-                          item.found
-                            ? "bg-green-50 text-green-700 border border-green-200"
-                            : "bg-amber-50 text-amber-700 border border-amber-200"
-                        }
-                      >
-                        {item.word}
-                      </Badge>
-                    ))}
-                  </CardContent>
-                </Card>
-              ) : null}
-
-              <div className="flex flex-wrap gap-3">
-                <Button variant="outline" onClick={() => setResult(null)}>
+             
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button variant="outline" onClick={() => setResult(null)} className="gap-2">
+                  <Search className="size-4" />
                   Nouvelle analyse
                 </Button>
                 <Button
@@ -301,8 +522,7 @@ export function ATSAnalysis() {
                   }}
                   className="gap-2"
                 >
-                  <AlertTriangle className="size-4" />
-                  Reinitialiser
+                  Tout effacer
                 </Button>
               </div>
             </motion.div>

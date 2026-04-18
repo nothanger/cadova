@@ -1,3 +1,4 @@
+
 export function CadovaIcon({ size = 512 }: { size?: number }) {
   return (
     <svg
@@ -7,19 +8,27 @@ export function CadovaIcon({ size = 512 }: { size?: number }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-<rect width="512" height="512" rx="115" fill="url(#bgGradient)" />
-<g transform="translate(100, 80)">
-<path
+      
+      <rect width="512" height="512" rx="115" fill="url(#bgGradient)" />
+
+     
+      <g transform="translate(100, 80)">
+        
+        <path
           d="M 160 230 C 100 230 50 180 50 120 C 50 60 100 10 160 10 C 180 10 200 20 215 35"
           fill="url(#brainGradient1)"
           opacity="0.95"
         />
-<path
+
+        
+        <path
           d="M 160 230 C 220 230 270 180 270 120 C 270 60 220 10 160 10 C 140 10 120 20 105 35"
           fill="url(#brainGradient2)"
           opacity="0.95"
         />
-<path
+
+        
+        <path
           d="M 110 80 Q 120 70 130 80 Q 140 90 150 80"
           stroke="rgba(255,255,255,0.3)"
           strokeWidth="4"
@@ -47,7 +56,9 @@ export function CadovaIcon({ size = 512 }: { size?: number }) {
           strokeLinecap="round"
           fill="none"
         />
-<ellipse
+
+        
+        <ellipse
           cx="160"
           cy="100"
           rx="40"
@@ -56,10 +67,12 @@ export function CadovaIcon({ size = 512 }: { size?: number }) {
           opacity="0.4"
         />
       </g>
-<text
+
+      
+      <text
         x="256"
         y="440"
-        fontFamily="Sora, system-ui, sans-serif"
+        fontFamily="Syne, sans-serif"
         fontSize="140"
         fontWeight="700"
         fill="url(#textGradient)"
@@ -69,29 +82,38 @@ export function CadovaIcon({ size = 512 }: { size?: number }) {
       </text>
 
       <defs>
-<linearGradient id="bgGradient" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+        
+        <linearGradient id="bgGradient" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#2B1430" />
           <stop offset="50%" stopColor="#4E1D58" />
           <stop offset="100%" stopColor="#34163A" />
         </linearGradient>
-<linearGradient id="brainGradient1" x1="50" y1="10" x2="160" y2="230" gradientUnits="userSpaceOnUse">
+
+        
+        <linearGradient id="brainGradient1" x1="50" y1="10" x2="160" y2="230" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#B84DCE" />
           <stop offset="30%" stopColor="#AD49C2" />
           <stop offset="60%" stopColor="#9540A7" />
           <stop offset="100%" stopColor="#843E92" />
         </linearGradient>
-<linearGradient id="brainGradient2" x1="270" y1="10" x2="160" y2="230" gradientUnits="userSpaceOnUse">
+
+        
+        <linearGradient id="brainGradient2" x1="270" y1="10" x2="160" y2="230" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#B84DCE" />
           <stop offset="30%" stopColor="#A044B3" />
           <stop offset="60%" stopColor="#8C3C9D" />
           <stop offset="100%" stopColor="#672374" />
         </linearGradient>
-<radialGradient id="highlightGradient" cx="0.5" cy="0.3">
+
+        
+        <radialGradient id="highlightGradient" cx="0.5" cy="0.3">
           <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.6" />
           <stop offset="70%" stopColor="#FFFFFF" stopOpacity="0.2" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </radialGradient>
-<linearGradient id="textGradient" x1="0" y1="380" x2="512" y2="440" gradientUnits="userSpaceOnUse">
+
+        
+        <linearGradient id="textGradient" x1="0" y1="380" x2="512" y2="440" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#B74DCD" />
           <stop offset="50%" stopColor="#9540A7" />
           <stop offset="100%" stopColor="#B84DCE" />
