@@ -43,6 +43,7 @@ export function HealthCheck() {
     ];
 
     setTests(testList);
+
     try {
       const start = Date.now();
       
@@ -74,6 +75,8 @@ export function HealthCheck() {
     }
 
     await new Promise((resolve) => setTimeout(resolve, 300));
+
+    
     try {
       const start = Date.now();
       const response = await fetch(`${API_URL}/health`);
@@ -103,6 +106,8 @@ export function HealthCheck() {
     }
 
     await new Promise((resolve) => setTimeout(resolve, 300));
+
+   
     try {
       const start = Date.now();
       const { data, error } = await supabase.auth.getSession();
@@ -134,6 +139,8 @@ export function HealthCheck() {
     }
 
     await new Promise((resolve) => setTimeout(resolve, 300));
+
+    
     try {
       const start = Date.now();
       const { data, error } = await supabase.auth.getSession();
@@ -166,6 +173,7 @@ export function HealthCheck() {
     }
 
     await new Promise((resolve) => setTimeout(resolve, 300));
+
     try {
       const start = Date.now();
       const { data: sessionData } = await supabase.auth.getSession();
@@ -211,6 +219,8 @@ export function HealthCheck() {
     }
 
     await new Promise((resolve) => setTimeout(resolve, 300));
+
+    
     try {
       const start = Date.now();
       const response = await fetch(`${API_URL}/health`);
@@ -284,7 +294,8 @@ export function HealthCheck() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
-<div className="text-center space-y-2">
+       
+        <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-3">
             <Zap className="h-10 w-10 text-indigo-600" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
@@ -295,7 +306,9 @@ export function HealthCheck() {
             Vérification de l'état de santé de l'infrastructure Cadova
           </p>
         </div>
-{overallStatus === "completed" && (
+
+       
+        {overallStatus === "completed" && (
           <Alert className={errorCount > 0 ? "border-red-600 bg-red-50" : "border-green-600 bg-green-50"}>
             <AlertDescription className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -322,7 +335,9 @@ export function HealthCheck() {
             </AlertDescription>
           </Alert>
         )}
-<Card>
+
+       
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Server className="h-5 w-5" />
@@ -343,7 +358,9 @@ export function HealthCheck() {
             </div>
           </CardContent>
         </Card>
-<div className="space-y-4">
+
+        
+        <div className="space-y-4">
           {tests.map((test, index) => (
             <Card key={index} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
@@ -376,7 +393,9 @@ export function HealthCheck() {
             </Card>
           ))}
         </div>
-<div className="flex gap-4 justify-center">
+
+        {/* Actions */}
+        <div className="flex gap-4 justify-center">
           <Button
             onClick={runTests}
             disabled={isRunning}
@@ -396,7 +415,9 @@ export function HealthCheck() {
             )}
           </Button>
         </div>
-<Card>
+
+       
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="h-5 w-5" />
@@ -430,7 +451,9 @@ export function HealthCheck() {
             </div>
           </CardContent>
         </Card>
-<Card className="border-indigo-200 bg-indigo-50/50">
+
+        
+        <Card className="border-indigo-200 bg-indigo-50/50">
           <CardHeader>
             <CardTitle className="text-indigo-900 flex items-center gap-2"><Lightbulb className="w-5 h-5 text-current" />Aide au diagnostic</CardTitle>
           </CardHeader>

@@ -19,9 +19,8 @@ import {
   Mail,
 } from "lucide-react";
 import L from "leaflet";
-import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
-import { saveApplication } from "@/lib/localStorage";
+
+
 
 type CompanyType = "stage" | "emploi" | "both";
 type Sector =
@@ -54,6 +53,8 @@ interface Company {
   tags: string[];
 }
 
+
+
 const SECTORS_LABELS: Record<Sector, string> = {
   tech: "Tech & IT",
   marketing: "Marketing",
@@ -77,6 +78,7 @@ const SECTOR_COLORS: Record<Sector, string> = {
 };
 
 const MOCK_COMPANIES: Company[] = [
+ 
   {
     id: "pam1",
     name: "Saint-Gobain PAM",
@@ -320,6 +322,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "contact@notaire-pam.fr",
     tags: ["Droit", "Notariat", "Secrétariat juridique", "Stage"],
   },
+  
   {
     id: "nan1",
     name: "Université de Lorraine",
@@ -506,6 +509,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages@loria.fr",
     tags: ["IA", "Recherche", "Machine Learning", "Robotique", "Stage PFE"],
   },
+  // ── METZ ───────────────────────────────────────────────────────
   {
     id: "mtz1",
     name: "ArcelorMittal Metz",
@@ -601,6 +605,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "recrutement@cm-cee.fr",
     tags: ["Banque", "Finance", "Relation client", "Alternance"],
   },
+
   {
     id: "thi1",
     name: "Paul Wurth Thionville",
@@ -656,6 +661,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "jobs-thionville@amazon.com",
     tags: ["Logistique", "Management", "CDD", "CDI", "Opérations"],
   },
+
   {
     id: "ver1",
     name: "Bragard Hôtellerie Verdun",
@@ -675,6 +681,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages@bragard.com",
     tags: ["Commerce", "Marketing", "Logistique", "Alternance"],
   },
+  
   {
     id: "str1",
     name: "Alsace Tech Hub",
@@ -731,6 +738,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages-sbg@biomerieux.fr",
     tags: ["Biotechnologie", "R&D", "Médical", "Alternance"],
   },
+  
   {
     id: "lil1",
     name: "Decathlon Campus",
@@ -787,6 +795,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "recrutement-digital@auchan.fr",
     tags: ["E-commerce", "Data", "UX", "Product", "CDI"],
   },
+
   {
     id: "par1",
     name: "TechVision France",
@@ -916,6 +925,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages@agencecreativ.fr",
     tags: ["Community Management", "SEO", "Design", "Stage 3e"],
   },
+ 
   {
     id: "lyo1",
     name: "Ubisoft Villeurbanne",
@@ -973,6 +983,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "recrutement@gl-events.com",
     tags: ["Événementiel", "Communication", "Marketing", "Stage"],
   },
+
   {
     id: "tou1",
     name: "Airbus Defence & Space",
@@ -1011,6 +1022,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages@cnes.fr",
     tags: ["Spatial", "Informatique embarquée", "Ingénierie", "Stage PFE"],
   },
+
   {
     id: "brd1",
     name: "Dassault Aviation Bordeaux",
@@ -1030,6 +1042,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages-bx@dassault-aviation.com",
     tags: ["Aéronautique", "Avionique", "Ingénierie", "Stage PFE"],
   },
+  
   {
     id: "nat1",
     name: "Airbus Nantes",
@@ -1068,6 +1081,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "contact@atlanpole.fr",
     tags: ["Tech", "Biotech", "Startup", "Innovation", "CDI"],
   },
+
   {
     id: "mar1",
     name: "CMA CGM Marseille",
@@ -1106,6 +1120,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages-helicopters@airbus.com",
     tags: ["Aéronautique", "Ingénierie", "Test", "Stage PFE", "Alternance"],
   },
+
   {
     id: "gre1",
     name: "STMicroelectronics Crolles",
@@ -1144,6 +1159,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages-grenoble@se.com",
     tags: ["Énergie", "IoT", "Électrotechnique", "Développement", "Alternance"],
   },
+  
   {
     id: "ren1",
     name: "Orange Labs Rennes",
@@ -1163,6 +1179,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "recrutement-rennes@orange.com",
     tags: ["Réseaux", "IA", "Cybersécurité", "R&D", "Alternance"],
   },
+ 
   {
     id: "mtp1",
     name: "Ubisoft Montpellier",
@@ -1201,6 +1218,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages-mtp@sanofi.com",
     tags: ["Pharmaceutique", "Biologie", "Marketing médical", "Alternance"],
   },
+  
   {
     id: "nic1",
     name: "Amadeus Sophia Antipolis",
@@ -1220,6 +1238,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "careers@amadeus.com",
     tags: ["Travel Tech", "Développement", "Data", "CDI", "Stage PFE"],
   },
+ 
   {
     id: "clf1",
     name: "Michelin Clermont-Ferrand",
@@ -1239,6 +1258,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages@michelin.com",
     tags: ["Pneumatique", "Ingénierie", "Chimie", "Data", "Alternance"],
   },
+ 
   {
     id: "dij1",
     name: "Urgo Group Dijon",
@@ -1258,6 +1278,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages@urgo-group.com",
     tags: ["Pharmaceutique", "Marketing", "R&D", "Alternance"],
   },
+  
   {
     id: "rei1",
     name: "LVMH Champagne Pommery",
@@ -1276,6 +1297,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages@pommery.com",
     tags: ["Luxe", "Œnologie", "Marketing", "Événementiel", "Stage"],
   },
+ 
   {
     id: "rou1",
     name: "Renault Cléon Normandie",
@@ -1295,6 +1317,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages-cleon@renault.com",
     tags: ["Automobile", "Mécanique", "Production", "Alternance", "Stage PFE"],
   },
+  
   {
     id: "cae1",
     name: "Philips DA Caen",
@@ -1314,6 +1337,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages-caen@philips.com",
     tags: ["Électronique", "Logiciel embarqué", "R&D", "Stage PFE"],
   },
+
   {
     id: "epi1",
     name: "Images & Art Épinal",
@@ -1332,6 +1356,7 @@ const MOCK_COMPANIES: Company[] = [
     email: "stages@imagesdepinal.fr",
     tags: ["Design", "Communication culturelle", "Impression", "Stage"],
   },
+ 
   {
     id: "2",
     name: "AgenceCreativ",
@@ -1509,8 +1534,10 @@ const MOCK_COMPANIES: Company[] = [
   },
 ];
 
+
+
 function getMarkerColor(type: CompanyType) {
-  return type === "stage" ? "#6366f1" : type === "emploi" ? "#10b981" : "#6b55f7";
+  return type === "stage" ? "#6366f1" : type === "emploi" ? "#10b981" : "#8b5cf6";
 }
 
 function createIcon(type: CompanyType) {
@@ -1529,6 +1556,8 @@ function createIcon(type: CompanyType) {
   });
 }
 
+
+
 function LeafletMap({
   center,
   zoom,
@@ -1546,6 +1575,8 @@ function LeafletMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
+
+  
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -1567,12 +1598,17 @@ function LeafletMap({
       map.remove();
       mapRef.current = null;
     };
+    
   }, []);
+
+  
   useEffect(() => {
     if (mapRef.current) {
       mapRef.current.setView(center, zoom, { animate: true });
     }
   }, [center, zoom]);
+
+  
   useEffect(() => {
     if (!markersRef.current) return;
     markersRef.current.clearLayers();
@@ -1603,6 +1639,8 @@ function LeafletMap({
       marker.addTo(markersRef.current!);
     });
   }, [companies, onSelectCompany]);
+
+ 
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -1632,6 +1670,8 @@ function LeafletMap({
     />
   );
 }
+
+
 
 function CompanyCard({
   company,
@@ -1705,14 +1745,14 @@ function CompanyCard({
   );
 }
 
+
+
 function CompanyDetail({
   company,
   onClose,
-  onTrack,
 }: {
   company: Company;
   onClose: () => void;
-  onTrack: (company: Company) => void;
 }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
@@ -1824,12 +1864,9 @@ function CompanyDetail({
             <ExternalLink className="size-4" />
             Voir le site
           </a>
-          <button
-            onClick={() => onTrack(company)}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm hover:bg-slate-50 transition-colors"
-          >
+          <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm hover:bg-slate-50 transition-colors">
             <Mail className="size-4" />
-            Suivre
+            Postuler
           </button>
         </div>
       </div>
@@ -1837,9 +1874,10 @@ function CompanyDetail({
   );
 }
 
+
+
 export function CompanyFinder() {
   useSEO({ title: "Carte entreprises TrackIA — Cadova", noindex: true });
-  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "stage" | "emploi">(
     "all"
@@ -1904,26 +1942,6 @@ export function CompanyFinder() {
     setMapZoom(14);
   }, []);
 
-  const handleTrackCompany = useCallback(
-    (company: Company) => {
-      if (!user?.id) {
-        toast.error("Connecte-toi pour enregistrer cette candidature.");
-        return;
-      }
-
-      saveApplication({
-        userId: user.id,
-        company: company.name,
-        position: company.type === "stage" ? "Stage" : company.type === "emploi" ? "Emploi" : "Stage / Emploi",
-        status: "sent",
-        appliedAt: new Date().toISOString(),
-        notes: `Ajoute depuis la carte entreprises (${company.city})`,
-      });
-      toast.success("Entreprise ajoutee a ton suivi.");
-    },
-    [user?.id]
-  );
-
   const stageCount = MOCK_COMPANIES.filter(
     (c) => c.type === "stage" || c.type === "both"
   ).length;
@@ -1934,7 +1952,8 @@ export function CompanyFinder() {
   return (
     <AppLayout>
       <div className="max-w-7xl mx-auto space-y-6">
-<div>
+        {/* Header */}
+        <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="size-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center">
               <MapPin className="size-5 text-white" />
@@ -1949,7 +1968,9 @@ export function CompanyFinder() {
             </div>
           </div>
         </div>
-<div className="grid grid-cols-3 gap-3">
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3">
             <div className="size-10 rounded-lg bg-indigo-50 flex items-center justify-center">
               <Building2 className="size-5 text-indigo-600" />
@@ -1980,7 +2001,9 @@ export function CompanyFinder() {
             </div>
           </div>
         </div>
-<div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+
+        
+        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
@@ -2089,11 +2112,14 @@ export function CompanyFinder() {
             </div>
           )}
         </div>
-<div
+
+        
+        <div
           className="grid grid-cols-1 lg:grid-cols-5 gap-4"
           style={{ minHeight: 520 }}
         >
-<div className="lg:col-span-3 rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative">
+          
+          <div className="lg:col-span-3 rounded-2xl overflow-hidden border border-slate-200 shadow-sm relative">
             <LeafletMap
               center={mapCenter}
               zoom={mapZoom}
@@ -2101,7 +2127,9 @@ export function CompanyFinder() {
               userLocation={userLocation}
               onSelectCompany={handleSelectCompany}
             />
-<div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur rounded-lg px-3 py-2 shadow-md z-[1000] flex items-center gap-3">
+
+           
+            <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur rounded-lg px-3 py-2 shadow-md z-[1000] flex items-center gap-3">
               <div className="flex items-center gap-1.5">
                 <div className="size-3 rounded-full bg-indigo-500" />
                 <span className="text-[10px] text-slate-600">Stages</span>
@@ -2116,13 +2144,14 @@ export function CompanyFinder() {
               </div>
             </div>
           </div>
-<div className="lg:col-span-2 space-y-3 max-h-[600px] overflow-y-auto pr-1">
+
+          
+          <div className="lg:col-span-2 space-y-3 max-h-[600px] overflow-y-auto pr-1">
             {selectedCompany ? (
               <>
                 <CompanyDetail
                   company={selectedCompany}
                   onClose={() => setSelectedCompany(null)}
-                  onTrack={handleTrackCompany}
                 />
                 <button
                   onClick={() => setSelectedCompany(null)}
