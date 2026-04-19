@@ -91,7 +91,7 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
       password,
       user_metadata: { name },
     
-      email_confirm: false,
+      email_confirm: true,
     });
 
     if (error) {
@@ -215,90 +215,6 @@ app.put("/make-server-0a5eb56b/user/profile", async (c) => {
     return c.json({ success: true, profile: updatedProfile });
   } catch (error: any) {
     console.error("❌ Error updating user profile:", error);
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-app.delete("/make-server-0a5eb56b/user/delete", async (c) => {
-  try {
-    const accessToken = c.req.header("Authorization")?.split(" ")[1];
-    if (!accessToken) return c.json({ error: "Unauthorized - No token provided" }, 401);
-
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
-    if (error || !user) return c.json({ error: "Unauthorized - Invalid token" }, 401);
-
-    const prefixes = [
-      `cv:${user.id}:`,
-      `cover_letter:${user.id}:`,
-      `ats_analysis:${user.id}:`,
-      `interview:${user.id}:`,
-      `application:${user.id}:`,
-    ];
-
-    for (const prefix of prefixes) {
-      const items = await kv.getByPrefix(prefix);
-      for (const item of items || []) {
-        if (item?.id) await kv.del(`${prefix}${item.id}`);
-      }
-    }
-
-    await kv.del(`user:${user.id}`);
-    const deleteResult = await supabaseAdmin.auth.admin.deleteUser(user.id);
-    if (deleteResult.error) return c.json({ error: deleteResult.error.message }, 500);
-
-    return c.json({ success: true });
-  } catch (error: any) {
-    console.error("Account delete error:", error);
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-app.post("/make-server-0a5eb56b/admin/bootstrap", async (c) => {
-  try {
-    const bootstrapToken = Deno.env.get("ADMIN_BOOTSTRAP_TOKEN") ?? "";
-    const providedToken = c.req.header("x-admin-bootstrap-token") ?? "";
-    if (!bootstrapToken || providedToken !== bootstrapToken) {
-      return c.json({ error: "Unauthorized" }, 401);
-    }
-
-    const email = "ethan.noto@icloud.com";
-    const { data: existing } = await supabaseAdmin.auth.admin.listUsers();
-    const existingUser = existing.users.find((user) => user.email?.toLowerCase() === email);
-
-    const user = existingUser
-      ? existingUser
-      : (await supabaseAdmin.auth.admin.createUser({
-          email,
-          email_confirm: false,
-          user_metadata: { name: "Ethan", role: "admin" },
-        })).data.user;
-
-    if (!user) return c.json({ error: "Unable to bootstrap admin" }, 500);
-
-    await supabaseAdmin.auth.admin.updateUserById(user.id, {
-      app_metadata: { ...(user.app_metadata || {}), role: "admin" },
-      user_metadata: { ...(user.user_metadata || {}), name: user.user_metadata?.name || "Ethan", role: "admin" },
-    });
-
-    const { data: linkData, error } = await supabaseAdmin.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-    });
-    if (error) return c.json({ error: error.message }, 500);
-
-    await kv.set(`user:${user.id}`, {
-      id: user.id,
-      email,
-      name: user.user_metadata?.name || "Ethan",
-      role: "admin",
-      createdAt: user.created_at || new Date().toISOString(),
-      subscription: "premium",
-      credits: { cv: 999, coverLetter: 999, atsAnalysis: 999, interview: 999 },
-    });
-
-    return c.json({ success: true, email, actionLink: linkData.properties?.action_link });
-  } catch (error: any) {
-    console.error("Admin bootstrap error:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -428,6 +344,10 @@ app.post("/make-server-0a5eb56b/reussia/cover-letters", async (c) => {
     return c.json({ error: error.message }, 500);
   }
 });
+
+
+
+// Analyze CV for ATS
 app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -480,22 +400,6 @@ app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
     return c.json({ success: true, analysis });
   } catch (error: any) {
     console.error("❌ Error running ATS analysis:", error);
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-app.get("/make-server-0a5eb56b/reussia/ats-analyses", async (c) => {
-  try {
-    const accessToken = c.req.header("Authorization")?.split(" ")[1];
-    if (!accessToken) return c.json({ error: "Unauthorized - No token provided" }, 401);
-
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
-    if (error || !user) return c.json({ error: "Unauthorized - Invalid token" }, 401);
-
-    const analyses = await kv.getByPrefix(`ats_analysis:${user.id}:`);
-    return c.json({ analyses: analyses || [] });
-  } catch (error: any) {
-    console.error("Error fetching ATS analyses:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -598,46 +502,6 @@ app.post("/make-server-0a5eb56b/oralia/analyze-answer", async (c) => {
     return c.json({ success: true, feedback });
   } catch (error: any) {
     console.error("❌ Error analyzing interview answer:", error);
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-app.get("/make-server-0a5eb56b/oralia/sessions", async (c) => {
-  try {
-    const accessToken = c.req.header("Authorization")?.split(" ")[1];
-    if (!accessToken) return c.json({ error: "Unauthorized - No token provided" }, 401);
-
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
-    if (error || !user) return c.json({ error: "Unauthorized - Invalid token" }, 401);
-
-    const sessions = await kv.getByPrefix(`interview:${user.id}:`);
-    return c.json({ sessions: sessions || [] });
-  } catch (error: any) {
-    console.error("Error fetching interview sessions:", error);
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-app.post("/make-server-0a5eb56b/oralia/sessions", async (c) => {
-  try {
-    const accessToken = c.req.header("Authorization")?.split(" ")[1];
-    if (!accessToken) return c.json({ error: "Unauthorized - No token provided" }, 401);
-
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
-    if (error || !user) return c.json({ error: "Unauthorized - Invalid token" }, 401);
-
-    const sessionData = await c.req.json();
-    const sessionId = crypto.randomUUID();
-    const session = {
-      id: sessionId,
-      userId: user.id,
-      ...sessionData,
-      completedAt: new Date().toISOString(),
-    };
-    await kv.set(`interview:${user.id}:${sessionId}`, session);
-    return c.json({ success: true, session });
-  } catch (error: any) {
-    console.error("Error saving interview session:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -856,6 +720,8 @@ app.post("/make-server-0a5eb56b/skillia/skill-suggestions", async (c) => {
     const { jobTitle } = await c.req.json();
 
     console.log(`💡 Generating skill suggestions for user: ${user.id}, job: ${jobTitle}`);
+
+    // Mock suggestions (replace with real AI API call)
     const suggestions = {
       essentialSkills: [
         "JavaScript",
@@ -1093,6 +959,8 @@ Analyse ce CV par rapport à cette offre et donne un score ATS détaillé.`;
       console.log("Raw AI response:", aiResponse);
       return c.json({ error: "L'IA a renvoyé un format invalide. Réessayez." }, 500);
     }
+
+    // Save analysis
     const analysisId = crypto.randomUUID();
     await kv.set(`ats_analysis:${user.id}:${analysisId}`, {
       id: analysisId,

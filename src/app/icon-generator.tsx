@@ -1,6 +1,8 @@
 import { Download, Lightbulb, MonitorSmartphone, Palette, Sparkles } from "lucide-react";
 import { useRef } from "react";
 import { CadovaIcon } from "./components/CadovaIcon";
+
+
 export default function GenerateIcons() {
   const iconRefs = useRef<{ [key: number]: SVGSVGElement | null }>({});
 
@@ -13,18 +15,25 @@ export default function GenerateIcons() {
   const downloadIcon = (size: number, filename: string) => {
     const svgElement = iconRefs.current[size];
     if (!svgElement) return;
+
+    // Créer un canvas pour convertir SVG en PNG
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
     const svgData = new XMLSerializer().serializeToString(svgElement);
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(svgBlob);
+
+    
     const img = new Image();
     img.onload = () => {
       ctx.drawImage(img, 0, 0);
       URL.revokeObjectURL(url);
+
+     
       canvas.toBlob((blob) => {
         if (!blob) return;
         const pngUrl = URL.createObjectURL(blob);
