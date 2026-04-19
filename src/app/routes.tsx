@@ -6,6 +6,10 @@ import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
+import { Modules } from "./pages/Modules";
+import { ModuleDetail } from "./pages/ModuleDetail";
+import { Pricing } from "./pages/Pricing";
+import { ModulesComparison } from "./pages/ModulesComparison";
 import { Dashboard } from "./pages/Dashboard";
 import { SettingsPage } from "./pages/Settings";
 import { CVGenerator } from "./pages/CVGenerator";
@@ -19,14 +23,23 @@ import { HealthCheck } from "./pages/HealthCheck";
 import { SystemInfo } from "./pages/SystemInfo";
 import GenerateIcons from "./icon-generator";
 import { AuthGuard } from "./components/AuthGuard";
+import { RouteErrorFallback } from "./components/RouteErrorFallback";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     Component: Root,
+    errorElement: <RouteErrorFallback />,
     children: [
      
       { index: true, Component: Landing },
+      { path: "modules", Component: Modules },
+      { path: "modules/comparaison", Component: ModulesComparison },
+      { path: "modules/:slug", Component: ModuleDetail },
+      { path: "pricing", Component: Pricing },
+      { path: "formules", Component: Pricing },
+      { path: "compare", Component: ModulesComparison },
+      { path: "comparer", Component: ModulesComparison },
       { path: "login", Component: Login },
       { path: "signup", Component: Signup },
       { path: "forgot-password", Component: ForgotPassword },
@@ -50,6 +63,7 @@ export const router = createBrowserRouter([
           { path: "skills", Component: Skills },
         ],
       },
+      { path: "*", Component: RouteErrorFallback },
     ],
   },
 ]);

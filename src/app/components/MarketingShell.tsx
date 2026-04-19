@@ -49,8 +49,11 @@ export function MarketingShell({
             <NavLink to="/modules" className={({ isActive }) => getNavClass(isActive)} onClick={closeMenu}>
               Modules
             </NavLink>
+            <NavLink to="/compare" className={({ isActive }) => getNavClass(isActive)} onClick={closeMenu}>
+              Comparer
+            </NavLink>
             <NavLink to="/pricing" className={({ isActive }) => getNavClass(isActive)} onClick={closeMenu}>
-              nos formules
+              Nos formules
             </NavLink>
             <NavLink to="/login" className={({ isActive }) => getNavClass(isActive)} onClick={closeMenu}>
               Connexion
