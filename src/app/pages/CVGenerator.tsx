@@ -477,8 +477,8 @@ export function CVGenerator() {
         </motion.div>
 
        
-        <div className="mb-6 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-[1fr_auto]">
-          <div>
+        <div className="mb-6 grid items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-[minmax(0,1fr)_180px]">
+          <div className="min-w-0">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Modele de CV</p>
             <div className="grid gap-2 sm:grid-cols-3">
               {CV_TEMPLATES.map((template) => (
@@ -495,21 +495,27 @@ export function CVGenerator() {
               ))}
             </div>
           </div>
-          <div className="min-w-[180px]">
+          <div className="w-full min-w-0">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Photo</p>
-            <label className="flex h-full min-h-[96px] cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 text-center text-xs font-semibold text-slate-500">
-              {photoDataUrl ? (
-                <img src={photoDataUrl} alt="Photo importee" className="h-24 w-24 rounded-2xl object-cover shadow-sm ring-1 ring-slate-200" />
-              ) : (
-                "Importer une photo"
+            <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-slate-50">
+              <label className="flex h-full w-full cursor-pointer items-center justify-center overflow-hidden px-3 text-center text-xs font-semibold text-slate-500">
+                {photoDataUrl ? (
+                  <img src={photoDataUrl} alt="Photo importee" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="max-w-full truncate">Importer une photo</span>
+                )}
+                <input className="hidden" type="file" accept="image/*" onChange={(event) => handlePhotoUpload(event.target.files?.[0] ?? null)} />
+              </label>
+              {photoDataUrl && (
+                <button
+                  type="button"
+                  onClick={() => setPhotoDataUrl(null)}
+                  className="absolute right-2 top-2 z-10 rounded-full bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition-colors hover:bg-red-700"
+                >
+                  Retirer
+                </button>
               )}
-              <input className="hidden" type="file" accept="image/*" onChange={(event) => handlePhotoUpload(event.target.files?.[0] ?? null)} />
-            </label>
-            {photoDataUrl && (
-              <button onClick={() => setPhotoDataUrl(null)} className="mt-2 w-full rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
-                Retirer la photo
-              </button>
-            )}
+            </div>
             {templateId === "compact" && (
               <p className="mt-2 text-xs text-slate-400">Le modele Compact masque la photo pour garder plus d'espace.</p>
             )}
