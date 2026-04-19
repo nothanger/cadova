@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router";
+﻿import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router";
 import { useSEO } from "../hooks/useSEO";
 import {
   User, Bell, Shield, CreditCard, Check, Loader2, LogIn,
@@ -38,7 +38,7 @@ function ChangePasswordSection() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (newPw.length < 8) { setError("Minimum 8 caractères."); return; }
+    if (newPw.length < 8) { setError("Minimum 8 caractÃ¨res."); return; }
     if (newPw !== confirm) { setError("Les mots de passe ne correspondent pas."); return; }
     setLoading(true);
     const { error: err } = await updatePassword(current, newPw);
@@ -47,7 +47,7 @@ function ChangePasswordSection() {
       setError(err.message);
     } else {
       setSuccess(true);
-      toast.success("Mot de passe mis à jour !");
+      toast.success("Mot de passe mis Ã  jour !");
       setCurrent(""); setNewPw(""); setConfirm("");
       setTimeout(() => { setSuccess(false); setOpen(false); }, 2000);
     }
@@ -101,7 +101,7 @@ function ChangePasswordSection() {
               className="flex items-center gap-2 p-3 rounded-xl text-sm"
               style={{ background: "#ECFDF5", color: "#059669" }}
             >
-              <Check className="size-4" /> Mot de passe mis à jour avec succès !
+              <Check className="size-4" /> Mot de passe mis Ã  jour avec succÃ¨s !
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4 mt-3">
@@ -114,7 +114,7 @@ function ChangePasswordSection() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5" style={{ color: "#9CA3AF" }} />
                   <input
                     type={showCurrent ? "text" : "password"}
-                    placeholder="••••••••"
+                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                     value={current}
                     onChange={(e) => setCurrent(e.target.value)}
                     required
@@ -130,7 +130,7 @@ function ChangePasswordSection() {
                 </div>
                 <div className="flex justify-end mt-1">
                   <Link to="/forgot-password" className="text-xs hover:opacity-70 transition-opacity" style={{ color: "#5548F5" }}>
-                    Mot de passe oublié ?
+                    Mot de passe oubliÃ© ?
                   </Link>
                 </div>
               </div>
@@ -144,7 +144,7 @@ function ChangePasswordSection() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5" style={{ color: "#9CA3AF" }} />
                   <input
                     type={showNew ? "text" : "password"}
-                    placeholder="••••••••"
+                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                     value={newPw}
                     onChange={(e) => setNewPw(e.target.value)}
                     required
@@ -177,7 +177,7 @@ function ChangePasswordSection() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5" style={{ color: "#9CA3AF" }} />
                   <input
                     type={showConfirm ? "text" : "password"}
-                    placeholder="••••••••"
+                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
                     required
@@ -218,7 +218,7 @@ function ChangePasswordSection() {
                   style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
                 >
                   {loading ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-                  {loading ? "Mise à jour…" : "Confirmer"}
+                  {loading ? "Mise Ã  jourâ€¦" : "Confirmer"}
                 </button>
               </div>
             </form>
@@ -287,7 +287,7 @@ function TwoFactorSection() {
     if (err) {
       setError(err.message);
     } else {
-      toast.success("Authentification à 2 facteurs activée !");
+      toast.success("Authentification Ã  2 facteurs activÃ©e !");
       setCode("");
       setStep("active");
     }
@@ -301,7 +301,7 @@ function TwoFactorSection() {
     if (err) {
       setError(err.message);
     } else {
-      toast.success("2FA désactivée.");
+      toast.success("2FA dÃ©sactivÃ©e.");
       setStep("idle");
       setFactorId("");
     }
@@ -336,20 +336,20 @@ function TwoFactorSection() {
           </div>
           <div>
             <p className="text-sm font-semibold flex items-center gap-2" style={{ color: "#0C0B1A" }}>
-              Authentification à 2 facteurs
+              Authentification Ã  2 facteurs
               {step === "active" && (
                 <span
                   className="text-xs px-2 py-0.5 rounded-full font-semibold"
                   style={{ background: "rgba(34,197,94,0.1)", color: "#16A34A" }}
                 >
-                  Activée
+                  ActivÃ©e
                 </span>
               )}
             </p>
             <p className="text-xs" style={{ color: "#9CA3AF" }}>
               {step === "active"
-                ? "Ton compte est protégé par Google Authenticator / Authy"
-                : "Protège ton compte avec une app d'authentification (TOTP)"}
+                ? "Ton compte est protÃ©gÃ© par Google Authenticator / Authy"
+                : "ProtÃ¨ge ton compte avec une app d'authentification (TOTP)"}
             </p>
           </div>
         </div>
@@ -373,7 +373,7 @@ function TwoFactorSection() {
             className="text-xs font-semibold px-3.5 py-2 rounded-xl transition-all hover:opacity-80 disabled:opacity-50"
             style={{ background: "rgba(239,68,68,0.08)", color: "#EF4444" }}
           >
-            {disabling ? <Loader2 className="size-3.5 animate-spin" /> : "Désactiver"}
+            {disabling ? <Loader2 className="size-3.5 animate-spin" /> : "DÃ©sactiver"}
           </button>
         )}
       </div>
@@ -385,7 +385,7 @@ function TwoFactorSection() {
           style={{ borderTop: "1px solid rgba(85,72,245,0.06)" }}
         >
           <Loader2 className="size-4 animate-spin mt-4" style={{ color: "#5548F5" }} />
-          <p className="text-sm mt-4" style={{ color: "#6B6B8A" }}>Génération du QR code…</p>
+          <p className="text-sm mt-4" style={{ color: "#6B6B8A" }}>GÃ©nÃ©ration du QR codeâ€¦</p>
         </div>
       )}
 
@@ -414,7 +414,7 @@ function TwoFactorSection() {
                 )}
               </div>
               <p className="text-xs mt-2" style={{ color: "#9CA3AF" }}>
-                Compatible : Google Authenticator, Authy, 1Password…
+                Compatible : Google Authenticator, Authy, 1Passwordâ€¦
               </p>
             </div>
 
@@ -447,7 +447,7 @@ function TwoFactorSection() {
               {}
               <form onSubmit={handleVerify} className="mt-4 space-y-3">
                 <p className="text-xs font-semibold" style={{ color: "#6B6B8A" }}>
-                  2. Entre le code généré par l'app
+                  2. Entre le code gÃ©nÃ©rÃ© par l'app
                 </p>
                 <input
                   type="text"
@@ -485,7 +485,7 @@ function TwoFactorSection() {
                     style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
                   >
                     {verifying ? <Loader2 className="size-3.5 animate-spin" /> : <ShieldCheck className="size-3.5" />}
-                    {verifying ? "Vérification…" : "Activer la 2FA"}
+                    {verifying ? "VÃ©rificationâ€¦" : "Activer la 2FA"}
                   </button>
                 </div>
               </form>
@@ -510,16 +510,13 @@ function TwoFactorSection() {
 
 
 export function SettingsPage() {
-  useSEO({ title: "Paramètres — Cadova", noindex: true });
-  const { user, loading, updateProfile, deleteAccount } = useAuth();
-  const navigate = useNavigate();
+  useSEO({ title: "ParamÃ¨tres â€” Cadova", noindex: true });
+  const { user, loading, updateProfile } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState("");
-  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -532,7 +529,7 @@ export function SettingsPage() {
     e.preventDefault();
     setError(null);
     setSaved(false);
-    if (!name.trim()) { setError("Le nom ne peut pas être vide"); return; }
+    if (!name.trim()) { setError("Le nom ne peut pas Ãªtre vide"); return; }
     setSaving(true);
     try {
       const updates: { name?: string } = {};
@@ -555,23 +552,6 @@ export function SettingsPage() {
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleDeleteAccount = async () => {
-    if (deleteConfirm !== "SUPPRIMER") {
-      toast.error("Tape SUPPRIMER pour confirmer.");
-      return;
-    }
-    setDeleting(true);
-    const { error: deleteError } = await deleteAccount();
-    setDeleting(false);
-    if (deleteError) {
-      toast.error(deleteError.message);
-      return;
-    }
-    setDeleteConfirm("");
-    toast.success("Compte supprime.");
-    navigate("/login", { replace: true });
   };
 
   const card = "rounded-3xl p-6 space-y-4 shadow-sm";
@@ -602,7 +582,7 @@ export function SettingsPage() {
             Connexion requise
           </h2>
           <p className="text-sm mb-6" style={{ color: "#6B6B8A" }}>
-            Tu dois être connecté pour accéder à tes paramètres.
+            Tu dois Ãªtre connectÃ© pour accÃ©der Ã  tes paramÃ¨tres.
           </p>
           <Link
             to="/login"
@@ -628,10 +608,10 @@ export function SettingsPage() {
             className="font-extrabold mb-2"
             style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(2.3rem, 5vw, 4rem)", color: "#0C0B1A", letterSpacing: "-0.05em" }}
           >
-            Paramètres
+            ParamÃ¨tres
           </h1>
           <p className="text-sm" style={{ color: "#9CA3AF" }}>
-            Gère ton profil, ta sécurité et tes préférences
+            GÃ¨re ton profil, ta sÃ©curitÃ© et tes prÃ©fÃ©rences
           </p>
         </div>
 
@@ -662,7 +642,7 @@ export function SettingsPage() {
                   {name.charAt(0).toUpperCase() || "?"}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>{name || "—"}</p>
+                  <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>{name || "â€”"}</p>
                   <p className="text-xs" style={{ color: "#9CA3AF" }}>{email}</p>
                 </div>
               </div>
@@ -703,7 +683,7 @@ export function SettingsPage() {
                   }}
                 />
                 <p className="text-xs mt-1" style={{ color: "#C4C4D4" }}>
-                  L'email ne peut pas être modifié pour le moment
+                  L'email ne peut pas Ãªtre modifiÃ© pour le moment
                 </p>
               </div>
 
@@ -714,7 +694,7 @@ export function SettingsPage() {
               )}
               {saved && (
                 <div className="p-3 rounded-xl text-sm flex items-center gap-2" style={{ background: "#ECFDF5", color: "#059669" }}>
-                  <Check className="size-4" /> Modifications enregistrées !
+                  <Check className="size-4" /> Modifications enregistrÃ©es !
                 </div>
               )}
 
@@ -725,7 +705,7 @@ export function SettingsPage() {
                 style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
               >
                 {saving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-                {saving ? "Enregistrement…" : "Enregistrer"}
+                {saving ? "Enregistrementâ€¦" : "Enregistrer"}
               </button>
             </form>
           </div>
@@ -734,7 +714,7 @@ export function SettingsPage() {
           <div>
             <div className="flex items-center gap-2.5 mb-3">
               <Shield className="size-4" style={{ color: "#5548F5" }} />
-              <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Sécurité</p>
+              <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>SÃ©curitÃ©</p>
             </div>
 
             <div className="space-y-3">
@@ -762,11 +742,11 @@ export function SettingsPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Notifications</p>
-                <p className="text-xs" style={{ color: "#9CA3AF" }}>Gère tes préférences d'alertes</p>
+                <p className="text-xs" style={{ color: "#9CA3AF" }}>GÃ¨re tes prÃ©fÃ©rences d'alertes</p>
               </div>
             </div>
             {[
-              { label: "Emails de mise à jour", desc: "Nouvelles fonctionnalités et annonces" },
+              { label: "Emails de mise Ã  jour", desc: "Nouvelles fonctionnalitÃ©s et annonces" },
               { label: "Rappels candidatures", desc: "Dates limites et relances automatiques" },
             ].map((n) => (
               <div key={n.label} className="flex items-center justify-between py-1">
@@ -778,7 +758,7 @@ export function SettingsPage() {
                   className="text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer transition-all hover:opacity-80"
                   style={{ background: "rgba(85,72,245,0.08)", color: "#5548F5" }}
                 >
-                  Activé
+                  ActivÃ©
                 </div>
               </div>
             ))}
@@ -802,7 +782,7 @@ export function SettingsPage() {
                 </p>
                 <p className="text-xs" style={{ color: "#9CA3AF" }}>
                   {user.subscription === "premium"
-                    ? "Accès illimité à tous les modules"
+                    ? "AccÃ¨s illimitÃ© Ã  tous les modules"
                     : "1 CV, 1 lettre, analyse ATS basique"}
                 </p>
               </div>
@@ -811,43 +791,12 @@ export function SettingsPage() {
                   className="text-xs font-bold px-3.5 py-2 rounded-xl text-white transition-all hover:opacity-90"
                   style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
                 >
-                  Passer à Pro
+                  Passer Ã  Pro
                 </button>
               )}
             </div>
           </div>
 
-          <div
-            className={card}
-            style={{ border: "1px solid rgba(239,68,68,0.2)", background: "#FFF8F8" }}
-          >
-            <div className="flex items-center gap-2.5 mb-1">
-              <AlertTriangle className="size-4" style={{ color: "#EF4444" }} />
-              <p className="text-sm font-semibold" style={{ color: "#EF4444" }}>Zone de danger</p>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium" style={{ color: "#0C0B1A" }}>Supprimer le compte</p>
-                <p className="text-xs" style={{ color: "#9CA3AF" }}>Action irréversible — toutes tes données seront supprimées</p>
-              </div>
-              <div className="w-full max-w-xs space-y-2">
-                <input
-                  value={deleteConfirm}
-                  onChange={(event) => setDeleteConfirm(event.target.value)}
-                  placeholder="Tape SUPPRIMER"
-                  className="w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-xs outline-none"
-                />
-                <button
-                  onClick={handleDeleteAccount}
-                  disabled={deleting || deleteConfirm !== "SUPPRIMER"}
-                  className="w-full text-xs font-semibold px-3.5 py-2 rounded-xl transition-all hover:opacity-80 disabled:opacity-40"
-                  style={{ background: "rgba(239,68,68,0.1)", color: "#EF4444" }}
-                >
-                  {deleting ? "Suppression..." : "Supprimer definitivement"}
-                </button>
-              </div>
-            </div>
-          </div>
 
         </div>
       </div>
