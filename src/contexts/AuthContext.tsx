@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from "react";
 import { supabase, API_URL } from "@/lib/supabase";
-import { publicAnonKey } from "/utils/supabase/info";
 
 
 
@@ -302,16 +301,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const deleteAccount = async () => {
     try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token || accessToken;
+
+      if (!token) {
+        return { error: new Error("Session expiree. Reconnecte-toi avant de supprimer ton compte.") };
+      }
+
       const res = await fetch(`${API_URL}/user/delete`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken || publicAnonKey}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok || result.error) {
-        return { error: new Error(result.error || "Suppression impossible") };
+        return { error: new Error(result.error || "Suppression impossible pour le moment.") };
       }
       await signOut();
       return { error: null };

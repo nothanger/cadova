@@ -219,6 +219,57 @@ app.put("/make-server-0a5eb56b/user/profile", async (c) => {
   }
 });
 
+app.delete("/make-server-0a5eb56b/user/delete", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+
+    if (!accessToken) {
+      return c.json({ error: "Session manquante. Reconnecte-toi avant de supprimer ton compte." }, 401);
+    }
+
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
+
+    if (error || !user) {
+      console.error("Auth error while deleting user account:", error);
+      return c.json({ error: "Session expiree. Reconnecte-toi avant de supprimer ton compte." }, 401);
+    }
+
+    const prefixes = [
+      `cv:${user.id}:`,
+      `cover_letter:${user.id}:`,
+      `ats_analysis:${user.id}:`,
+      `interview:${user.id}:`,
+      `application:${user.id}:`,
+    ];
+
+    for (const prefix of prefixes) {
+      const { error: deleteDataError } = await supabaseAdmin
+        .from("kv_store_0a5eb56b")
+        .delete()
+        .like("key", `${prefix}%`);
+
+      if (deleteDataError) {
+        console.error("Error deleting account data:", deleteDataError);
+        return c.json({ error: "Impossible de supprimer toutes les donnees du compte. Aucune suppression de compte n'a ete finalisee." }, 500);
+      }
+    }
+
+    await kv.del(`user:${user.id}`);
+
+    const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
+
+    if (deleteUserError) {
+      console.error("Error deleting auth user:", deleteUserError);
+      return c.json({ error: "Les donnees ont ete nettoyees, mais la suppression du compte auth a echoue. Contacte le support." }, 500);
+    }
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error("Error deleting user account:", error);
+    return c.json({ error: error.message || "Suppression impossible pour le moment." }, 500);
+  }
+});
+
 
 app.get("/make-server-0a5eb56b/reussia/cvs", async (c) => {
   try {
