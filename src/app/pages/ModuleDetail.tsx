@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { MarketingShell } from "../components/MarketingShell";
 import { PricingCard } from "../components/PricingCard";
 import { useSEO } from "../hooks/useSEO";
@@ -29,37 +29,38 @@ export function ModuleDetail() {
   }
 
   const otherModules = cadovaModules.filter((item) => item.slug !== module.slug);
+  const continuationModules = otherModules.slice(0, 1);
 
   return (
     <MarketingShell ctaHref={module.ctaHref} ctaLabel={module.ctaLabel}>
       <section className="marketing-section marketing-hero">
         <div className="marketing-container marketing-detail-hero">
+          <div>
+            <div className="marketing-kicker">{module.name}</div>
+            <h1 className="marketing-title-section">{module.shortDescription}</h1>
+            <p className="marketing-copy" style={{ marginTop: 18 }}>
+              {module.fullDescription}
+            </p>
+            <div className="marketing-actions">
+              <Link to={module.ctaHref} className="marketing-button-primary">
+                {module.ctaLabel}
+              </Link>
+              <Link to="/modules/comparaison" className="marketing-button-secondary">
+                Comparer avec les autres modules
+              </Link>
+            </div>
+          </div>
           <div className="marketing-panel" style={{ padding: 28 }}>
-  <div className="marketing-kicker">
-    {module.previewTitle}
-  </div>
-  <h2 className="marketing-title-section" style={{ marginTop: 14, fontSize: "clamp(1.8rem, 4vw, 3rem)" }}>
-    {module.shortDescription}
-  </h2>
-  <div className="marketing-list" style={{ marginTop: 22 }}>
-    {module.previewMetrics.map((metric) => (
-      <div
-        key={metric.label}
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 12,
-          paddingBottom: 12,
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          color: "#697085",
-        }}
-      >
-        <span>{metric.label}</span>
-        <strong style={{ color: module.accentColor }}>{metric.value}</strong>
-      </div>
-    ))}
-  </div>
-</div>
+            <div className="marketing-kicker">{module.previewTitle}</div>
+            <div className="marketing-list" style={{ marginTop: 22 }}>
+              {module.previewMetrics.map((metric) => (
+                <div key={metric.label} className="marketing-metric-row">
+                  <span>{metric.label}</span>
+                  <strong style={{ color: module.accentColor }}>{metric.value}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -68,7 +69,7 @@ export function ModuleDetail() {
           <div className="marketing-detail-block">
             <div className="marketing-kicker">Pour qui</div>
             <div className="marketing-list" style={{ marginTop: 16 }}>
-              {module.targetAudience.map((item) => (
+              {module.targetAudience.slice(0, 3).map((item) => (
                 <div key={item} className="marketing-list-item">
                   <CheckCircle2 size={16} style={{ color: module.accentColor, marginTop: 3, flexShrink: 0 }} />
                   <span>{item}</span>
@@ -80,7 +81,7 @@ export function ModuleDetail() {
           <div className="marketing-detail-block">
             <div className="marketing-kicker">Fonctions cles</div>
             <div className="marketing-list" style={{ marginTop: 16 }}>
-              {module.features.map((item) => (
+              {module.features.slice(0, 3).map((item) => (
                 <div key={item} className="marketing-list-item">
                   <CheckCircle2 size={16} style={{ color: module.accentColor, marginTop: 3, flexShrink: 0 }} />
                   <span>{item}</span>
@@ -92,7 +93,7 @@ export function ModuleDetail() {
           <div className="marketing-detail-block">
             <div className="marketing-kicker">Ce que ca change</div>
             <div className="marketing-list" style={{ marginTop: 16 }}>
-              {module.benefits.map((item) => (
+              {module.benefits.slice(0, 3).map((item) => (
                 <div key={item} className="marketing-list-item">
                   <CheckCircle2 size={16} style={{ color: module.accentColor, marginTop: 3, flexShrink: 0 }} />
                   <span>{item}</span>
@@ -112,7 +113,7 @@ export function ModuleDetail() {
             </div>
           </div>
           <div className="marketing-grid-3">
-            {module.useCases.map((item, index) => (
+            {module.useCases.slice(0, 3).map((item, index) => (
               <div key={item} className="marketing-detail-block">
                 <div className="marketing-kicker" style={{ color: module.accentColor }}>
                   Situation {index + 1}
@@ -137,8 +138,8 @@ export function ModuleDetail() {
               Voir toutes les options
             </Link>
           </div>
-          <div className="marketing-grid-3">
-            {module.plans.map((plan, index) => (
+          <div className="marketing-grid-2 marketing-pricing-pair">
+            {module.plans.slice(0, 1).map((plan, index) => (
               <PricingCard
                 key={plan.name}
                 title={plan.name}
@@ -159,7 +160,7 @@ export function ModuleDetail() {
               summary="Si ce module devient central dans ta recherche, la formule complete garde la suite du parcours au meme endroit."
               highlights={cadovaBundle.highlights}
               accentColor="#161426"
-              ctaLabel="Voir Cadova Complet"
+              ctaLabel="Voir la formule complete"
               ctaHref="/pricing"
             />
           </div>
@@ -177,8 +178,8 @@ export function ModuleDetail() {
               Retour aux modules
             </Link>
           </div>
-          <div className="marketing-grid-3">
-            {otherModules.map((item) => (
+          <div className="marketing-grid-2 marketing-continuation-grid">
+            {continuationModules.map((item) => (
               <Link key={item.slug} to={item.route} className="marketing-module-card" style={{ borderColor: item.hoverBorder }}>
                 <span className="marketing-module-icon-wrap">
                   <item.icon size={20} style={{ color: item.accentColor }} />

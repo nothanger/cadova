@@ -268,11 +268,12 @@ export const cadovaModules: CadovaModule[] = [
     },
   ],
 },
+];
 
 export const cadovaBundle = {
   name: "Cadova Complet",
-  priceMonthly: "14,99 EUR",
-  priceYearly: "149 EUR",
+  priceMonthly: "8,99 EUR",
+  priceYearly: "89 EUR",
   note: "les 4 modules dans le meme espace",
   highlights: [
     "Ton dossier, tes entretiens, ton suivi et ton profil ensemble",

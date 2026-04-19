@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { MarketingShell } from "../components/MarketingShell";
 import { PricingCard } from "../components/PricingCard";
 import { useSEO } from "../hooks/useSEO";
-import { cadovaBundle, cadovaModules, cadovaPlans } from "../lib/module-data";
+import { cadovaBundle, cadovaModules } from "../lib/module-data";
 
 const pricingItems = [
   "bundle",
@@ -134,7 +134,7 @@ export function Pricing() {
           </div>
 
           <div className="marketing-recommendation-grid">
-            {recommendations.map((item) => (
+            {recommendations.slice(0, 3).map((item) => (
               <article
                 key={item.title}
                 className="marketing-recommendation-card"
@@ -163,25 +163,6 @@ export function Pricing() {
         </div>
       </section>
 
-      <section className="marketing-section">
-        <div className="marketing-container marketing-grid-2">
-          {cadovaPlans.map((plan) => (
-            <div key={plan.name} className="marketing-detail-block">
-              <div className="marketing-kicker">{plan.name}</div>
-              <p className="marketing-card-copy" style={{ marginTop: 14 }}>
-                {plan.summary}
-              </p>
-              <div className="marketing-list" style={{ marginTop: 18 }}>
-                {plan.bulletPoints.map((item) => (
-                  <div key={item} className="marketing-list-item" style={{ color: "#453f55" }}>
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
     </MarketingShell>
   );
 }

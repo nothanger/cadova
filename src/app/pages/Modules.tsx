@@ -4,7 +4,7 @@ import { ModuleCard } from "../components/ModuleCard";
 import { PricingCard } from "../components/PricingCard";
 import { MarketingShell } from "../components/MarketingShell";
 import { useSEO } from "../hooks/useSEO";
-import { cadovaBundle, cadovaModules, moduleHighlights } from "../lib/module-data";
+import { cadovaBundle, cadovaModules } from "../lib/module-data";
 
 export function Modules() {
   useSEO({
@@ -39,21 +39,9 @@ export function Modules() {
       </section>
 
       <section className="marketing-section">
-        <div className="marketing-container marketing-grid-4">
+        <div className="marketing-container marketing-grid-2">
           {cadovaModules.map((module) => (
             <ModuleCard key={module.slug} module={module} />
-          ))}
-        </div>
-      </section>
-
-      <section className="marketing-section">
-        <div className="marketing-container marketing-grid-4">
-          {moduleHighlights.map((item) => (
-            <div key={item.title} className="marketing-detail-block">
-              <item.icon size={18} style={{ color: "#ff6a4d" }} />
-              <h3 className="marketing-detail-block-title">{item.title}</h3>
-              <p className="marketing-card-copy">{item.text}</p>
-            </div>
           ))}
         </div>
       </section>
