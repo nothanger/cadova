@@ -170,7 +170,7 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
         templateId,
       });
     }
-    downloadSimplePdf(
+    await downloadSimplePdf(
       `lettre-${(companyName || jobTitle || "cadova").toLowerCase().replace(/\s+/g, "-")}.pdf`,
       "Lettre de motivation",
       [firstName, city, LETTER_TEMPLATES.find((item) => item.id === templateId)?.label].filter(Boolean).join(" - "),

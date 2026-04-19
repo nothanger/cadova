@@ -219,6 +219,40 @@ app.put("/make-server-0a5eb56b/user/profile", async (c) => {
   }
 });
 
+app.delete("/make-server-0a5eb56b/user/delete", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    if (!accessToken) return c.json({ error: "Unauthorized - No token provided" }, 401);
+
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
+    if (error || !user) return c.json({ error: "Unauthorized - Invalid token" }, 401);
+
+    const prefixes = [
+      `cv:${user.id}:`,
+      `cover_letter:${user.id}:`,
+      `ats_analysis:${user.id}:`,
+      `interview:${user.id}:`,
+      `application:${user.id}:`,
+    ];
+
+    for (const prefix of prefixes) {
+      const items = await kv.getByPrefix(prefix);
+      for (const item of items || []) {
+        if (item?.id) await kv.del(`${prefix}${item.id}`);
+      }
+    }
+
+    await kv.del(`user:${user.id}`);
+    const deleteResult = await supabaseAdmin.auth.admin.deleteUser(user.id);
+    if (deleteResult.error) return c.json({ error: deleteResult.error.message }, 500);
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error("Account delete error:", error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 app.post("/make-server-0a5eb56b/admin/bootstrap", async (c) => {
   try {
     const bootstrapToken = Deno.env.get("ADMIN_BOOTSTRAP_TOKEN") ?? "";

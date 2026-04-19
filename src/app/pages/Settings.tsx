@@ -511,12 +511,14 @@ function TwoFactorSection() {
 
 export function SettingsPage() {
   useSEO({ title: "Paramètres — Cadova", noindex: true });
-  const { user, loading, updateProfile } = useAuth();
+  const { user, loading, updateProfile, deleteAccount } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -552,6 +554,17 @@ export function SettingsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirm !== "SUPPRIMER") {
+      toast.error("Tape SUPPRIMER pour confirmer.");
+      return;
+    }
+    setDeleting(true);
+    const { error: deleteError } = await deleteAccount();
+    setDeleting(false);
+    if (deleteError) toast.error(deleteError.message);
   };
 
   const card = "rounded-3xl p-6 space-y-4 shadow-sm";
@@ -719,7 +732,19 @@ export function SettingsPage() {
 
             <div className="space-y-3">
               <ChangePasswordSection />
-              <TwoFactorSection />
+              <div className="rounded-3xl border border-black/5 bg-white p-5 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-2xl bg-slate-100">
+                    <ShieldOff className="size-4 text-slate-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Double authentification</p>
+                    <p className="text-xs leading-5" style={{ color: "#9CA3AF" }}>
+                      Masquee jusqu'a ce que la verification au login soit entierement active.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -798,12 +823,22 @@ export function SettingsPage() {
                 <p className="text-sm font-medium" style={{ color: "#0C0B1A" }}>Supprimer le compte</p>
                 <p className="text-xs" style={{ color: "#9CA3AF" }}>Action irréversible — toutes tes données seront supprimées</p>
               </div>
-              <button
-                className="text-xs font-semibold px-3.5 py-2 rounded-xl transition-all hover:opacity-80"
-                style={{ background: "rgba(239,68,68,0.1)", color: "#EF4444" }}
-              >
-                Supprimer
-              </button>
+              <div className="w-full max-w-xs space-y-2">
+                <input
+                  value={deleteConfirm}
+                  onChange={(event) => setDeleteConfirm(event.target.value)}
+                  placeholder="Tape SUPPRIMER"
+                  className="w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-xs outline-none"
+                />
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleting || deleteConfirm !== "SUPPRIMER"}
+                  className="w-full text-xs font-semibold px-3.5 py-2 rounded-xl transition-all hover:opacity-80 disabled:opacity-40"
+                  style={{ background: "rgba(239,68,68,0.1)", color: "#EF4444" }}
+                >
+                  {deleting ? "Suppression..." : "Supprimer definitivement"}
+                </button>
+              </div>
             </div>
           </div>
 

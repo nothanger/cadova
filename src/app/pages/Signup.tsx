@@ -55,8 +55,8 @@ export function Signup() {
         toast.error(error.message || "Erreur lors de la création du compte");
         setLoading(false);
       } else {
-        toast.success("Compte créé ! Bienvenue sur Cadova");
-        navigate("/dashboard", { replace: true });
+        toast.success("Compte cree. Verifie ton email pour activer la connexion.");
+        navigate("/login", { replace: true });
       }
     } catch {
       toast.error("Erreur inattendue");

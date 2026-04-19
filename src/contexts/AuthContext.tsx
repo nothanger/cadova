@@ -28,6 +28,7 @@ interface AuthContextType {
   updatePassword: (currentPassword: string, newPassword: string) => Promise<{ error: Error | null }>;
   sendPasswordReset: (email: string) => Promise<{ error: Error | null }>;
   resetPassword: (newPassword: string) => Promise<{ error: Error | null }>;
+  deleteAccount: () => Promise<{ error: Error | null }>;
   enrollTotp: () => Promise<{ qrUri: string; secret: string; factorId: string; error: Error | null }>;
   verifyTotp: (factorId: string, code: string) => Promise<{ error: Error | null }>;
   unenrollTotp: (factorId: string) => Promise<{ error: Error | null }>;
@@ -195,33 +196,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, name: string) => {
     try {
-      const res = await fetch(`${API_URL}/auth/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${publicAnonKey}`,
-        },
-        body: JSON.stringify({ email, password, name }),
-      });
-
-      const result = await res.json();
-
-      if (!res.ok || result.error) {
-        return { error: new Error(result.error || "Erreur lors de l'inscription") };
-      }
-
-
-      justSignedIn.current = true;
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`,
+          data: { name },
+        },
       });
 
-      if (signInError) {
-        return { error: new Error(signInError.message) };
+      if (error) {
+        return { error: new Error(error.message) };
       }
 
-      if (data.session) {
+      if (data.session && data.user) {
+        justSignedIn.current = true;
         setAccessToken(data.session.access_token);
         updateUser({
           id: data.user.id,
@@ -230,6 +219,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           subscription: "free",
           credits: { cv: 1, coverLetter: 0, atsAnalysis: 0, interview: 0 },
         });
+      } else {
+        updateUser(null);
+        setAccessToken(null);
       }
 
       return { error: null };
@@ -308,6 +300,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const deleteAccount = async () => {
+    try {
+      const res = await fetch(`${API_URL}/user/delete`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken || publicAnonKey}`,
+        },
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || result.error) {
+        return { error: new Error(result.error || "Suppression impossible") };
+      }
+      await signOut();
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
 
   const enrollTotp = async () => {
     try {
@@ -358,7 +370,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, accessToken, signIn, signUp, signOut, updateProfile, updatePassword, sendPasswordReset, resetPassword, enrollTotp, verifyTotp, unenrollTotp, getMfaFactors }}>
+    <AuthContext.Provider value={{ user, loading, accessToken, signIn, signUp, signOut, updateProfile, updatePassword, sendPasswordReset, resetPassword, deleteAccount, enrollTotp, verifyTotp, unenrollTotp, getMfaFactors }}>
       {children}
     </AuthContext.Provider>
   );
