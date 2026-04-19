@@ -62,7 +62,7 @@ function ChangePasswordSection() {
 
   return (
     <div
-      className="rounded-2xl overflow-hidden"
+      className="overflow-hidden rounded-3xl shadow-sm"
       style={{ border: "1px solid rgba(85,72,245,0.1)", background: "white" }}
     >
     
@@ -315,7 +315,7 @@ function TwoFactorSection() {
 
   return (
     <div
-      className="rounded-2xl overflow-hidden"
+      className="overflow-hidden rounded-3xl shadow-sm"
       style={{ border: "1px solid rgba(85,72,245,0.1)", background: "white" }}
     >
       {}
@@ -554,7 +554,7 @@ export function SettingsPage() {
     }
   };
 
-  const card = "rounded-2xl p-5 space-y-4";
+  const card = "rounded-3xl p-6 space-y-4 shadow-sm";
   const cardStyle = { border: "1px solid rgba(85,72,245,0.1)", background: "white" };
   const sectionTitle = "flex items-center gap-2.5 mb-4";
 
@@ -599,14 +599,14 @@ export function SettingsPage() {
   return (
     <AppLayout>
       <div
-        className="max-w-2xl mx-auto"
+        className="max-w-4xl mx-auto"
         style={{ fontFamily: "DM Sans, system-ui, sans-serif" }}
       >
        
         <div className="mb-8">
           <h1
-            className="font-extrabold mb-1"
-            style={{ fontFamily: "Syne, sans-serif", fontSize: "1.75rem", color: "#0C0B1A" }}
+            className="font-extrabold mb-2"
+            style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(2.3rem, 5vw, 4rem)", color: "#0C0B1A", letterSpacing: "-0.05em" }}
           >
             Paramètres
           </h1>
@@ -615,7 +615,7 @@ export function SettingsPage() {
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
 
           
           <div className={card} style={cardStyle}>

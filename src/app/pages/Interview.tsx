@@ -439,10 +439,10 @@ export function Interview() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="grid lg:grid-cols-3 gap-6"
+              className="mx-auto grid max-w-3xl gap-6"
             >
               {/* Config card */}
-              <div className="lg:col-span-2 rounded-2xl overflow-hidden" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
+              <div className="overflow-hidden rounded-3xl shadow-sm" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
                 <div className="px-6 py-4" style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
                   <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "#C4C4D4" }}>
                     Configuration
@@ -455,14 +455,14 @@ export function Interview() {
                     <label className="text-[11px] uppercase tracking-wider block mb-2" style={{ color: "#9CA3AF" }}>
                       Type d'entretien
                     </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       {(Object.entries(TYPE_LABELS) as [InterviewType, string][]).map(([val, label]) => (
                         <button
                           key={val}
                           onClick={() => setInterviewType(val)}
                           className="px-3 py-2.5 rounded-xl text-[12px] font-medium text-left transition-all"
                           style={{
-                            background: interviewType === val ? "#EC489915" : "rgba(0,0,0,0.03)",
+                            background: interviewType === val ? "#EC489915" : "#F8FAFC",
                             color: interviewType === val ? "#EC4899" : "#6B7280",
                             border: interviewType === val ? "1px solid #EC489930" : "1px solid transparent",
                           }}
@@ -479,7 +479,7 @@ export function Interview() {
                       Secteur (optionnel)
                     </label>
                     <div className="flex flex-wrap gap-2">
-                      {SECTORS.map((s) => (
+                      {SECTORS.slice(0, 6).map((s) => (
                         <button
                           key={s}
                           onClick={() => setSector(sector === s ? "" : s)}
@@ -518,7 +518,7 @@ export function Interview() {
                   </div>
 
                   {/* Info box */}
-                  <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background: "#F5F3FF" }}>
+                  <div className="flex items-start gap-3 rounded-2xl p-4" style={{ background: "#F5F3FF" }}>
                     <Lightbulb className="size-4 flex-shrink-0 mt-0.5" style={{ color: "#5548F5" }} />
                     <div>
                       <p className="text-[12px] font-semibold mb-1" style={{ color: "#3730A3" }}>Comment ça marche ?</p>
@@ -530,7 +530,7 @@ export function Interview() {
 
                   <button
                     onClick={handleStart}
-                    className="w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90"
+                    className="w-full rounded-2xl py-4 font-bold text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90"
                     style={{ background: "linear-gradient(135deg, #EC4899, #BE185D)", color: "white" }}
                   >
                     <Play className="size-4" />
@@ -540,7 +540,7 @@ export function Interview() {
               </div>
 
               
-              <div className="rounded-2xl overflow-hidden" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
+              <div className="hidden rounded-2xl overflow-hidden" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
                 <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
                   <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "#C4C4D4" }}>
                     Exemples de questions

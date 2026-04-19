@@ -18,7 +18,6 @@ export const router = createBrowserRouter([
     children: [
       { index: true, lazy: loadComponent(() => import("./pages/Landing"), "Landing") },
       { path: "modules", lazy: loadComponent(() => import("./pages/Modules"), "Modules") },
-      { path: "modules/comparaison", lazy: loadComponent(() => import("./pages/ModulesComparison"), "ModulesComparison") },
       { path: "modules/:slug", lazy: loadComponent(() => import("./pages/ModuleDetail"), "ModuleDetail") },
       { path: "pricing", lazy: loadComponent(() => import("./pages/Pricing"), "Pricing") },
       { path: "login", lazy: loadComponent(() => import("./pages/Login"), "Login") },

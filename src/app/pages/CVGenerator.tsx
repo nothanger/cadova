@@ -102,7 +102,6 @@ export function CVGenerator() {
   const { user } = useAuth();
   // Navigation
   const [step, setStep] = useState(0);
-  const [isGenerating, setIsGenerating] = useState(false);
 
 
   const [sector, setSector] = useState<SectorId>("marketing");
@@ -326,12 +325,7 @@ export function CVGenerator() {
 
   
   const handleGoToPreview = () => {
-    if (step === STEPS.length - 2) {
-      
-      setIsGenerating(true);
-    } else {
-      setStep((s) => s + 1);
-    }
+    setStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
 
   
@@ -406,7 +400,7 @@ export function CVGenerator() {
   
   return (
     <AppLayout>
-      {isGenerating && (
+      {false && (
         <LoadingScreen
           label="Génération du CV"
           accent="#5548F5"
@@ -419,7 +413,6 @@ export function CVGenerator() {
             { label: "Mise en page et vérification finale", duration: 600 },
           ]}
           onComplete={() => {
-            setIsGenerating(false);
             setStep(STEPS.length - 1);
           }}
         />
@@ -461,6 +454,14 @@ export function CVGenerator() {
               {photoDataUrl ? "Photo ajoutee" : "Importer une photo"}
               <input className="hidden" type="file" accept="image/*" onChange={(event) => handlePhotoUpload(event.target.files?.[0] ?? null)} />
             </label>
+            {photoDataUrl && (
+              <button onClick={() => setPhotoDataUrl(null)} className="mt-2 w-full rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
+                Retirer la photo
+              </button>
+            )}
+            {templateId === "compact" && (
+              <p className="mt-2 text-xs text-slate-400">Le modele Compact masque la photo pour garder plus d'espace.</p>
+            )}
           </div>
         </div>
 
@@ -1042,7 +1043,8 @@ export function CVGenerator() {
                   <CardContent className="p-0">
                     <div className="bg-white p-8 md:p-12 max-w-[800px] mx-auto print:p-6">
                      
-                      <div className="border-b-2 border-indigo-600 pb-6 mb-6">
+                      <div className={`border-b-2 border-indigo-600 pb-6 mb-6 ${templateId === "compact" ? "flex items-start justify-between gap-6" : ""}`}>
+                        <div className="min-w-0">
                         <h1 className="text-3xl font-bold text-slate-900">
                           {firstName || lastName ? `${firstName} ${lastName}`.trim() : "Ton Nom"}
                         </h1>
@@ -1071,6 +1073,10 @@ export function CVGenerator() {
                             </span>
                           )}
                         </div>
+                        </div>
+                        {photoDataUrl && templateId !== "compact" && (
+                          <img src={photoDataUrl} alt="Photo de profil" className="mt-4 h-24 w-24 rounded-2xl object-cover ring-1 ring-slate-200" />
+                        )}
                       </div>
 
                       

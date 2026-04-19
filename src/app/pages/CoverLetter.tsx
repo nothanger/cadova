@@ -59,7 +59,6 @@ export function CoverLetter() {
 useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
   const { user } = useAuth();
   const [generated, setGenerated] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [variant, setVariant] = useState(0); // pour forcer une regénération visuelle
 
@@ -106,7 +105,7 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
   const letterContent = editedContent ?? assembledLetter;
 
   const handleGenerate = () => {
-    setIsGenerating(true);
+    handleGenerateComplete();
   };
 
   const handleGenerateComplete = () => {
@@ -123,7 +122,6 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
       city,
     });
     setEditedContent(letter);
-    setIsGenerating(false);
     setGenerated(true);
   };
 
@@ -210,7 +208,7 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
 
   return (
     <AppLayout>
-      {isGenerating && (
+      {false && (
         <LoadingScreen
           label="Génération de la lettre"
           accent="#8B5CF6"
@@ -431,7 +429,7 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <Card>
+                  <Card className="overflow-hidden rounded-3xl border-slate-200 shadow-sm">
                     <CardHeader>
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <CardTitle className="flex items-center gap-2">
@@ -483,7 +481,7 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
                         value={letterContent}
                         onChange={(e) => setEditedContent(e.target.value)}
                         rows={24}
-                        className="text-sm leading-relaxed resize-none bg-slate-50 border-slate-200 font-serif"
+                        className="min-h-[560px] resize-none rounded-2xl border-slate-200 bg-[#fbfbfd] p-6 font-serif text-[15px] leading-8 text-slate-800 shadow-inner"
                       />
                       <div className="flex items-center justify-between mt-3">
                         <p className="text-xs text-slate-500">
@@ -502,9 +500,9 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
-                  <Card className="h-full">
-                    <CardContent className="p-12 text-center flex flex-col items-center justify-center min-h-[500px]">
-                      <div className="size-16 rounded-2xl bg-violet-100 flex items-center justify-center mx-auto mb-4">
+                  <Card className="h-full overflow-hidden rounded-3xl border-slate-200 shadow-sm">
+                    <CardContent className="p-10 text-center flex flex-col items-center justify-center min-h-[520px] bg-white">
+                      <div className="size-16 rounded-3xl bg-violet-100 flex items-center justify-center mx-auto mb-4">
                         <PenTool className="size-8 text-violet-600" />
                       </div>
                       <h3 className="text-lg font-semibold mb-2">Ta lettre apparaitra ici</h3>

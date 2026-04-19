@@ -80,8 +80,8 @@ export function Landing() {
               <div className="marketing-kicker">Les modules</div>
               <h2 className="marketing-title-section">Choisis le module qui correspond a ton besoin</h2>
             </div>
-            <Link to="/modules" className="marketing-link">
-              Comparer les modules
+            <Link to="/pricing" className="marketing-link">
+              Voir les formules
             </Link>
           </div>
           <div className="marketing-grid-2">
@@ -105,8 +105,8 @@ export function Landing() {
               <Link to="/signup" className="marketing-button-light">
                 Voir la formule complete
               </Link>
-              <Link to="/modules" className="marketing-button-light">
-                Comparer les modules
+              <Link to="/pricing" className="marketing-button-light">
+                Voir les formules
               </Link>
             </div>
           </div>

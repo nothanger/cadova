@@ -91,7 +91,7 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
       password,
       user_metadata: { name },
     
-      email_confirm: true,
+      email_confirm: false,
     });
 
     if (error) {
@@ -215,6 +215,56 @@ app.put("/make-server-0a5eb56b/user/profile", async (c) => {
     return c.json({ success: true, profile: updatedProfile });
   } catch (error: any) {
     console.error("❌ Error updating user profile:", error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.post("/make-server-0a5eb56b/admin/bootstrap", async (c) => {
+  try {
+    const bootstrapToken = Deno.env.get("ADMIN_BOOTSTRAP_TOKEN") ?? "";
+    const providedToken = c.req.header("x-admin-bootstrap-token") ?? "";
+    if (!bootstrapToken || providedToken !== bootstrapToken) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const email = "ethan.noto@icloud.com";
+    const { data: existing } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = existing.users.find((user) => user.email?.toLowerCase() === email);
+
+    const user = existingUser
+      ? existingUser
+      : (await supabaseAdmin.auth.admin.createUser({
+          email,
+          email_confirm: false,
+          user_metadata: { name: "Ethan", role: "admin" },
+        })).data.user;
+
+    if (!user) return c.json({ error: "Unable to bootstrap admin" }, 500);
+
+    await supabaseAdmin.auth.admin.updateUserById(user.id, {
+      app_metadata: { ...(user.app_metadata || {}), role: "admin" },
+      user_metadata: { ...(user.user_metadata || {}), name: user.user_metadata?.name || "Ethan", role: "admin" },
+    });
+
+    const { data: linkData, error } = await supabaseAdmin.auth.admin.generateLink({
+      type: "magiclink",
+      email,
+    });
+    if (error) return c.json({ error: error.message }, 500);
+
+    await kv.set(`user:${user.id}`, {
+      id: user.id,
+      email,
+      name: user.user_metadata?.name || "Ethan",
+      role: "admin",
+      createdAt: user.created_at || new Date().toISOString(),
+      subscription: "premium",
+      credits: { cv: 999, coverLetter: 999, atsAnalysis: 999, interview: 999 },
+    });
+
+    return c.json({ success: true, email, actionLink: linkData.properties?.action_link });
+  } catch (error: any) {
+    console.error("Admin bootstrap error:", error);
     return c.json({ error: error.message }, 500);
   }
 });

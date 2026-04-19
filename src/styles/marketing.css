@@ -68,7 +68,7 @@
 }
 
 .marketing-nav-link {
-  border-radius: 8px;
+  border-radius: 18px;
   color: #697085;
   font-size: 12px;
   font-weight: 650;
@@ -142,14 +142,14 @@
 .marketing-detail-block,
 .marketing-table {
   border: 1px solid #e0e2ef;
-  border-radius: 8px;
+  border-radius: 18px;
   background: linear-gradient(180deg, #ffffff, #fbfbfd);
   box-shadow: 0 22px 60px rgba(15, 16, 33, 0.055);
 }
 
 .marketing-panel-dark {
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border-radius: 18px;
   background: linear-gradient(145deg, #090719, #141033);
   color: white;
   box-shadow: 0 30px 70px rgba(8, 7, 25, 0.22);
@@ -310,7 +310,7 @@
   gap: 14px;
   width: min(100%, 310px);
   border: 1px solid #e0e2ef;
-  border-radius: 8px;
+  border-radius: 18px;
   background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 20px 52px rgba(15, 16, 33, 0.08), 0 12px 34px rgba(80, 68, 245, 0.08);
   padding: 18px 20px;
@@ -381,7 +381,7 @@
 
 .marketing-meta-card {
   border: 1px solid #e0e2ef;
-  border-radius: 8px;
+  border-radius: 18px;
   background: rgba(255,255,255,0.72);
   padding: 16px;
 }
@@ -430,7 +430,7 @@
   height: 42px;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 18px;
   background: #efedff;
 }
 

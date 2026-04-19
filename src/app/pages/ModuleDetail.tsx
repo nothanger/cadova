@@ -45,8 +45,8 @@ export function ModuleDetail() {
               <Link to={module.ctaHref} className="marketing-button-primary">
                 {module.ctaLabel}
               </Link>
-              <Link to="/modules/comparaison" className="marketing-button-secondary">
-                Comparer avec les autres modules
+              <Link to="/pricing" className="marketing-button-secondary">
+                Voir les formules
               </Link>
             </div>
           </div>

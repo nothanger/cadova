@@ -26,8 +26,8 @@ export function Modules() {
               </p>
             </div>
             <div className="marketing-actions" style={{ marginTop: 0 }}>
-              <Link to="/modules/comparaison" className="marketing-button-primary">
-                M'aider a choisir
+              <Link to="/pricing" className="marketing-button-primary">
+                Voir les formules
                 <ArrowRight size={18} />
               </Link>
               <Link to="/pricing" className="marketing-button-secondary">
