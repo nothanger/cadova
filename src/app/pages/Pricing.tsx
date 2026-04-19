@@ -37,24 +37,6 @@ const recommendations = [
     ctaHref: "/signup",
     accentColor: "#d946ef",
   },
-  {
-    title: "Candidatures a suivre",
-    need: "Tu ne sais plus qui tu as contacte, qui relancer, ni ce qui est encore actif.",
-    recommendation: "TrackIA",
-    reason: "Tu remets tes envois, statuts et relances dans un ordre simple a tenir.",
-    ctaLabel: "Mettre de l'ordre",
-    ctaHref: "/signup",
-    accentColor: "#14b8a6",
-  },
-  {
-    title: "Profil / LinkedIn / competences",
-    need: "Ton profil existe, mais il ne dit pas clairement ce que tu cherches.",
-    recommendation: "SkillIA",
-    reason: "Tu rends ton profil plus coherent avec les postes que tu veux vraiment viser.",
-    ctaLabel: "Clarifier mon profil",
-    ctaHref: "/signup",
-    accentColor: "#2563eb",
-  },
 ];
 
 export function Pricing() {

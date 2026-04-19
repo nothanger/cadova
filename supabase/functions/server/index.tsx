@@ -400,6 +400,22 @@ app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
   }
 });
 
+app.get("/make-server-0a5eb56b/reussia/ats-analyses", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    if (!accessToken) return c.json({ error: "Unauthorized - No token provided" }, 401);
+
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
+    if (error || !user) return c.json({ error: "Unauthorized - Invalid token" }, 401);
+
+    const analyses = await kv.getByPrefix(`ats_analysis:${user.id}:`);
+    return c.json({ analyses: analyses || [] });
+  } catch (error: any) {
+    console.error("Error fetching ATS analyses:", error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 
 
 
@@ -498,6 +514,46 @@ app.post("/make-server-0a5eb56b/oralia/analyze-answer", async (c) => {
     return c.json({ success: true, feedback });
   } catch (error: any) {
     console.error("❌ Error analyzing interview answer:", error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.get("/make-server-0a5eb56b/oralia/sessions", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    if (!accessToken) return c.json({ error: "Unauthorized - No token provided" }, 401);
+
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
+    if (error || !user) return c.json({ error: "Unauthorized - Invalid token" }, 401);
+
+    const sessions = await kv.getByPrefix(`interview:${user.id}:`);
+    return c.json({ sessions: sessions || [] });
+  } catch (error: any) {
+    console.error("Error fetching interview sessions:", error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.post("/make-server-0a5eb56b/oralia/sessions", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    if (!accessToken) return c.json({ error: "Unauthorized - No token provided" }, 401);
+
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
+    if (error || !user) return c.json({ error: "Unauthorized - Invalid token" }, 401);
+
+    const sessionData = await c.req.json();
+    const sessionId = crypto.randomUUID();
+    const session = {
+      id: sessionId,
+      userId: user.id,
+      ...sessionData,
+      completedAt: new Date().toISOString(),
+    };
+    await kv.set(`interview:${user.id}:${sessionId}`, session);
+    return c.json({ success: true, session });
+  } catch (error: any) {
+    console.error("Error saving interview session:", error);
     return c.json({ error: error.message }, 500);
   }
 });

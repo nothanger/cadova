@@ -24,6 +24,9 @@ import {
 } from "lucide-react";
 import { AppLayout } from "../components/AppLayout";
 import { motion, AnimatePresence } from "motion/react";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveAccountCoverLetter } from "../lib/account-data";
+import { downloadSimplePdf } from "../lib/pdf-export";
 import {
   buildCoverLetter,
   SECTORS,
@@ -46,8 +49,15 @@ const TYPE_LABELS: Record<CandidatureType, string> = {
   parcoursup: "Parcoursup / Formation",
 };
 
+const LETTER_TEMPLATES = [
+  { id: "classic", label: "Classique" },
+  { id: "direct", label: "Direct" },
+  { id: "school", label: "Formation" },
+];
+
 export function CoverLetter() {
 useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
+  const { user } = useAuth();
   const [generated, setGenerated] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -71,6 +81,7 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
 
   
   const [editedContent, setEditedContent] = useState<string | null>(null);
+  const [templateId, setTemplateId] = useState("classic");
 
   const canGenerate = companyName.trim().length > 0 && jobTitle.trim().length > 0;
 
@@ -149,7 +160,25 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    if (!letterContent) return;
+    if (user?.id) {
+      await saveAccountCoverLetter({
+        userId: user.id,
+        title: `Lettre - ${companyName || jobTitle || "candidature"}`,
+        company: companyName,
+        position: jobTitle,
+        content: letterContent,
+        templateId,
+      });
+    }
+    downloadSimplePdf(
+      `lettre-${(companyName || jobTitle || "cadova").toLowerCase().replace(/\s+/g, "-")}.pdf`,
+      "Lettre de motivation",
+      [firstName, city, LETTER_TEMPLATES.find((item) => item.id === templateId)?.label].filter(Boolean).join(" - "),
+      [{ title: companyName || jobTitle || "Candidature", lines: letterContent.split("\n").filter(Boolean) }]
+    );
+    return;
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
     printWindow.document.write(`<!DOCTYPE html><html><head>
@@ -213,6 +242,23 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
             Assemblee automatiquement depuis des blocs optimises — modifiable a volonte.
           </p>
         </motion.div>
+
+        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Modele de lettre</p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {LETTER_TEMPLATES.map((template) => (
+              <button
+                key={template.id}
+                onClick={() => setTemplateId(template.id)}
+                className={`rounded-lg border px-4 py-3 text-left text-sm font-bold transition-all ${
+                  templateId === template.id ? "border-violet-500 bg-violet-50 text-violet-700" : "border-slate-200 text-slate-700 hover:border-violet-200"
+                }`}
+              >
+                {template.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Formulaire */}

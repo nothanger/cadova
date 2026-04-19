@@ -17,7 +17,7 @@ import {
   InterviewType,
   SessionReport,
 } from "../lib/oralia-data";
-import { saveInterviewSession } from "@/lib/localStorage";
+import { saveAccountInterviewSession } from "../lib/account-data";
 import { useAuth } from "@/contexts/AuthContext";
 
 
@@ -378,7 +378,7 @@ export function Interview() {
 
       // Save to localStorage
       if (user?.id) {
-        saveInterviewSession({
+        saveAccountInterviewSession({
           userId: user.id,
           type: interviewType,
           sector: sector || undefined,

@@ -31,6 +31,9 @@ import {
 } from "lucide-react";
 import { AppLayout } from "../components/AppLayout";
 import { motion, AnimatePresence } from "motion/react";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveAccountCV } from "../lib/account-data";
+import { downloadSimplePdf } from "../lib/pdf-export";
 import {
   SECTORS,
   BULLETS,
@@ -73,6 +76,11 @@ interface Project {
 }
 
 const STEPS = ["Contexte", "Identite", "Formation", "Experience", "Projets", "Competences", "Apercu"];
+const CV_TEMPLATES = [
+  { id: "editorial", label: "Editorial", desc: "Clair, moderne, tres lisible" },
+  { id: "compact", label: "Compact", desc: "Plus dense pour dossiers charges" },
+  { id: "junior", label: "Junior", desc: "Met davantage les projets en avant" },
+];
 
 const LEVEL_OPTIONS: { value: ExperienceLevel; label: string; desc: string }[] = [
   { value: "lyceen",       label: "Lyceen(ne)",      desc: "Bac en cours, premiere experience" },
@@ -91,6 +99,7 @@ const TYPE_OPTIONS = [
 
 export function CVGenerator() {
  useSEO({ title: "Générateur de CV — Cadova", noindex: false });
+  const { user } = useAuth();
   // Navigation
   const [step, setStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -137,6 +146,8 @@ export function CVGenerator() {
   
   const [summaryVariantIdx, setSummaryVariantIdx] = useState(0);
   const [editedSummary, setEditedSummary] = useState<string | null>(null);
+  const [templateId, setTemplateId] = useState("editorial");
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
 
   
   const goNext = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -324,7 +335,14 @@ export function CVGenerator() {
   };
 
   
-  const handlePrint = () => {
+  const handlePhotoUpload = (file: File | null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setPhotoDataUrl(typeof reader.result === "string" ? reader.result : null);
+    reader.readAsDataURL(file);
+  };
+
+  const handlePrint = async () => {
     const fullName = `${firstName} ${lastName}`.trim();
     const allSkills = [...selectedSkills, ...selectedSoftSkills];
     const langStr = languageEntries
@@ -332,81 +350,57 @@ export function CVGenerator() {
       .map((l) => `${l.lang}${l.level ? ` (${l.level})` : ""}`)
       .join(" • ");
 
-    const expHtml = noExperience
-      ? ""
-      : experiences
-          .filter((e) => e.title)
-          .map(
-            (e) => `<div style="margin-bottom:16px">
-              <div style="display:flex;justify-content:space-between">
-                <div><strong>${e.title}</strong><br/><span style="color:#64748b">${e.company}</span></div>
-                <span style="color:#94a3b8;font-size:12px">${e.period}</span>
-              </div>
-              <p style="font-size:13px;color:#475569;margin-top:4px;white-space:pre-line">${e.description}</p>
-            </div>`
-          )
-          .join("");
+    const sections = [
+      { title: "Contact", lines: [[email, phone, city, linkedin].filter(Boolean).join(" - ")] },
+      { title: "Profil", lines: [summary] },
+      {
+        title: "Experience professionnelle",
+        lines: noExperience
+          ? []
+          : experiences.filter((e) => e.title).flatMap((e) => [`${e.title} - ${e.company} (${e.period})`, e.description]),
+      },
+      {
+        title: "Formation",
+        lines: education.filter((e) => e.degree).flatMap((e) => [`${e.degree} - ${e.school} (${e.period})`, e.description]),
+      },
+      {
+        title: "Projets",
+        lines: projects.filter((p) => p.name).flatMap((p) => [`${p.name} - ${p.context}`, p.description]),
+      },
+      { title: "Competences", lines: [allSkills.join(", ")] },
+      { title: "Langues", lines: [langStr] },
+    ].map((section) => ({ ...section, lines: section.lines.filter(Boolean) }));
 
-    const eduHtml = education
-      .filter((e) => e.degree)
-      .map(
-        (e) => `<div style="margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between">
-            <div><strong>${e.degree}</strong><br/><span style="color:#64748b">${e.school}</span></div>
-            <span style="color:#94a3b8;font-size:12px">${e.period}</span>
-          </div>
-          ${e.description ? `<p style="font-size:13px;color:#475569;margin-top:4px">${e.description}</p>` : ""}
-        </div>`
-      )
-      .join("");
+    if (user?.id) {
+      await saveAccountCV({
+        userId: user.id,
+        title: fullName || "CV sans titre",
+        content: {
+          templateId,
+          firstName,
+          lastName,
+          email,
+          phone,
+          city,
+          linkedin,
+          jobTitle,
+          summary,
+          education,
+          experiences,
+          projects,
+          skills: allSkills,
+          languages: languageEntries,
+          hasPhoto: !!photoDataUrl,
+        },
+      });
+    }
 
-    const projHtml = projects
-      .filter((e) => e.name)
-      .map(
-        (e) => `<div style="margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between">
-            <div><strong>${e.name}</strong><br/><span style="color:#64748b">${e.context}</span></div>
-          </div>
-          ${e.description ? `<p style="font-size:13px;color:#475569;margin-top:4px">${e.description}</p>` : ""}
-        </div>`
-      )
-      .join("");
-
-    const skillsHtml = allSkills.length
-      ? allSkills.map((s) => `<span style="background:#ede9fe;color:#5b21b6;padding:3px 10px;border-radius:20px;font-size:12px;margin:3px;display:inline-block">${s}</span>`).join("")
-      : "";
-
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-    printWindow.document.write(`<!DOCTYPE html><html><head>
-      <title>CV — ${fullName}</title>
-      <style>
-        body{font-family:Arial,sans-serif;max-width:720px;margin:40px auto;color:#1e293b;font-size:14px;line-height:1.6}
-        h1{font-size:26px;margin:0}h2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#4f46e5;border-bottom:1px solid #e0e7ff;padding-bottom:4px;margin:20px 0 12px}
-        .header{border-bottom:2px solid #4f46e5;padding-bottom:16px;margin-bottom:20px}
-        .contact{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:#64748b}
-        @media print{body{margin:20px}}
-      </style>
-    </head><body>
-      <div class="header">
-        <h1>${fullName}</h1>
-        <p style="color:#4f46e5;font-size:16px;margin:4px 0">${jobTitle}</p>
-        <div class="contact">
-          ${email ? `<span>${email}</span>` : ""}
-          ${phone ? `<span>${phone}</span>` : ""}
-          ${city ? `<span>${city}</span>` : ""}
-          ${linkedin ? `<span>${linkedin}</span>` : ""}
-        </div>
-      </div>
-      ${summary ? `<h2>Profil</h2><p style="font-size:13px;color:#475569">${summary}</p>` : ""}
-      ${expHtml ? `<h2>Experience professionnelle</h2>${expHtml}` : ""}
-      ${eduHtml ? `<h2>Formation</h2>${eduHtml}` : ""}
-      ${projHtml ? `<h2>Projets</h2>${projHtml}` : ""}
-      ${skillsHtml ? `<h2>Competences</h2><div>${skillsHtml}</div>` : ""}
-      ${langStr ? `<h2>Langues</h2><p style="font-size:13px">${langStr}</p>` : ""}
-    </body></html>`);
-    printWindow.document.close();
-    printWindow.print();
+    downloadSimplePdf(
+      `cv-${(fullName || "cadova").toLowerCase().replace(/\s+/g, "-")}.pdf`,
+      fullName || "Ton nom",
+      [jobTitle, CV_TEMPLATES.find((item) => item.id === templateId)?.label].filter(Boolean).join(" - "),
+      sections
+    );
   };
 
   
@@ -443,6 +437,33 @@ export function CVGenerator() {
         </motion.div>
 
        
+        <div className="mb-6 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-[1fr_auto]">
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Modele de CV</p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {CV_TEMPLATES.map((template) => (
+                <button
+                  key={template.id}
+                  onClick={() => setTemplateId(template.id)}
+                  className={`rounded-lg border p-3 text-left transition-all ${
+                    templateId === template.id ? "border-indigo-500 bg-indigo-50" : "border-slate-200 hover:border-indigo-200"
+                  }`}
+                >
+                  <p className="text-sm font-bold text-slate-900">{template.label}</p>
+                  <p className="mt-1 text-xs leading-snug text-slate-500">{template.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="min-w-[180px]">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Photo</p>
+            <label className="flex h-full min-h-[82px] cursor-pointer items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 text-center text-xs font-semibold text-slate-500">
+              {photoDataUrl ? "Photo ajoutee" : "Importer une photo"}
+              <input className="hidden" type="file" accept="image/*" onChange={(event) => handlePhotoUpload(event.target.files?.[0] ?? null)} />
+            </label>
+          </div>
+        </div>
+
         <div className="flex items-center gap-1 mb-8 overflow-x-auto pb-1">
           {STEPS.map((name, i) => (
             <div key={i} className="flex items-center gap-1 flex-shrink-0">

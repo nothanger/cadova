@@ -47,7 +47,7 @@ export function ModulesComparison() {
             <div className="marketing-kicker">Comparaison</div>
             <h1 className="marketing-title-section">Le bon module depend de ce qui te bloque aujourd'hui.</h1>
             <p className="marketing-copy" style={{ marginTop: 16 }}>
-              Si ton CV est faible, commence par ReussIA. Si un entretien approche, prends OralIA. Si tu ne sais plus qui relancer, TrackIA. Si ton profil ne raconte rien, SkillIA.
+              Si ton dossier est faible, commence par ReussIA. Si un entretien approche, prends OralIA. Le dashboard rassemble ensuite tes contenus et tes progres.
             </p>
           </div>
         </div>

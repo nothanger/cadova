@@ -5,13 +5,10 @@ import {
   PenTool,
   Search,
   MessageSquare,
-  MapPin,
   Settings,
   LogOut,
   Menu,
   X,
-  Linkedin,
-  Lightbulb,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,11 +17,10 @@ import { CadovaLogo } from "./CadovaLogo";
 
 const navSections = [
   {
-    module: "TrackIA",
-    accent: "#14b8a6",
+    module: "Workspace",
+    accent: "#5044f5",
     items: [
       { icon: LayoutDashboard, label: "Dashboard", sub: "Vue d'ensemble", path: "/dashboard" },
-      { icon: MapPin, label: "Entreprises", sub: "Pistes a explorer", path: "/company-finder" },
     ],
   },
   {
@@ -41,14 +37,6 @@ const navSections = [
     accent: "#d946ef",
     items: [
       { icon: MessageSquare, label: "Entretien", sub: "S'entrainer avant", path: "/interview" },
-    ],
-  },
-  {
-    module: "SkillIA",
-    accent: "#2563eb",
-    items: [
-      { icon: Linkedin, label: "LinkedIn", sub: "Profil plus lisible", path: "/linkedin" },
-      { icon: Lightbulb, label: "Competences", sub: "Quoi mettre en avant", path: "/skills" },
     ],
   },
 ];
