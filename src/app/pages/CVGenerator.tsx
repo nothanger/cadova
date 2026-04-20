@@ -1181,54 +1181,54 @@ export function CVGenerator() {
                 
                 <Card className="overflow-hidden rounded-[28px] border-slate-200 shadow-[0_30px_90px_rgba(15,23,42,0.08)]">
                   <CardContent className="p-0">
-                    <div
-                      className={`mx-auto min-h-[980px] max-w-[820px] bg-white p-9 md:p-14 print:p-6 ${
-                        templateId === "junior" ? "border-t-[10px] border-t-pink-500" : templateId === "compact" ? "border-l-[10px] border-l-slate-900" : "border-t-[10px] border-t-indigo-600"
-                      }`}
-                    >
-                     
-                      <div className={`mb-8 border-b pb-7 ${templateId === "compact" ? "flex items-start justify-between gap-6 border-slate-900" : "border-slate-200"}`}>
-                        <div className="min-w-0">
-                        <h1 className="text-4xl font-black tracking-[-0.04em] text-slate-950">
-                          {firstName || lastName ? `${firstName} ${lastName}`.trim() : "Ton Nom"}
-                        </h1>
-                        <p className={`mt-2 text-lg font-semibold ${templateId === "junior" ? "text-pink-600" : templateId === "compact" ? "text-slate-700" : "text-indigo-600"}`}>
-                          {jobTitle || "Titre professionnel"}
-                        </p>
-                        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[13px] font-medium text-slate-500">
-                          {email && (
-                            <span className="flex items-center gap-1">
-                              <Mail className="size-3.5" /> {email}
-                            </span>
-                          )}
-                          {phone && (
-                            <span className="flex items-center gap-1">
-                              <Phone className="size-3.5" /> {phone}
-                            </span>
-                          )}
-                          {city && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="size-3.5" /> {city}
-                            </span>
-                          )}
-                          {linkedin && (
-                            <span className="flex items-center gap-1">
-                              <Linkedin className="size-3.5" /> {linkedin}
-                            </span>
+                    <div className="mx-auto min-h-[980px] max-w-[820px] bg-white p-9 md:p-14 print:p-6">
+                      <div className={`relative mb-9 overflow-hidden rounded-[26px] border ${previewAccent.ring.replace("ring", "border")} ${previewAccent.softBg} p-7`}>
+                        <div className={`absolute left-0 top-0 h-full w-2 ${previewAccent.dot}`} />
+                        <div className={`grid gap-7 ${photoDataUrl && templateId !== "compact" ? "md:grid-cols-[minmax(0,1fr)_132px]" : ""}`}>
+                          <div className="min-w-0">
+                            <p className={`mb-3 text-[11px] font-black uppercase tracking-[0.22em] ${previewAccent.text}`}>
+                              Curriculum vitae
+                            </p>
+                            <h1 className="text-4xl font-black tracking-[-0.04em] text-slate-950 md:text-[44px]">
+                              {firstName || lastName ? `${firstName} ${lastName}`.trim() : "Ton Nom"}
+                            </h1>
+                            <p className={`mt-2 text-lg font-bold ${previewAccent.text}`}>
+                              {jobTitle || "Titre professionnel"}
+                            </p>
+                            <div className="mt-5 grid gap-2 text-[13px] font-medium text-slate-600 sm:grid-cols-2">
+                              {email && (
+                                <span className="flex items-center gap-2">
+                                  <Mail className={`size-3.5 ${previewAccent.text}`} /> {email}
+                                </span>
+                              )}
+                              {phone && (
+                                <span className="flex items-center gap-2">
+                                  <Phone className={`size-3.5 ${previewAccent.text}`} /> {phone}
+                                </span>
+                              )}
+                              {city && (
+                                <span className="flex items-center gap-2">
+                                  <MapPin className={`size-3.5 ${previewAccent.text}`} /> {city}
+                                </span>
+                              )}
+                              {linkedin && (
+                                <span className="flex items-center gap-2">
+                                  <Linkedin className={`size-3.5 ${previewAccent.text}`} /> {linkedin}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {photoDataUrl && templateId !== "compact" && (
+                            <div className={`flex h-32 w-32 items-center justify-center rounded-[24px] bg-white p-2 shadow-sm ring-1 ${previewAccent.ring}`}>
+                              <img src={photoDataUrl} alt="Photo de profil" className="h-full w-full rounded-[18px] object-cover" />
+                            </div>
                           )}
                         </div>
-                        </div>
-                        {photoDataUrl && templateId !== "compact" && (
-                          <img src={photoDataUrl} alt="Photo de profil" className="mt-1 h-28 w-28 rounded-[24px] object-cover shadow-lg shadow-slate-200/80 ring-1 ring-slate-200" />
-                        )}
                       </div>
 
-                      
-                      <div className="mb-6">
-                        <div className="flex items-center justify-between mb-2">
-                          <h2 className={`text-xs font-black uppercase tracking-[0.18em] ${templateId === "junior" ? "text-pink-600" : templateId === "compact" ? "text-slate-900" : "text-indigo-600"}`}>
-                            Profil
-                          </h2>
+                      <div className="mb-8">
+                        <div className="mb-3 flex items-center justify-between">
+                          {renderPreviewSectionTitle("Profil")}
                           <div className="flex gap-2">
                             <Button
                               variant="ghost"
@@ -1254,54 +1254,53 @@ export function CVGenerator() {
                         <Textarea
                           value={summary}
                           onChange={(e) => setEditedSummary(e.target.value)}
-                          rows={4}
-                          className="text-sm text-slate-700 leading-relaxed resize-none border-dashed border-slate-200 bg-transparent hover:border-indigo-200 focus:border-indigo-400 p-2 rounded"
+                          rows={3}
+                          className="sr-only"
                         />
+                        <div className="grid gap-2.5 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                          {(summaryLines.length ? summaryLines : [summary]).map((line, index) => (
+                            <p key={`${line}-${index}`} className="text-[13.5px] leading-6 text-slate-700">
+                              {line}
+                            </p>
+                          ))}
+                        </div>
                       </div>
 
-                      
                       {!noExperience && experiences.some((e) => e.title) && (
-                        <div className="mb-6">
-                          <h2 className={`mb-3 text-xs font-black uppercase tracking-[0.18em] ${templateId === "junior" ? "text-pink-600" : templateId === "compact" ? "text-slate-900" : "text-indigo-600"}`}>
-                            Experience professionnelle
-                          </h2>
-                          <div className="space-y-4">
+                        <div className="mb-8">
+                          {renderPreviewSectionTitle("Experience professionnelle")}
+                          <div className="space-y-5">
                             {experiences.filter((e) => e.title).map((exp) => (
-                              <div key={exp.id}>
+                              <div key={exp.id} className="border-l-2 border-slate-200 pl-4">
                                 <div className="flex justify-between items-start">
                                   <div>
-                                    <p className="text-[15px] font-bold text-slate-950">{exp.title}</p>
-                                    <p className="text-sm text-slate-600">{exp.company}</p>
+                                    <p className="text-[15px] font-black text-slate-950">{exp.title}</p>
+                                    <p className={`mt-0.5 text-sm font-semibold ${previewAccent.text}`}>{exp.company}</p>
                                   </div>
-                                  <p className="text-xs text-slate-500 whitespace-nowrap ml-4">{exp.period}</p>
+                                  <p className="ml-4 whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">{exp.period}</p>
                                 </div>
-                                <p className="mt-2 whitespace-pre-line text-[13px] leading-6 text-slate-600">
-                                  {exp.description}
-                                </p>
+                                {renderDescription(exp.description)}
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
 
-                      
                       {education.some((e) => e.degree) && (
-                        <div className="mb-6">
-                          <h2 className={`mb-3 text-xs font-black uppercase tracking-[0.18em] ${templateId === "junior" ? "text-pink-600" : templateId === "compact" ? "text-slate-900" : "text-indigo-600"}`}>
-                            Formation
-                          </h2>
-                          <div className="space-y-3">
+                        <div className="mb-8">
+                          {renderPreviewSectionTitle("Formation")}
+                          <div className="space-y-4">
                             {education.filter((e) => e.degree).map((edu) => (
-                              <div key={edu.id}>
+                              <div key={edu.id} className="rounded-2xl border border-slate-100 p-4">
                                 <div className="flex justify-between items-start">
                                   <div>
-                                    <p className="font-semibold text-sm">{edu.degree}</p>
-                                    <p className="text-sm text-slate-600">{edu.school}</p>
+                                    <p className="text-sm font-black text-slate-950">{edu.degree}</p>
+                                    <p className={`mt-0.5 text-sm font-semibold ${previewAccent.text}`}>{edu.school}</p>
                                   </div>
-                                  <p className="text-xs text-slate-500 whitespace-nowrap ml-4">{edu.period}</p>
+                                  <p className="ml-4 whitespace-nowrap text-xs font-semibold text-slate-500">{edu.period}</p>
                                 </div>
                                 {edu.description && (
-                                  <p className="text-sm text-slate-600 mt-1">{edu.description}</p>
+                                  <p className="mt-2 text-[13px] leading-6 text-slate-600">{edu.description}</p>
                                 )}
                               </div>
                             ))}
@@ -1309,60 +1308,53 @@ export function CVGenerator() {
                         </div>
                       )}
 
-                      
                       {projects.some((e) => e.name) && (
-                        <div className="mb-6">
-                          <h2 className={`mb-3 text-xs font-black uppercase tracking-[0.18em] ${templateId === "junior" ? "text-pink-600" : templateId === "compact" ? "text-slate-900" : "text-indigo-600"}`}>
-                            Projets
-                          </h2>
-                          <div className="space-y-3">
+                        <div className="mb-8">
+                          {renderPreviewSectionTitle("Projets")}
+                          <div className="space-y-4">
                             {projects.filter((e) => e.name).map((proj) => (
-                              <div key={proj.id}>
+                              <div key={proj.id} className="border-l-2 border-slate-200 pl-4">
                                 <div className="flex justify-between items-start">
                                   <div>
-                                    <p className="font-semibold text-sm">{proj.name}</p>
-                                    <p className="text-sm text-slate-600">{proj.context}</p>
+                                    <p className="text-sm font-black text-slate-950">{proj.name}</p>
+                                    <p className={`mt-0.5 text-sm font-semibold ${previewAccent.text}`}>{proj.context}</p>
                                   </div>
                                 </div>
-                                {proj.description && (
-                                  <p className="text-sm text-slate-600 mt-1">{proj.description}</p>
-                                )}
+                                {renderDescription(proj.description)}
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
 
-                     
                       {(selectedSkills.length > 0 || selectedSoftSkills.length > 0) && (
-                        <div className="mb-6">
-                          <h2 className={`mb-3 text-xs font-black uppercase tracking-[0.18em] ${templateId === "junior" ? "text-pink-600" : templateId === "compact" ? "text-slate-900" : "text-indigo-600"}`}>
-                            Competences
-                          </h2>
-                          <div className="flex flex-wrap gap-2">
-                            {[...selectedSkills, ...selectedSoftSkills].map((skill, i) => (
-                              <span
-                                key={i}
-                                className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${templateId === "compact" ? "bg-slate-100 text-slate-700" : templateId === "junior" ? "bg-pink-50 text-pink-700" : "bg-indigo-50 text-indigo-700"}`}
-                              >
-                                {skill}
-                              </span>
-                            ))}
+                        <div className="mb-8">
+                          {renderPreviewSectionTitle("Competences")}
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {selectedSkills.length > 0 && (
+                              <div className="rounded-2xl bg-slate-50 p-4">
+                                <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Metier</p>
+                                <p className="text-[13px] leading-6 text-slate-700">{selectedSkills.join(" · ")}</p>
+                              </div>
+                            )}
+                            {selectedSoftSkills.length > 0 && (
+                              <div className="rounded-2xl bg-slate-50 p-4">
+                                <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Qualites</p>
+                                <p className="text-[13px] leading-6 text-slate-700">{selectedSoftSkills.join(" · ")}</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
 
-                      
                       {languageEntries.some((l) => l.lang) && (
                         <div>
-                          <h2 className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">
-                            Langues
-                          </h2>
+                          {renderPreviewSectionTitle("Langues")}
                           <p className="text-sm text-slate-700">
                             {languageEntries
                               .filter((l) => l.lang)
                               .map((l) => `${l.lang}${l.level ? ` (${l.level})` : ""}`)
-                              .join(" • ")}
+                              .join(" · ")}
                           </p>
                         </div>
                       )}

@@ -67,6 +67,14 @@ function wrapText(text: string, maxChars: number) {
   return lines;
 }
 
+function cleanDetailLine(line: string) {
+  return line.replace(/^[-•]\s*/, "").trim();
+}
+
+function splitDetailLines(text: string) {
+  return text.split(/\r?\n/).map(cleanDetailLine).filter(Boolean);
+}
+
 function dataUrlToBinary(dataUrl: string) {
   const base64 = dataUrl.split(",")[1] || "";
   const raw = atob(base64);
@@ -125,21 +133,30 @@ export async function downloadSimplePdf(
   const pageHeight = 842;
   const margin = options.template === "compact" ? 42 : 50;
   const accent = options.template === "junior" ? "0.93 0.24 0.54" : options.template === "compact" ? "0.06 0.07 0.10" : "0.31 0.27 0.96";
+  const accentSoft = options.template === "junior" ? "1 0.95 0.98" : options.template === "compact" ? "0.96 0.97 0.98" : "0.95 0.95 1";
   const bodySize = options.template === "compact" ? 9 : 9.8;
   const lineGap = options.template === "compact" ? 12 : 14;
   const commands: string[] = [
     "q",
-    "0.98 0.98 0.99 rg",
+    "1 1 1 rg",
     `0 0 ${pageWidth} ${pageHeight} re f`,
     "Q",
     "q",
+    `${accentSoft} rg`,
+    `${margin - 10} ${pageHeight - 122} ${pageWidth - margin * 2 + 20} 92 re f`,
+    "Q",
+    "q",
     `${accent} rg`,
-    `${margin} ${pageHeight - 100} ${pageWidth - margin * 2} 2 re f`,
+    `${margin - 10} ${pageHeight - 122} 6 92 re f`,
     "Q",
     "BT",
-    "/F1 29 Tf",
+    "/F2 8 Tf",
+    `${accent} rg`,
+    `1 0 0 1 ${margin} ${pageHeight - 48} Tm`,
+    `${pdfHexText("CURRICULUM VITAE")} Tj`,
+    "/F1 30 Tf",
     `0.04 0.04 0.09 rg`,
-    `1 0 0 1 ${margin} ${pageHeight - 66} Tm`,
+    `1 0 0 1 ${margin} ${pageHeight - 72} Tm`,
     `${pdfHexText(title)} Tj`,
   ];
 
@@ -156,29 +173,67 @@ export async function downloadSimplePdf(
   }
 
   if (subtitle) {
-    commands.push("/F2 11 Tf", `0.30 0.33 0.42 rg`, `1 0 0 1 ${margin} ${pageHeight - 86} Tm`, `${pdfHexText(subtitle)} Tj`);
+    commands.push("/F1 11 Tf", `${accent} rg`, `1 0 0 1 ${margin} ${pageHeight - 91} Tm`, `${pdfHexText(subtitle)} Tj`);
   }
   commands.push("ET");
 
   if (hasPhoto) {
-    commands.push("q", `1 0 0 1 ${pageWidth - margin - 72} ${pageHeight - 106} cm`, "72 0 0 72 0 0 cm", "/Im1 Do", "Q");
+    commands.push(
+      "q",
+      "1 1 1 rg",
+      `${pageWidth - margin - 85} ${pageHeight - 114} 74 74 re f`,
+      "Q",
+      "q",
+      `1 0 0 1 ${pageWidth - margin - 82} ${pageHeight - 111} cm`,
+      "68 0 0 68 0 0 cm",
+      "/Im1 Do",
+      "Q"
+    );
   }
 
-  let y = pageHeight - 130;
+  let y = pageHeight - 150;
   const textWidth = hasPhoto ? 72 : 88;
   sections.forEach((section) => {
     const lines = section.lines.filter(Boolean);
     if (!lines.length || y < 70) return;
-    commands.push("BT", "/F1 10 Tf", `${accent} rg`, `1 0 0 1 ${margin} ${y} Tm`, `${pdfHexText(section.title.toUpperCase())} Tj`, "ET");
-    y -= 16;
+    commands.push("q", `${accent} rg`, `${margin} ${y + 3} 6 6 re f`, "Q");
+    commands.push("q", "0.88 0.89 0.93 rg", `${margin + 116} ${y + 5} ${pageWidth - margin * 2 - 116} 0.8 re f`, "Q");
+    commands.push("BT", "/F1 9 Tf", `${accent} rg`, `1 0 0 1 ${margin + 14} ${y} Tm`, `${pdfHexText(section.title.toUpperCase())} Tj`, "ET");
+    y -= 18;
+
     commands.push("BT", `/F2 ${bodySize} Tf`, "0.14 0.16 0.22 rg");
-    lines.flatMap((line) => wrapText(line, textWidth)).forEach((line) => {
-      if (y < 50) return;
-      commands.push(`1 0 0 1 ${margin} ${y} Tm`, `${pdfHexText(line)} Tj`);
-      y -= lineGap;
-    });
+    if (section.title.toLowerCase() === "profil") {
+      lines.flatMap((line) => wrapText(line, textWidth)).slice(0, 5).forEach((line) => {
+        if (y < 50) return;
+        commands.push(`1 0 0 1 ${margin} ${y} Tm`, `${pdfHexText(line)} Tj`);
+        y -= lineGap;
+      });
+    } else {
+      lines.forEach((line) => {
+        if (y < 50) return;
+        const detailLines = splitDetailLines(line);
+        if (detailLines.length > 1) {
+          detailLines.forEach((detail) => {
+            wrapText(detail, textWidth - 4).forEach((wrapped, index) => {
+              if (y < 50) return;
+              if (index === 0) commands.push(`1 0 0 1 ${margin + 4} ${y} Tm`, `${pdfHexText("•")} Tj`);
+              commands.push(`1 0 0 1 ${margin + 16} ${y} Tm`, `${pdfHexText(wrapped)} Tj`);
+              y -= lineGap;
+            });
+          });
+        } else {
+          wrapText(line, textWidth).forEach((wrapped, index) => {
+            if (y < 50) return;
+            commands.push(index === 0 ? "/F1 9.6 Tf" : `/F2 ${bodySize} Tf`);
+            commands.push(`1 0 0 1 ${margin} ${y} Tm`, `${pdfHexText(wrapped)} Tj`);
+            y -= lineGap;
+          });
+          commands.push(`/F2 ${bodySize} Tf`);
+        }
+      });
+    }
     commands.push("ET");
-    y -= options.template === "compact" ? 8 : 14;
+    y -= options.template === "compact" ? 10 : 16;
   });
 
   const stream = commands.join("\n");
