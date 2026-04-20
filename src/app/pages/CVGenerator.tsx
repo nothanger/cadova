@@ -212,6 +212,69 @@ export function CVGenerator() {
   }, [summaryVariantIdx, firstName, sector, level, candidatureType, education]);
 
   const summary = genderText(editedSummary ?? autoSummary, gender);
+  const previewAccent =
+    templateId === "junior"
+      ? {
+          text: "text-pink-600",
+          border: "border-pink-500",
+          bg: "bg-pink-50",
+          softBg: "bg-pink-50/70",
+          ring: "ring-pink-100",
+          dot: "bg-pink-500",
+        }
+      : templateId === "compact"
+        ? {
+            text: "text-slate-950",
+            border: "border-slate-950",
+            bg: "bg-slate-100",
+            softBg: "bg-slate-50",
+            ring: "ring-slate-200",
+            dot: "bg-slate-950",
+          }
+        : {
+            text: "text-indigo-600",
+            border: "border-indigo-600",
+            bg: "bg-indigo-50",
+            softBg: "bg-indigo-50/70",
+            ring: "ring-indigo-100",
+            dot: "bg-indigo-600",
+          };
+
+  const summaryLines = summary
+    .split(/(?<=[.!?])\s+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
+  const renderPreviewSectionTitle = (label: string) => (
+    <div className="mb-4 flex items-center gap-3">
+      <span className={`h-2.5 w-2.5 rounded-full ${previewAccent.dot}`} />
+      <h2 className={`text-[11px] font-black uppercase tracking-[0.2em] ${previewAccent.text}`}>
+        {label}
+      </h2>
+      <span className="h-px flex-1 bg-slate-200" />
+    </div>
+  );
+
+  const renderDescription = (description: string) => {
+    const lines = description
+      .split(/\r?\n/)
+      .map((line) => line.replace(/^[-•]\s*/, "").trim())
+      .filter(Boolean);
+
+    if (!lines.length) return null;
+
+    return (
+      <ul className="mt-3 space-y-1.5 text-[13px] leading-6 text-slate-600">
+        {lines.map((line, index) => (
+          <li key={`${line}-${index}`} className="flex gap-2.5">
+            <span className={`mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full ${previewAccent.dot}`} />
+            <span>{line}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  };
    
   const addEducation = () => {
     setEducation((prev) => [

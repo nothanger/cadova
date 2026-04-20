@@ -1,5 +1,53 @@
-function escapePdfText(value: string) {
-  return value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)").replace(/\r?\n/g, " ");
+const winAnsiMap: Record<number, number> = {
+  0x20ac: 0x80,
+  0x201a: 0x82,
+  0x0192: 0x83,
+  0x201e: 0x84,
+  0x2026: 0x85,
+  0x2020: 0x86,
+  0x2021: 0x87,
+  0x02c6: 0x88,
+  0x2030: 0x89,
+  0x0160: 0x8a,
+  0x2039: 0x8b,
+  0x0152: 0x8c,
+  0x017d: 0x8e,
+  0x2018: 0x91,
+  0x2019: 0x92,
+  0x201c: 0x93,
+  0x201d: 0x94,
+  0x2022: 0x95,
+  0x2013: 0x96,
+  0x2014: 0x97,
+  0x02dc: 0x98,
+  0x2122: 0x99,
+  0x0161: 0x9a,
+  0x203a: 0x9b,
+  0x0153: 0x9c,
+  0x017e: 0x9e,
+  0x0178: 0x9f,
+};
+
+function pdfHexText(value: string) {
+  const normalized = value.normalize("NFC").replace(/\r?\n/g, " ");
+  const bytes: number[] = [];
+
+  for (let index = 0; index < normalized.length; index += 1) {
+    const code = normalized.charCodeAt(index);
+    if ((code >= 0x20 && code <= 0x7e) || (code >= 0xa0 && code <= 0xff)) {
+      bytes.push(code);
+    } else if (winAnsiMap[code]) {
+      bytes.push(winAnsiMap[code]);
+    } else {
+      bytes.push(0x20);
+    }
+  }
+
+  return `<${bytes.map((byte) => byte.toString(16).padStart(2, "0")).join("").toUpperCase()}>`;
+}
+
+function byteLength(value: string) {
+  return new TextEncoder().encode(value).length;
 }
 
 function wrapText(text: string, maxChars: number) {
@@ -92,7 +140,7 @@ export async function downloadSimplePdf(
     "/F1 29 Tf",
     `0.04 0.04 0.09 rg`,
     `1 0 0 1 ${margin} ${pageHeight - 66} Tm`,
-    `(${escapePdfText(title)}) Tj`,
+    `${pdfHexText(title)} Tj`,
   ];
 
   let imageObject = "";
@@ -108,7 +156,7 @@ export async function downloadSimplePdf(
   }
 
   if (subtitle) {
-    commands.push("/F2 11 Tf", `0.30 0.33 0.42 rg`, `1 0 0 1 ${margin} ${pageHeight - 86} Tm`, `(${escapePdfText(subtitle)}) Tj`);
+    commands.push("/F2 11 Tf", `0.30 0.33 0.42 rg`, `1 0 0 1 ${margin} ${pageHeight - 86} Tm`, `${pdfHexText(subtitle)} Tj`);
   }
   commands.push("ET");
 
@@ -121,12 +169,12 @@ export async function downloadSimplePdf(
   sections.forEach((section) => {
     const lines = section.lines.filter(Boolean);
     if (!lines.length || y < 70) return;
-    commands.push("BT", "/F1 10 Tf", `${accent} rg`, `1 0 0 1 ${margin} ${y} Tm`, `(${escapePdfText(section.title.toUpperCase())}) Tj`, "ET");
+    commands.push("BT", "/F1 10 Tf", `${accent} rg`, `1 0 0 1 ${margin} ${y} Tm`, `${pdfHexText(section.title.toUpperCase())} Tj`, "ET");
     y -= 16;
     commands.push("BT", `/F2 ${bodySize} Tf`, "0.14 0.16 0.22 rg");
     lines.flatMap((line) => wrapText(line, textWidth)).forEach((line) => {
       if (y < 50) return;
-      commands.push(`1 0 0 1 ${margin} ${y} Tm`, `(${escapePdfText(line)}) Tj`);
+      commands.push(`1 0 0 1 ${margin} ${y} Tm`, `${pdfHexText(line)} Tj`);
       y -= lineGap;
     });
     commands.push("ET");
@@ -139,19 +187,19 @@ export async function downloadSimplePdf(
     "<< /Type /Catalog /Pages 2 0 R >>",
     "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
     `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> ${resources} >> /Contents 6 0 R >>`,
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+    `<< /Length ${byteLength(stream)} >>\nstream\n${stream}\nendstream`,
     ...(hasPhoto ? [imageObject] : []),
   ];
 
   let pdf = "%PDF-1.4\n";
   const offsets: number[] = [0];
   objects.forEach((object, index) => {
-    offsets.push(pdf.length);
+    offsets.push(byteLength(pdf));
     pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
   });
-  const xref = pdf.length;
+  const xref = byteLength(pdf);
   pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
   offsets.slice(1).forEach((offset) => {
     pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
