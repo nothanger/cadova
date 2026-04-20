@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from "react";
 import { supabase, API_URL } from "@/lib/supabase";
+import { getStoredSubscription, type BillingInterval, type SubscriptionPlan } from "@/app/lib/payment-service";
 
 
 
@@ -7,7 +8,8 @@ interface UserProfile {
   id: string;
   email: string;
   name: string;
-  subscription: "free" | "premium";
+  subscription: SubscriptionPlan;
+  billingInterval?: BillingInterval;
   credits: {
     cv: number;
     coverLetter: number;
@@ -24,6 +26,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Pick<UserProfile, "name" | "email">>) => Promise<{ error: Error | null }>;
+  upgradeToPro: (billing: BillingInterval) => Promise<{ error: Error | null }>;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<{ error: Error | null }>;
   sendPasswordReset: (email: string) => Promise<{ error: Error | null }>;
   resetPassword: (newPassword: string) => Promise<{ error: Error | null }>;
@@ -38,7 +41,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 
 const CACHE_KEY = "cadova_user_cache";
-const CACHE_TOKEN_KEY = "cadova_token_cache";
 
 function getCachedUser(): UserProfile | null {
   try {
@@ -80,11 +82,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data: authData } = await supabase.auth.getUser(token);
       if (authData?.user) {
+        const storedSubscription = getStoredSubscription(authData.user.id);
         updateUser({
           id: authData.user.id,
           email: authData.user.email || "",
           name: authData.user.user_metadata?.name || "Utilisateur",
-          subscription: authData.user.user_metadata?.subscription || "free",
+          subscription: storedSubscription?.plan || authData.user.user_metadata?.subscription || "free",
+          billingInterval: storedSubscription?.billing || authData.user.user_metadata?.billingInterval,
           credits: authData.user.user_metadata?.credits || {
             cv: 1, coverLetter: 0, atsAnalysis: 0, interview: 0,
           },
@@ -174,13 +178,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAccessToken(data.session.access_token);
 
         const metaName = data.user.user_metadata?.name;
+        const storedSubscription = getStoredSubscription(data.user.id);
        
         const displayName = metaName || email.split("@")[0] || "Utilisateur";
         updateUser({
           id: data.user.id,
           email: data.user.email || email,
           name: displayName,
-          subscription: "free",
+          subscription: storedSubscription?.plan || data.user.user_metadata?.subscription || "free",
+          billingInterval: storedSubscription?.billing || data.user.user_metadata?.billingInterval,
           credits: { cv: 1, coverLetter: 0, atsAnalysis: 0, interview: 0 },
         });
        
@@ -216,6 +222,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: data.user.email || email,
           name: name,
           subscription: "free",
+          billingInterval: undefined,
           credits: { cv: 1, coverLetter: 0, atsAnalysis: 0, interview: 0 },
         });
       } else {
@@ -259,6 +266,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) return { error: new Error(error.message) };
       updateUser({ ...user, ...updates });
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
+  const upgradeToPro = async (billing: BillingInterval) => {
+    try {
+      if (!user) return { error: new Error("Non connecté") };
+
+      await supabase.auth.updateUser({
+        data: {
+          subscription: "pro",
+          billingInterval: billing,
+        },
+      });
+
+      updateUser({
+        ...user,
+        subscription: "pro",
+        billingInterval: billing,
+        credits: {
+          cv: 999,
+          coverLetter: 999,
+          atsAnalysis: 999,
+          interview: 999,
+        },
+      });
+
       return { error: null };
     } catch (err) {
       return { error: err as Error };
@@ -376,7 +412,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, accessToken, signIn, signUp, signOut, updateProfile, updatePassword, sendPasswordReset, resetPassword, deleteAccount, enrollTotp, verifyTotp, unenrollTotp, getMfaFactors }}>
+    <AuthContext.Provider value={{ user, loading, accessToken, signIn, signUp, signOut, updateProfile, upgradeToPro, updatePassword, sendPasswordReset, resetPassword, deleteAccount, enrollTotp, verifyTotp, unenrollTotp, getMfaFactors }}>
       {children}
     </AuthContext.Provider>
   );

@@ -8,6 +8,7 @@ import {
   KeyRound, AlertTriangle,
 } from "lucide-react";
 import { AppLayout } from "../components/AppLayout";
+import { isProSubscription } from "../lib/payment-service";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -512,6 +513,7 @@ export function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isPro = isProSubscription(user?.subscription);
 
   useEffect(() => {
     if (user) {
@@ -772,21 +774,22 @@ export function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>
-                  Plan {user.subscription === "premium" ? "Pro" : "Gratuit"}
+                  Plan {isPro ? "Pro" : "Gratuit"}
                 </p>
                 <p className="text-xs" style={{ color: "#9CA3AF" }}>
-                  {user.subscription === "premium"
-                    ? "Accès illimité à tous les modules"
-                    : "1 CV, 1 lettre, analyse ATS basique"}
+                  {isPro
+                    ? "Accès complet à Cadova"
+                    : "CV, lettres et suivi limités"}
                 </p>
               </div>
-              {user.subscription !== "premium" && (
-                <button
+              {!isPro && (
+                <Link
+                  to="/checkout"
                   className="text-xs font-bold px-3.5 py-2 rounded-xl text-white transition-all hover:opacity-90"
                   style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
                 >
-                  Passer à Pro
-                </button>
+                  Passer Pro
+                </Link>
               )}
             </div>
           </div>

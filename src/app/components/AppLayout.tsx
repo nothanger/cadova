@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard,
+  Briefcase,
   FileText,
   PenTool,
   Search,
@@ -21,6 +22,7 @@ const navSections = [
     accent: "#5044f5",
     items: [
       { icon: LayoutDashboard, label: "Dashboard", sub: "Vue d'ensemble", path: "/dashboard" },
+      { icon: Briefcase, label: "Suivi", sub: "Candidatures et relances", path: "/suivi" },
     ],
   },
   {

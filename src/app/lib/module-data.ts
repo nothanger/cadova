@@ -3,14 +3,6 @@ import { FileText, MessageSquare, ShieldCheck, Sparkles, Target, TrendingUp } fr
 
 export type ModuleSlug = "reussia" | "oralia";
 
-export interface ModulePlan {
-  name: string;
-  priceMonthly: string;
-  priceNote: string;
-  summary: string;
-  highlights: string[];
-}
-
 export interface CadovaModule {
   slug: ModuleSlug;
   name: string;
@@ -30,7 +22,6 @@ export interface CadovaModule {
   ctaHref: string;
   previewTitle: string;
   previewMetrics: { label: string; value: string }[];
-  plans: ModulePlan[];
 }
 
 export const cadovaModules: CadovaModule[] = [
@@ -75,22 +66,6 @@ export const cadovaModules: CadovaModule[] = [
       { label: "ATS", value: "a verifier" },
       { label: "Lettre", value: "prete a ajuster" },
     ],
-    plans: [
-      {
-        name: "Solo",
-        priceMonthly: "4,99 EUR",
-        priceNote: "par mois",
-        summary: "Pour remettre ton dossier au propre sans payer pour le reste.",
-        highlights: ["CV", "Lettre", "Analyse ATS", "Versions sauvegardees"],
-      },
-      {
-        name: "Boost",
-        priceMonthly: "7,99 EUR",
-        priceNote: "par mois",
-        summary: "Pour les periodes ou tu dois envoyer beaucoup de dossiers.",
-        highlights: ["Plus de generations", "Plus d'analyses", "Ajustements frequents", "Exports facilites"],
-      },
-    ],
   },
   {
     slug: "oralia",
@@ -132,55 +107,6 @@ export const cadovaModules: CadovaModule[] = [
       { label: "Questions", value: "realistes" },
       { label: "Feedback", value: "direct" },
       { label: "Point cle", value: "structure" },
-    ],
-    plans: [
-      {
-        name: "Solo",
-        priceMonthly: "5,99 EUR",
-        priceNote: "par mois",
-        summary: "Pour t'entrainer avant les entretiens importants.",
-        highlights: ["Simulations", "Feedback", "Scores", "Historique"],
-      },
-      {
-        name: "Training",
-        priceMonthly: "8,99 EUR",
-        priceNote: "par mois",
-        summary: "Pour enchainer les entrainements quand les rendez-vous arrivent.",
-        highlights: ["Sessions intensives", "Mode pression", "Usage plus frequent", "Progression suivie"],
-      },
-    ],
-  },
-];
-
-export const cadovaBundle = {
-  name: "Cadova Complet",
-  priceMonthly: "8,99 EUR",
-  priceYearly: "89 EUR",
-  note: "Dashboard, ReussIA et OralIA dans le meme espace",
-  highlights: [
-    "CV, lettres, analyse ATS et simulations d'entretien",
-    "Un dashboard qui retrouve tes contenus sur ton compte",
-    "Le plus simple pour une recherche active et suivie",
-  ],
-};
-
-export const cadovaPlans = [
-  {
-    name: "Module unique",
-    summary: "Tu prends seulement le coup de main dont tu as besoin maintenant.",
-    bulletPoints: [
-      "Un module choisi selon ton probleme du moment",
-      "Bien pour un besoin ponctuel",
-      "Prix plus bas pour commencer doucement",
-    ],
-  },
-  {
-    name: "Cadova Complet",
-    summary: "Tu gardes tes documents, tes entretiens et tes progres au meme endroit.",
-    bulletPoints: [
-      "Dashboard, ReussIA et OralIA ensemble",
-      "Moins de ruptures entre documents et preparation orale",
-      "Plus confortable pour une recherche active",
     ],
   },
 ];

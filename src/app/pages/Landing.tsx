@@ -2,27 +2,27 @@ import { Link } from "react-router";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { MarketingShell } from "../components/MarketingShell";
 import { ModuleCard } from "../components/ModuleCard";
-import { PricingCard } from "../components/PricingCard";
 import { useSEO } from "../hooks/useSEO";
-import { cadovaBundle, cadovaModules } from "../lib/module-data";
+import { cadovaModules } from "../lib/module-data";
+import { PRO_PRICING } from "../lib/payment-service";
 
 const heroCards = [
-  { title: "Trouve ton entree", text: "Candidature structuree" },
-  { title: "Ton CV tient en quelques minutes", text: "Optimise avant envoi" },
-  { title: "Tu suis tes candidatures", text: "Sans t'eparpiller" },
+  { title: "Documents prêts", text: "CV et lettres adaptés" },
+  { title: "Relances suivies", text: "5 à 7 jours sans oubli" },
+  { title: "Pipeline clair", text: "Toutes tes offres au même endroit" },
 ];
 
 const valueCards = [
-  "Des modules adaptes a ton besoin",
-  "Un essai gratuit pour tester",
-  "Une interface simple pour avancer sans t'eparpiller",
+  "CV, lettres, suivi et entretiens réunis",
+  "Un plan gratuit pour commencer",
+  "Un espace simple pour piloter toute ta recherche",
 ];
 
 export function Landing() {
   useSEO({
     title: "Cadova - IA pour trouver un stage, une alternance ou un job",
     description:
-      "Cadova aide les jeunes candidats avec des modules simples pour le CV, la lettre, l'entretien, le suivi et le profil.",
+      "Cadova aide les jeunes candidats à gérer toute leur recherche d’emploi au même endroit.",
     canonical: "https://cadova.fr/",
     noindex: false,
   });
@@ -35,18 +35,18 @@ export function Landing() {
         <div className="marketing-container marketing-hero-grid">
           <div className="marketing-hero-content">
             <h1 className="marketing-title">
-              Tu cherche un stage? Alors fais le bien :)
+              Gère toute ta recherche au même endroit.
             </h1>
             <p className="marketing-copy" style={{ marginTop: 18, maxWidth: 520 }}>
-              Avec Cadova, tu fais tout au meme endroit: CV, entrainement et suivi.
+              Crée tes documents, suis tes candidatures, prépare tes entretiens et relance au bon moment.
             </p>
             <div className="marketing-actions">
               <Link to="/signup" className="marketing-button-primary">
-                Essayer les modules
+                Commencer gratuitement
                 <ArrowRight size={18} />
               </Link>
-              <Link to="/modules" className="marketing-button-secondary">
-                Voir les formules
+              <Link to="/pricing" className="marketing-button-secondary">
+                Voir les tarifs
               </Link>
             </div>
             <div className="marketing-proof-list">
@@ -78,7 +78,7 @@ export function Landing() {
           <div className="marketing-section-head">
             <div>
               <div className="marketing-kicker">Les modules</div>
-              <h2 className="marketing-title-section">Choisis le module qui correspond a ton besoin</h2>
+              <h2 className="marketing-title-section">Tout ce qu’il faut pour avancer proprement</h2>
             </div>
             <Link to="/pricing" className="marketing-link">
               Voir les formules
@@ -99,28 +99,41 @@ export function Landing() {
               Maintenant que tu sais? Pourquoi pas commencer aujourd'hui?
             </h2>
             <p className="marketing-copy-muted" style={{ marginTop: 16 }}>
-              Teste le module complet ou compare les modules avant de choisir.
+              Passe d’une candidature dispersée à un espace clair, suivi et actionnable.
             </p>
             <div className="marketing-actions">
               <Link to="/signup" className="marketing-button-light">
-                Voir la formule complete
+                Commencer
               </Link>
               <Link to="/pricing" className="marketing-button-light">
-                Voir les formules
+                Voir les tarifs
               </Link>
             </div>
           </div>
-          <PricingCard
-            title={cadovaBundle.name}
-            price={cadovaBundle.priceMonthly}
-            note="par mois"
-            summary="Pour garder toute ta recherche au meme endroit."
-            highlights={cadovaBundle.highlights}
-            accentColor="#5044F5"
-            ctaLabel="Commencer"
-            ctaHref="/signup"
-            featured
-          />
+          <div className="marketing-pricing-card is-featured">
+            <div className="marketing-pricing-heading">
+              <span className="marketing-recommended-badge">Pro</span>
+              <span className="marketing-pricing-badge">CADOVA COMPLET</span>
+            </div>
+            <div className="marketing-price-line">
+              <strong>{PRO_PRICING.monthly.price}</strong>
+              <span className="marketing-price-note">par mois</span>
+            </div>
+            <p className="marketing-card-copy" style={{ marginTop: 14 }}>
+              CV, lettres, suivi, relances, entretiens et dashboard dans un seul espace.
+            </p>
+            <div className="marketing-list" style={{ marginTop: 18 }}>
+              {["Tout illimité", "Suivi candidatures complet", "Mensuel ou annuel"].map((item) => (
+                <div key={item} className="marketing-list-item">
+                  <CheckCircle2 size={16} style={{ color: "#5044F5", marginTop: 3, flexShrink: 0 }} />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+            <Link to="/checkout" className="marketing-button-primary marketing-pricing-cta-featured" style={{ marginTop: 22 }}>
+              Passer Pro
+            </Link>
+          </div>
         </div>
       </section>
     </MarketingShell>

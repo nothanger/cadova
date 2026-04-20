@@ -1,48 +1,46 @@
 import { Link } from "react-router";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { MarketingShell } from "../components/MarketingShell";
-import { PricingCard } from "../components/PricingCard";
 import { useSEO } from "../hooks/useSEO";
-import { cadovaBundle, cadovaModules } from "../lib/module-data";
+import { PRO_PRICING } from "../lib/payment-service";
 
-const pricingItems = [
-  "bundle",
-  ...cadovaModules,
-];
-
-const recommendations = [
+const plans = [
   {
-    title: "Lyceen / premier stage",
-    need: "Tu dois rendre un premier dossier propre, sans trop savoir ce qu'on attend.",
-    recommendation: "ReussIA",
-    reason: "Tu poses un CV lisible, une lettre correcte et tu verifies les mots importants avant d'envoyer.",
-    ctaLabel: "Commencer par ReussIA",
-    ctaHref: "/signup",
-    accentColor: "#5044f5",
+    name: "Gratuit",
+    price: "0 €",
+    note: "pour commencer",
+    summary: "Pour créer tes premiers documents et suivre quelques candidatures.",
+    cta: "Commencer gratuitement",
+    href: "/signup",
+    featured: false,
+    highlights: [
+      "CV limité",
+      "Lettres limitées",
+      "Suivi jusqu’à 5 candidatures",
+      "Templates email de base",
+    ],
   },
   {
-    title: "Etudiant / alternance",
-    need: "Tu as plusieurs offres, plusieurs dates, et ca commence a partir dans tous les sens.",
-    recommendation: "Cadova Complet",
-    reason: "Tu gardes le dossier, l'entretien, le suivi et ton profil dans le meme espace.",
-    ctaLabel: "Choisir Cadova Complet",
-    ctaHref: "/signup",
-    accentColor: "#5044f5",
-  },
-  {
-    title: "Entretien qui arrive",
-    need: "Tu as peur de bloquer, de parler trop vite ou de repondre trop vague.",
-    recommendation: "OralIA",
-    reason: "Tu t'entraines avant le jour J et tu vois quelles reponses manquent de structure.",
-    ctaLabel: "Preparer mon entretien",
-    ctaHref: "/signup",
-    accentColor: "#d946ef",
+    name: "Pro",
+    price: PRO_PRICING.monthly.price,
+    note: "par mois",
+    summary: "Pour gérer toute ta recherche d’emploi sans limite.",
+    cta: "Passer Pro",
+    href: "/checkout",
+    featured: true,
+    highlights: [
+      "Accès complet à tous les outils",
+      "Suivi candidatures illimité",
+      "Relances et historique email",
+      "Paiement annuel disponible avec réduction",
+    ],
   },
 ];
 
 export function Pricing() {
   useSEO({
-    title: "Formules Cadova",
-    description: "Choisis le module Cadova qui correspond a ton besoin du moment ou garde tout dans la formule complete.",
+    title: "Tarifs Cadova",
+    description: "Un plan gratuit pour commencer, un plan Pro à 8,99€/mois pour gérer toute ta recherche d’emploi.",
     noindex: false,
   });
 
@@ -51,100 +49,64 @@ export function Pricing() {
       <section className="marketing-section marketing-hero">
         <div className="marketing-container marketing-panel" style={{ padding: 30 }}>
           <div style={{ maxWidth: 760 }}>
-            <div className="marketing-kicker">Formules</div>
-            <h1 className="marketing-title-section">Prends seulement ce qui t'aide maintenant.</h1>
+            <div className="marketing-kicker">Tarifs</div>
+            <h1 className="marketing-title-section">Un seul espace pour gérer toute ta recherche.</h1>
             <p className="marketing-copy" style={{ marginTop: 16 }}>
-              Si tu as juste un CV a remettre au propre, prends un module. Si ta recherche part sur plusieurs semaines avec entretiens, relances et profil a tenir, Cadova Complet sera plus confortable.
+              Cadova remplace les fichiers éparpillés, les tableaux bricolés et les relances oubliées par un espace clair pour avancer.
             </p>
           </div>
-        </div>
-      </section>
-
-      <section className="marketing-section">
-        <div className="marketing-container marketing-pricing-grid">
-          {pricingItems.map((item) => {
-            if (item === "bundle") {
-              return (
-                <PricingCard
-                  key="cadova-complet"
-                  title={cadovaBundle.name}
-                  price={cadovaBundle.priceMonthly}
-                  note="par mois"
-                  badge="Le plus pratique"
-                  subtitle="Les 4 modules ensemble"
-                  summary="Pour garder toute ta recherche au meme endroit, surtout quand les candidatures s'enchainent."
-                  highlights={[
-                    "CV, lettre, ATS, entretien, suivi et profil",
-                    "Un dashboard qui garde la memoire",
-                    "Plus simple pour une recherche active",
-                  ]}
-                  accentColor="#5044F5"
-                  ctaLabel="Me simplifier la recherche"
-                  ctaHref="/signup"
-                  featured
-                />
-              );
-            }
-
-            return (
-              <PricingCard
-                key={item.slug}
-                title={item.name}
-                price={item.plans[0].priceMonthly}
-                note={item.plans[0].priceNote}
-                summary={item.plans[0].summary}
-                highlights={item.plans[0].highlights}
-                accentColor={item.accentColor}
-                ctaLabel={item.ctaLabel}
-                ctaHref={item.ctaHref}
-              />
-            );
-          })}
         </div>
       </section>
 
       <section className="marketing-section">
         <div className="marketing-container">
-          <div className="marketing-section-head">
-            <div>
-              <div className="marketing-kicker">Petit repere</div>
-              <h2 className="marketing-title-section">Quelle formule te correspond ?</h2>
-            </div>
-            <p className="marketing-copy marketing-section-intro">
-              Pars de ta situation reelle. Le bon choix, c'est celui qui enleve le blocage le plus urgent.
-            </p>
-          </div>
-
-          <div className="marketing-recommendation-grid">
-            {recommendations.slice(0, 3).map((item) => (
+          <div className="grid gap-5 lg:grid-cols-2">
+            {plans.map((plan) => (
               <article
-                key={item.title}
-                className="marketing-recommendation-card"
-                style={{ borderColor: `${item.accentColor}2e` }}
+                key={plan.name}
+                className={`rounded-[8px] border bg-white p-6 shadow-sm ${
+                  plan.featured ? "border-indigo-200 shadow-indigo-500/10" : "border-slate-200"
+                }`}
               >
-                <span className="marketing-recommendation-accent" style={{ background: item.accentColor }} />
-                <div>
-                  <h3>{item.title}</h3>
-                  <p className="marketing-recommendation-need">{item.need}</p>
+                {plan.featured && (
+                  <span className="mb-5 inline-flex rounded-[8px] bg-indigo-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-indigo-600">
+                    Le plus complet
+                  </span>
+                )}
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-950">{plan.name}</h2>
+                    <p className="mt-2 max-w-sm text-sm leading-6 text-slate-600">{plan.summary}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-black text-slate-950">{plan.price}</p>
+                    <p className="text-xs font-semibold text-slate-500">{plan.note}</p>
+                  </div>
                 </div>
-                <div className="marketing-recommendation-result">
-                  <span>Je te conseille</span>
-                  <strong style={{ color: item.accentColor }}>{item.recommendation}</strong>
+
+                <div className="mt-6 space-y-3">
+                  {plan.highlights.map((highlight) => (
+                    <div key={highlight} className="flex items-center gap-2 text-sm text-slate-700">
+                      <CheckCircle2 className="size-4 text-emerald-600" />
+                      <span>{highlight}</span>
+                    </div>
+                  ))}
                 </div>
-                <p className="marketing-card-copy">{item.reason}</p>
+
                 <Link
-                  to={item.ctaHref}
-                  className="marketing-button-primary marketing-recommendation-cta"
-                  style={{ background: item.accentColor, boxShadow: "none" }}
+                  to={plan.href}
+                  className={`mt-8 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[8px] px-5 text-sm font-black ${
+                    plan.featured ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "bg-slate-100 text-slate-950"
+                  }`}
                 >
-                  {item.ctaLabel}
+                  {plan.cta}
+                  <ArrowRight className="size-4" />
                 </Link>
               </article>
             ))}
           </div>
         </div>
       </section>
-
     </MarketingShell>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import { ArrowRight, FileText, MessageSquare, PenTool, Search } from "lucide-react";
+import { ArrowRight, Briefcase, FileText, MessageSquare, PenTool, Search } from "lucide-react";
 import { motion } from "motion/react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AppLayout } from "../components/AppLayout";
@@ -12,6 +12,7 @@ const actions = [
   { label: "Creer un CV", text: "ReussIA", href: "/cv-generator", icon: FileText, color: "#5548F5" },
   { label: "Ecrire une lettre", text: "ReussIA", href: "/cover-letter", icon: PenTool, color: "#5548F5" },
   { label: "Analyser un CV", text: "ReussIA", href: "/ats-analysis", icon: Search, color: "#5548F5" },
+  { label: "Suivre mes candidatures", text: "Relances et emails", href: "/suivi", icon: Briefcase, color: "#0F172A" },
   { label: "Simuler un entretien", text: "OralIA", href: "/interview", icon: MessageSquare, color: "#EC4899" },
 ];
 
@@ -41,6 +42,7 @@ export function Dashboard() {
     const letters = workspace?.coverLetters ?? [];
     const analyses = workspace?.atsAnalyses ?? [];
     const interviews = workspace?.interviewSessions ?? [];
+    const applications = workspace?.applications ?? [];
     const avgAts = analyses.length
       ? Math.round(analyses.reduce((sum, item) => sum + item.score, 0) / analyses.length)
       : 0;
@@ -70,9 +72,20 @@ export function Dashboard() {
         date: item.completedAt,
         color: "#EC4899",
       })),
+      ...applications.map((item) => ({
+        label: `${item.company} - ${item.position}`,
+        tag: item.status,
+        date: item.updatedAt || item.createdAt,
+        color: "#0F172A",
+      })),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    return { cvs, letters, analyses, interviews, avgAts, activity };
+    const responseStatuses = ["Entretien", "Refusé", "Accepté"];
+    const responseRate = applications.length
+      ? Math.round((applications.filter((item) => responseStatuses.includes(item.status)).length / applications.length) * 100)
+      : 0;
+
+    return { cvs, letters, analyses, interviews, applications, avgAts, responseRate, activity };
   }, [workspace]);
 
   const firstName = user?.name && user.name !== "Utilisateur" ? user.name.split(" ")[0] : user?.email?.split("@")[0] || "toi";
@@ -91,11 +104,11 @@ export function Dashboard() {
                 Bonjour, {firstName}.
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-6" style={{ color: "#6B7280" }}>
-                Cadova centralise tes documents ReussIA, tes analyses ATS et tes entrainements OralIA sur ton compte.
+                Cadova centralise tes documents, tes candidatures, tes relances et tes entretiens sur ton compte.
               </p>
             </div>
-            <Link to="/cv-generator" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#5548F5] px-5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20">
-              Continuer mon dossier
+            <Link to="/suivi" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-[#5548F5] px-5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20">
+              Ouvrir mon suivi
               <ArrowRight className="size-4" />
             </Link>
           </div>
@@ -103,10 +116,10 @@ export function Dashboard() {
 
         <div className="mb-8 grid gap-4 md:grid-cols-4">
           {[
-            { label: "CV sauvegardes", value: stats.cvs.length },
-            { label: "Lettres", value: stats.letters.length },
-            { label: "Score ATS moyen", value: stats.avgAts ? `${stats.avgAts}` : "-" },
-            { label: "Simulations", value: stats.interviews.length },
+            { label: "Candidatures", value: stats.applications.length },
+            { label: "Taux réponse", value: `${stats.responseRate}%` },
+            { label: "Entretiens", value: stats.applications.filter((item) => item.status === "Entretien").length },
+            { label: "Documents", value: stats.cvs.length + stats.letters.length },
           ].map((item, index) => (
             <motion.div
               key={item.label}
@@ -133,7 +146,7 @@ export function Dashboard() {
                   Actions
                 </p>
                 <h2 className="mt-1 text-xl font-black" style={{ fontFamily: "Syne, sans-serif", color: "#0C0B1A" }}>
-                  Tes 3 piliers Cadova
+                  Tout ton espace candidature
                 </h2>
               </div>
             </div>

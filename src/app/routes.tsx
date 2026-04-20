@@ -9,8 +9,9 @@ import { ResetPassword } from "./pages/ResetPassword";
 import { Modules } from "./pages/Modules";
 import { ModuleDetail } from "./pages/ModuleDetail";
 import { Pricing } from "./pages/Pricing";
-import { ModulesComparison } from "./pages/ModulesComparison";
 import { Dashboard } from "./pages/Dashboard";
+import { Applications } from "./pages/Applications";
+import { Checkout } from "./pages/Checkout";
 import { SettingsPage } from "./pages/Settings";
 import { CVGenerator } from "./pages/CVGenerator";
 import { CoverLetter } from "./pages/CoverLetter";
@@ -34,12 +35,9 @@ export const router = createBrowserRouter([
      
       { index: true, Component: Landing },
       { path: "modules", Component: Modules },
-      { path: "modules/comparaison", Component: ModulesComparison },
       { path: "modules/:slug", Component: ModuleDetail },
       { path: "pricing", Component: Pricing },
       { path: "formules", Component: Pricing },
-      { path: "compare", Component: ModulesComparison },
-      { path: "comparer", Component: ModulesComparison },
       { path: "login", Component: Login },
       { path: "signup", Component: Signup },
       { path: "forgot-password", Component: ForgotPassword },
@@ -53,6 +51,8 @@ export const router = createBrowserRouter([
         Component: AuthGuard,
         children: [
           { path: "dashboard", Component: Dashboard },
+          { path: "suivi", Component: Applications },
+          { path: "checkout", Component: Checkout },
           { path: "settings", Component: SettingsPage },
           { path: "cv-generator", Component: CVGenerator },
           { path: "cover-letter", Component: CoverLetter },

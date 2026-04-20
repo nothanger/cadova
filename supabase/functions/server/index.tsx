@@ -611,7 +611,12 @@ app.post("/make-server-0a5eb56b/trackia/applications", async (c) => {
       id: applicationId,
       userId: user.id,
       ...applicationData,
-      status: applicationData.status || "sent",
+      type: applicationData.type || "stage",
+      status: applicationData.status || "À envoyer",
+      appliedAt: applicationData.appliedAt || applicationData.applied_at || new Date().toISOString().slice(0, 10),
+      followUpDate: applicationData.followUpDate || applicationData.follow_up_date || "",
+      email: applicationData.email || "",
+      link: applicationData.link || "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -689,6 +694,98 @@ app.delete("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
     return c.json({ success: true });
   } catch (error: any) {
     console.error("Error deleting application:", error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.post("/make-server-0a5eb56b/trackia/emails/send", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+
+    if (!accessToken) {
+      return c.json({ error: "Unauthorized - No token provided" }, 401);
+    }
+
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
+
+    if (error || !user) {
+      return c.json({ error: "Unauthorized - Invalid token" }, 401);
+    }
+
+    const { candidatureId, recipient, subject, content } = await c.req.json();
+
+    if (!candidatureId || !recipient || !subject || !content) {
+      return c.json({ error: "Missing email fields" }, 400);
+    }
+
+    let status = "queued";
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    const fromEmail = Deno.env.get("CADOVA_FROM_EMAIL");
+
+    if (resendKey && fromEmail) {
+      const emailResponse = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${resendKey}`,
+          "Content-Type": "application/json; charset=UTF-8",
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: recipient,
+          subject,
+          text: content,
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        const errorBody = await emailResponse.text();
+        console.error("Email provider error:", emailResponse.status, errorBody);
+        return c.json({ error: "Email provider unavailable" }, 502);
+      }
+
+      status = "sent";
+    }
+
+    const email = {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      candidatureId,
+      recipient,
+      subject,
+      content,
+      status,
+      sentAt: new Date().toISOString(),
+    };
+
+    await kv.set(`email_sent:${user.id}:${candidatureId}:${email.id}`, email);
+
+    return c.json({ success: true, email });
+  } catch (error: any) {
+    console.error("Error sending email:", error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.get("/make-server-0a5eb56b/trackia/emails/:candidatureId", async (c) => {
+  try {
+    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+
+    if (!accessToken) {
+      return c.json({ error: "Unauthorized - No token provided" }, 401);
+    }
+
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
+
+    if (error || !user) {
+      return c.json({ error: "Unauthorized - Invalid token" }, 401);
+    }
+
+    const candidatureId = c.req.param("candidatureId");
+    const emails = await kv.getByPrefix(`email_sent:${user.id}:${candidatureId}:`);
+
+    return c.json({ emails: emails || [] });
+  } catch (error: any) {
+    console.error("Error fetching emails:", error);
     return c.json({ error: error.message }, 500);
   }
 });

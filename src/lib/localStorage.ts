@@ -7,6 +7,8 @@ const STORAGE_KEYS = {
   ATS_ANALYSES: "cadova_ats_analyses",
   INTERVIEWS: "cadova_interviews",
   APPLICATIONS: "cadova_applications",
+  EMAIL_TEMPLATES: "cadova_email_templates",
+  EMAILS_SENT: "cadova_emails_sent",
   LINKEDIN_ANALYSES: "cadova_linkedin_analyses",
 };
 
@@ -15,9 +17,9 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  password: string; // En production réelle, ne JAMAIS stocker en clair !
+  password: string;
   createdAt: string;
-  subscription: "free" | "premium";
+  subscription: "free" | "pro" | "premium";
   credits: {
     cv: number;
     coverLetter: number;
@@ -190,16 +192,52 @@ export interface ATSAnalysis {
   analyzedAt: string;
 }
 
+export type ApplicationStatus =
+  | "À envoyer"
+  | "Envoyé"
+  | "Relance à faire"
+  | "Relancé"
+  | "Entretien"
+  | "Refusé"
+  | "Accepté";
+
+export type ApplicationType = "stage" | "alternance" | "job";
+
 export interface Application {
   id: string;
   userId: string;
   company: string;
   position: string;
-  status: "sent" | "interview" | "offer" | "rejected";
+  type: ApplicationType;
+  status: ApplicationStatus;
   appliedAt: string;
+  followUpDate: string;
+  email: string;
+  link: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface EmailTemplate {
+  id: string;
+  userId: string;
+  name: string;
+  subject: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmailSent {
+  id: string;
+  userId: string;
+  candidatureId: string;
+  recipient: string;
+  subject: string;
+  content: string;
+  status: "sent" | "queued";
+  sentAt: string;
 }
 
 export interface LinkedInAnalysis {
@@ -347,7 +385,21 @@ export const saveATSAnalysis = (
 
 
 export const getApplications = (userId: string): Application[] => {
-  return getItems<Application>(STORAGE_KEYS.APPLICATIONS, userId);
+  const statusMap: Record<string, ApplicationStatus> = {
+    sent: "Envoyé",
+    interview: "Entretien",
+    offer: "Accepté",
+    rejected: "Refusé",
+  };
+  return getItems<Application>(STORAGE_KEYS.APPLICATIONS, userId).map((item: any) => ({
+    ...item,
+    type: item.type || "stage",
+    status: statusMap[item.status] || item.status || "À envoyer",
+    appliedAt: item.appliedAt || item.applied_at || "",
+    followUpDate: item.followUpDate || item.follow_up_date || "",
+    email: item.email || "",
+    link: item.link || "",
+  }));
 };
 
 export const saveApplication = (
@@ -374,6 +426,49 @@ export const updateApplication = (
 
 export const deleteApplication = (id: string): boolean => {
   return deleteItem(STORAGE_KEYS.APPLICATIONS, id);
+};
+
+export const getEmailTemplates = (userId: string): EmailTemplate[] => {
+  return getItems<EmailTemplate>(STORAGE_KEYS.EMAIL_TEMPLATES, userId);
+};
+
+export const saveEmailTemplate = (
+  templateData: Omit<EmailTemplate, "id" | "createdAt" | "updatedAt">
+): EmailTemplate => {
+  const template: EmailTemplate = {
+    ...templateData,
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  return addItem(STORAGE_KEYS.EMAIL_TEMPLATES, template);
+};
+
+export const updateEmailTemplate = (
+  id: string,
+  updates: Partial<EmailTemplate>
+): EmailTemplate | null => {
+  return updateItem(STORAGE_KEYS.EMAIL_TEMPLATES, id, {
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  });
+};
+
+export const getEmailsSent = (userId: string): EmailSent[] => {
+  return getItems<EmailSent>(STORAGE_KEYS.EMAILS_SENT, userId);
+};
+
+export const getEmailsForApplication = (userId: string, candidatureId: string): EmailSent[] => {
+  return getEmailsSent(userId).filter((email) => email.candidatureId === candidatureId);
+};
+
+export const saveEmailSent = (emailData: Omit<EmailSent, "id" | "sentAt">): EmailSent => {
+  const email: EmailSent = {
+    ...emailData,
+    id: crypto.randomUUID(),
+    sentAt: new Date().toISOString(),
+  };
+  return addItem(STORAGE_KEYS.EMAILS_SENT, email);
 };
 
 

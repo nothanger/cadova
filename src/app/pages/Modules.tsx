@@ -1,10 +1,10 @@
 import { Link } from "react-router";
 import { ArrowRight } from "lucide-react";
 import { ModuleCard } from "../components/ModuleCard";
-import { PricingCard } from "../components/PricingCard";
 import { MarketingShell } from "../components/MarketingShell";
 import { useSEO } from "../hooks/useSEO";
-import { cadovaBundle, cadovaModules } from "../lib/module-data";
+import { cadovaModules } from "../lib/module-data";
+import { PRO_PRICING } from "../lib/payment-service";
 
 export function Modules() {
   useSEO({
@@ -27,11 +27,11 @@ export function Modules() {
             </div>
             <div className="marketing-actions" style={{ marginTop: 0 }}>
               <Link to="/pricing" className="marketing-button-primary">
-                Voir les formules
+                Voir les tarifs
                 <ArrowRight size={18} />
               </Link>
               <Link to="/pricing" className="marketing-button-secondary">
-                Voir les options
+                Passer Pro
               </Link>
             </div>
           </div>
@@ -60,17 +60,22 @@ export function Modules() {
             </p>
           </div>
 
-          <PricingCard
-            title={cadovaBundle.name}
-            price={cadovaBundle.priceMonthly}
-            note={cadovaBundle.note}
-            summary="Le choix le plus confortable si tu veux garder toute ta recherche au meme endroit."
-            highlights={cadovaBundle.highlights}
-            accentColor="#161426"
-            ctaLabel="Voir les formules"
-            ctaHref="/pricing"
-            featured
-          />
+          <div className="marketing-pricing-card is-featured">
+            <div className="marketing-pricing-heading">
+              <span className="marketing-recommended-badge">Pro</span>
+              <span className="marketing-pricing-badge">Cadova complet</span>
+            </div>
+            <div className="marketing-price-line">
+              <strong>{PRO_PRICING.monthly.price}</strong>
+              <span className="marketing-price-note">par mois</span>
+            </div>
+            <p className="marketing-card-copy" style={{ marginTop: 14 }}>
+              Un abonnement unique pour CV, lettres, ATS, entretiens, suivi et relances.
+            </p>
+            <Link to="/checkout" className="marketing-button-primary marketing-pricing-cta-featured" style={{ marginTop: 22 }}>
+              Passer Pro
+            </Link>
+          </div>
         </div>
       </section>
     </MarketingShell>

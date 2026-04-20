@@ -1,9 +1,9 @@
 import { Link, useParams } from "react-router";
 import { CheckCircle2 } from "lucide-react";
 import { MarketingShell } from "../components/MarketingShell";
-import { PricingCard } from "../components/PricingCard";
 import { useSEO } from "../hooks/useSEO";
-import { cadovaBundle, cadovaModules, getModuleBySlug } from "../lib/module-data";
+import { cadovaModules, getModuleBySlug } from "../lib/module-data";
+import { PRO_PRICING } from "../lib/payment-service";
 
 export function ModuleDetail() {
   const { slug } = useParams();
@@ -46,7 +46,7 @@ export function ModuleDetail() {
                 {module.ctaLabel}
               </Link>
               <Link to="/pricing" className="marketing-button-secondary">
-                Voir les formules
+                Voir les tarifs
               </Link>
             </div>
           </div>
@@ -131,38 +131,40 @@ export function ModuleDetail() {
         <div className="marketing-container">
           <div className="marketing-section-head">
             <div>
-              <div className="marketing-kicker">Formules</div>
-              <h2 className="marketing-title-section">Formules pour {module.name}</h2>
+              <div className="marketing-kicker">Accès</div>
+              <h2 className="marketing-title-section">{module.name} est inclus dans Cadova.</h2>
             </div>
             <Link to="/pricing" className="marketing-link">
-              Voir toutes les options
+              Voir les tarifs
             </Link>
           </div>
           <div className="marketing-grid-2 marketing-pricing-pair">
-            {module.plans.slice(0, 1).map((plan, index) => (
-              <PricingCard
-                key={plan.name}
-                title={plan.name}
-                price={plan.priceMonthly}
-                note={plan.priceNote}
-                summary={plan.summary}
-                highlights={plan.highlights}
-                accentColor={module.accentColor}
-                ctaLabel={module.ctaLabel}
-                ctaHref={module.ctaHref}
-                featured={index === 0}
-              />
-            ))}
-            <PricingCard
-              title={cadovaBundle.name}
-              price={cadovaBundle.priceMonthly}
-              note={cadovaBundle.note}
-              summary="Si ce module devient central dans ta recherche, la formule complete garde la suite du parcours au meme endroit."
-              highlights={cadovaBundle.highlights}
-              accentColor="#161426"
-              ctaLabel="Voir la formule complete"
-              ctaHref="/pricing"
-            />
+            <div className="marketing-detail-block">
+              <div className="marketing-kicker">Gratuit</div>
+              <h3 style={{ marginTop: 12, fontSize: 28, fontWeight: 900, color: "#161426" }}>0 €</h3>
+              <p className="marketing-card-copy" style={{ marginTop: 12 }}>
+                Pour tester les outils essentiels et commencer ton dossier.
+              </p>
+              <Link to="/signup" className="marketing-button-secondary" style={{ marginTop: 22 }}>
+                Commencer
+              </Link>
+            </div>
+            <div className="marketing-pricing-card is-featured">
+              <div className="marketing-pricing-heading">
+                <span className="marketing-recommended-badge">Pro</span>
+                <span className="marketing-pricing-badge">Cadova complet</span>
+              </div>
+              <div className="marketing-price-line">
+                <strong>{PRO_PRICING.monthly.price}</strong>
+                <span className="marketing-price-note">par mois</span>
+              </div>
+              <p className="marketing-card-copy" style={{ marginTop: 14 }}>
+                Accès complet à tous les outils, au suivi illimité et aux relances.
+              </p>
+              <Link to="/checkout" className="marketing-button-primary marketing-pricing-cta-featured" style={{ marginTop: 22 }}>
+                Passer Pro
+              </Link>
+            </div>
           </div>
         </div>
       </section>
