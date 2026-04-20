@@ -381,7 +381,7 @@ export function Applications() {
             setSelectedApplication(application);
           }
         }}
-        className={`cursor-grab rounded-[8px] border bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] outline-none transition-all duration-150 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-[0_18px_44px_rgba(15,23,42,0.10)] focus-visible:border-indigo-400 focus-visible:ring-4 focus-visible:ring-indigo-100 active:cursor-grabbing ${
+        className={`min-w-0 cursor-grab overflow-hidden break-words rounded-[8px] border bg-white p-4 whitespace-normal shadow-[0_10px_30px_rgba(15,23,42,0.06)] outline-none transition-all duration-150 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-[0_18px_44px_rgba(15,23,42,0.10)] focus-visible:border-indigo-400 focus-visible:ring-4 focus-visible:ring-indigo-100 active:cursor-grabbing ${
           followUp.isOverdue ? "border-amber-300 ring-2 ring-amber-100" : "border-slate-200/80"
         }`}
       >
@@ -395,55 +395,55 @@ export function Applications() {
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] ${toneClass(nextAction.tone)}`}>
+          <span className={`max-w-full rounded-full px-2.5 py-1 text-[10px] font-black break-words uppercase tracking-[0.06em] whitespace-normal ${toneClass(nextAction.tone)}`}>
             {typeLabel(application.type)}
           </span>
-          <span className={`min-w-0 rounded-full px-2.5 py-1 text-[10px] font-black leading-4 ${toneClass(nextAction.tone)}`}>
+          <span className={`min-w-0 max-w-full rounded-full px-2.5 py-1 text-[10px] font-black leading-4 break-words whitespace-normal ${toneClass(nextAction.tone)}`}>
             {nextAction.label}
           </span>
         </div>
 
-        <div className="my-4 grid gap-2.5">
-          <div className="flex items-baseline gap-2">
-            <span className="shrink-0 text-[11px] font-bold text-slate-400">Envoyé le</span>
-            <strong className="min-w-0 text-[13px] font-black text-slate-900">
+        <div className="my-4 flex min-w-0 flex-col gap-2.5">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-[11px] leading-4 font-bold text-slate-400">Envoyé le</span>
+            <strong className="min-w-0 text-[13px] leading-5 font-black break-words text-slate-900">
               {application.appliedAt ? formatDate(application.appliedAt) : "Pas encore"}
             </strong>
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="shrink-0 text-[11px] font-bold text-slate-400">Relance le</span>
-            <strong className={`min-w-0 text-[13px] font-black ${followUp.isDue ? "text-amber-800" : "text-slate-900"}`}>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-[11px] leading-4 font-bold text-slate-400">Relance le</span>
+            <strong className={`min-w-0 text-[13px] leading-5 font-black break-words ${followUp.isDue ? "text-amber-800" : "text-slate-900"}`}>
               {formatDate(followUp.dueDate)}
             </strong>
           </div>
         </div>
 
         {followUp.isDue && (
-          <div className="mt-3 flex items-center gap-2 rounded-[8px] bg-amber-50 px-3 py-2 text-[12px] font-bold text-amber-900">
+          <div className="mt-3 flex min-w-0 items-start gap-2 rounded-[8px] bg-amber-50 px-3 py-2 text-[12px] leading-5 font-bold break-words text-amber-900">
             <AlertTriangle className="size-3.5" />
             {followUp.isOverdue ? `En retard de ${Math.abs(followUp.daysUntil)} j` : "À relancer aujourd’hui"}
           </div>
         )}
 
         {preview && (
-          <p className="mt-3 rounded-[8px] border border-slate-100 bg-white p-3 text-[12px] leading-5 text-slate-600">
+          <p className="mt-3 overflow-hidden rounded-[8px] border border-slate-100 bg-white p-3 text-[12px] leading-5 break-words whitespace-normal text-slate-600">
             {preview}{application.notes && application.notes.length > 96 ? "..." : ""}
           </p>
         )}
 
         <div className="mt-4 grid gap-2">
           {application.status === "À envoyer" ? (
-            <button type="button" onClick={(event) => { event.stopPropagation(); markAsSent(application); }} className="h-9 rounded-[8px] bg-slate-950 px-3 text-[12px] font-black text-white transition hover:bg-indigo-700">
+            <button type="button" onClick={(event) => { event.stopPropagation(); markAsSent(application); }} className="min-h-9 rounded-[8px] bg-slate-950 px-3 py-2 text-[12px] leading-4 font-black break-words text-white transition hover:bg-indigo-700">
               Envoyée
             </button>
           ) : (
-            <button type="button" disabled={!application.email} onClick={(event) => { event.stopPropagation(); openEmail(application); }} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[8px] bg-slate-950 px-3 text-[12px] font-black text-white transition hover:bg-indigo-700 disabled:opacity-40">
+            <button type="button" disabled={!application.email} onClick={(event) => { event.stopPropagation(); openEmail(application); }} className="inline-flex min-h-9 flex-wrap items-center justify-center gap-1.5 rounded-[8px] bg-slate-950 px-3 py-2 text-[12px] leading-4 font-black break-words text-white transition hover:bg-indigo-700 disabled:opacity-40">
               <Mail className="size-3.5" />
               Relancer
             </button>
           )}
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-            <button type="button" onClick={(event) => { event.stopPropagation(); editApplication(application); }} className="h-9 rounded-[8px] bg-slate-100 px-3 text-[12px] font-black text-slate-700 transition hover:bg-slate-200">
+            <button type="button" onClick={(event) => { event.stopPropagation(); editApplication(application); }} className="min-h-9 rounded-[8px] bg-slate-100 px-3 py-2 text-[12px] leading-4 font-black break-words text-slate-700 transition hover:bg-slate-200">
               Modifier
             </button>
             {application.link && (
@@ -529,8 +529,8 @@ export function Applications() {
           </div>
         )}
 
-        <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
-          <form onSubmit={submitApplication} className="h-fit rounded-[8px] border border-slate-200/80 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.06)] [&_label]:mb-1.5 [&_label]:text-[12px] [&_label]:font-bold [&_label]:text-slate-700">
+        <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
+          <form onSubmit={submitApplication} className="h-fit w-full rounded-[8px] border border-slate-200/80 bg-white p-3 shadow-[0_14px_36px_rgba(15,23,42,0.06)] sm:p-4 [&_label]:mb-1.5 [&_label]:text-[12px] [&_label]:font-bold [&_label]:text-slate-700">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="text-sm font-black text-slate-950">{editingId ? "Modifier" : "Nouvelle candidature"}</p>
@@ -552,7 +552,7 @@ export function Applications() {
                 <Label>Poste</Label>
                 <Input className={fieldClass} value={draft.position} onChange={(event) => setDraft((item) => ({ ...item, position: event.target.value }))} required />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <Label>Type</Label>
                   <select value={draft.type} onChange={(event) => setDraft((item) => ({ ...item, type: event.target.value as ApplicationType }))} className={selectClass}>
@@ -568,7 +568,7 @@ export function Applications() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <Label>Date d’envoi</Label>
                   <Input className={fieldClass} type="date" value={draft.appliedAt} onChange={(event) => setDraft((item) => ({ ...item, appliedAt: event.target.value, followUpDate: item.followUpDate || recommendedFollowUpDate(event.target.value) }))} />
@@ -599,8 +599,8 @@ export function Applications() {
           </form>
 
           <div className="min-w-0">
-            <div className="overflow-x-auto pb-3">
-              <div className="grid min-w-[1660px] grid-cols-7 gap-3">
+            <div className="max-w-full overflow-x-auto overscroll-x-contain pb-3 [scrollbar-gutter:stable]">
+              <div className="grid min-w-[1960px] grid-cols-7 gap-3 lg:min-w-[1660px]">
                 {STATUSES.map((status) => {
                   const items = applications.filter((item) => item.status === status);
                   const style = statusStyles[status];
@@ -609,7 +609,7 @@ export function Applications() {
                       key={status}
                       onDragOver={(event) => event.preventDefault()}
                       onDrop={() => draggedId && moveApplication(draggedId, status)}
-                      className={`min-h-[500px] rounded-[8px] border ${style.border} ${style.bg} p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]`}
+                      className={`min-h-[500px] min-w-0 rounded-[8px] border ${style.border} ${style.bg} p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]`}
                     >
                       <div className="mb-4 flex items-center justify-between rounded-[8px] bg-white/70 px-3 py-2 shadow-sm shadow-slate-900/[0.03]">
                         <div className="flex items-center gap-2">
@@ -640,11 +640,11 @@ export function Applications() {
                 const nextAction = getNextAction(application);
                 return (
                   <button key={application.id} type="button" onClick={() => setSelectedApplication(application)} className="flex w-full items-center justify-between border-b border-slate-100 px-4 py-3 text-left last:border-0">
-                    <div>
-                      <p className="text-sm font-bold text-slate-950">{application.company}</p>
-                      <p className="text-xs text-slate-600">{application.position} - {nextAction.label}</p>
+                    <div className="min-w-0">
+                      <p className="line-clamp-2 break-words text-sm font-bold text-slate-950">{application.company}</p>
+                      <p className="mt-1 line-clamp-2 break-words text-xs text-slate-600">{application.position} - {nextAction.label}</p>
                     </div>
-                    <span className="text-xs font-bold text-indigo-700">Ouvrir</span>
+                    <span className="ml-3 shrink-0 text-xs font-bold text-indigo-700">Ouvrir</span>
                   </button>
                 );
               })}
