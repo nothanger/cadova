@@ -403,17 +403,16 @@ export function Applications() {
           </span>
         </div>
 
-        <div className="mt-4 grid gap-2 rounded-[8px] border border-slate-100 bg-slate-50/80 p-3">
-          <div className="grid gap-0.5">
-            <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">Envoyé le</span>
-            <strong className="whitespace-nowrap text-[13px] font-black text-slate-900">
+        <div className="my-4 grid gap-2.5">
+          <div className="flex items-baseline gap-2">
+            <span className="shrink-0 text-[11px] font-bold text-slate-400">Envoyé le</span>
+            <strong className="min-w-0 text-[13px] font-black text-slate-900">
               {application.appliedAt ? formatDate(application.appliedAt) : "Pas encore"}
             </strong>
           </div>
-          <div className="h-px bg-slate-200/70" />
-          <div className="grid gap-0.5">
-            <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">Relance le</span>
-            <strong className={`whitespace-nowrap text-[13px] font-black ${followUp.isDue ? "text-amber-800" : "text-slate-900"}`}>
+          <div className="flex items-baseline gap-2">
+            <span className="shrink-0 text-[11px] font-bold text-slate-400">Relance le</span>
+            <strong className={`min-w-0 text-[13px] font-black ${followUp.isDue ? "text-amber-800" : "text-slate-900"}`}>
               {formatDate(followUp.dueDate)}
             </strong>
           </div>
