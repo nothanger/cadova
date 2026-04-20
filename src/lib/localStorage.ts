@@ -212,6 +212,7 @@ export interface Application {
   status: ApplicationStatus;
   appliedAt: string;
   followUpDate: string;
+  lastFollowUpAt?: string;
   email: string;
   link: string;
   notes?: string;

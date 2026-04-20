@@ -434,7 +434,7 @@ export function HealthCheck() {
                 Se créer un compte
               </Button>
               <Button variant="outline" onClick={() => window.location.href = "/dashboard"}>
-                Aller au Dashboard
+                Aller à l’accueil
               </Button>
               <Button
                 variant="outline"

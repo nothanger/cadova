@@ -5,9 +5,9 @@ import { CadovaLogo } from "./CadovaLogo";
 
 const defaultPerks = [
   "14 jours pour essayer sans carte bancaire",
-  "Un CV plus clair, meme si tu pars d'un brouillon",
-  "Des entrainements d'entretien sans pression",
-  "Tu arretes quand tu veux",
+  "Un CV plus clair, même si tu pars d’un brouillon",
+  "Des entraînements d’entretien sans pression",
+  "Tu arrêtes quand tu veux",
 ];
 
 export function AuthShell({
@@ -41,7 +41,7 @@ export function AuthShell({
           </h1>
           <div className="mt-8 grid gap-5">
             {perks.map((perk) => (
-              <div key={perk} className="flex items-center gap-3 text-sm text-white/76">
+              <div key={perk} className="flex items-center gap-3 text-sm text-white/82">
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#5044f5]/28 text-[#b9b2ff]">
                   <CheckCircle className="size-3.5" />
                 </span>
@@ -51,8 +51,8 @@ export function AuthShell({
           </div>
         </div>
 
-        <div className="relative z-10 rounded-[18px] border border-white/10 bg-white/[0.045] p-5">
-          <p className="mb-4 text-xs text-white/40">Des candidats qui avancent, chacun a son rythme</p>
+        <div className="relative z-10 rounded-[8px] border border-white/10 bg-white/[0.045] p-5">
+          <p className="mb-4 text-xs text-white/65">Des candidats qui avancent, chacun à son rythme</p>
           <div className="flex items-center gap-3">
             <div className="-space-x-2 flex">
               {["M", "T", "S", "A"].map((letter, index) => (
@@ -66,8 +66,8 @@ export function AuthShell({
               ))}
             </div>
             <div>
-              <p className="text-sm font-extrabold text-white">Lyceens, etudiants, jeunes diplomes</p>
-              <p className="flex items-center gap-2 text-xs text-white/36">
+              <p className="text-sm font-extrabold text-white">Lycéens, étudiants, jeunes diplômés</p>
+              <p className="flex items-center gap-2 text-xs text-white/65">
                 <Star className="size-4" />
                 <span>Un espace pour retrouver le fil</span>
               </p>

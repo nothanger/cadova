@@ -13,11 +13,11 @@ export function RouteErrorFallback() {
         <CadovaLogo width={82} />
         <div>
           <p className="cadova-kicker">Cadova</p>
-          <h1>La page n'a pas pu se charger correctement.</h1>
+          <h1>La page n’a pas pu se charger correctement.</h1>
           <p>
             {blockedChunk
-              ? "Un bloqueur de contenu ou le reseau a interrompu le chargement d'une partie de l'interface."
-              : "L'interface a rencontre un probleme de rendu temporaire."}
+              ? "Un bloqueur de contenu ou le réseau a interrompu le chargement d’une partie de l’interface."
+              : "L’interface a rencontré un problème de rendu temporaire."}
           </p>
         </div>
         <div className="cadova-route-fallback-actions">

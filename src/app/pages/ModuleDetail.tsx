@@ -10,8 +10,8 @@ export function ModuleDetail() {
   const module = getModuleBySlug(slug);
 
   useSEO({
-    title: module ? `${module.name} - Cadova` : "Module Cadova",
-    description: module?.fullDescription ?? "Detail d'un module Cadova.",
+    title: module ? `${module.name} - Cadova` : "Outil Cadova",
+    description: module?.fullDescription ?? "Détail d’un outil Cadova.",
     noindex: false,
   });
 
@@ -19,9 +19,9 @@ export function ModuleDetail() {
     return (
       <div className="marketing-empty">
         <div style={{ textAlign: "center" }}>
-          <h1>Module introuvable</h1>
+          <h1>Outil introuvable</h1>
           <Link to="/modules" className="marketing-link">
-            Retour aux modules
+            Retour aux outils
           </Link>
         </div>
       </div>
@@ -79,7 +79,7 @@ export function ModuleDetail() {
           </div>
 
           <div className="marketing-detail-block">
-            <div className="marketing-kicker">Fonctions cles</div>
+            <div className="marketing-kicker">Fonctions clés</div>
             <div className="marketing-list" style={{ marginTop: 16 }}>
               {module.features.slice(0, 3).map((item) => (
                 <div key={item} className="marketing-list-item">
@@ -91,7 +91,7 @@ export function ModuleDetail() {
           </div>
 
           <div className="marketing-detail-block">
-            <div className="marketing-kicker">Ce que ca change</div>
+            <div className="marketing-kicker">Ce que ça change</div>
             <div className="marketing-list" style={{ marginTop: 16 }}>
               {module.benefits.slice(0, 3).map((item) => (
                 <div key={item} className="marketing-list-item">
@@ -108,7 +108,7 @@ export function ModuleDetail() {
         <div className="marketing-container">
           <div className="marketing-section-head">
             <div>
-              <div className="marketing-kicker">Cas d'usage</div>
+              <div className="marketing-kicker">Cas d’usage</div>
               <h2 className="marketing-title-section">Quand {module.name} est le bon choix</h2>
             </div>
           </div>
@@ -174,10 +174,10 @@ export function ModuleDetail() {
           <div className="marketing-section-head">
             <div>
               <div className="marketing-kicker">Continuer</div>
-              <h2 className="marketing-title-section">Voir les autres modules</h2>
+              <h2 className="marketing-title-section">Voir les autres outils</h2>
             </div>
             <Link to="/modules" className="marketing-link">
-              Retour aux modules
+              Retour aux outils
             </Link>
           </div>
           <div className="marketing-grid-2 marketing-continuation-grid">

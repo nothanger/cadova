@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
+  AlertTriangle,
   ArrowRight,
   CalendarClock,
   Check,
+  ChevronRight,
   ExternalLink,
   Mail,
   Plus,
   Send,
-  Sparkles,
-  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "../components/AppLayout";
@@ -42,14 +42,16 @@ const STATUSES: ApplicationStatus[] = [
   "Accepté",
 ];
 
-const statusStyles: Record<ApplicationStatus, { bg: string; text: string; border: string }> = {
-  "À envoyer": { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200" },
-  Envoyé: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-100" },
-  "Relance à faire": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-100" },
-  Relancé: { bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-100" },
-  Entretien: { bg: "bg-indigo-50", text: "text-indigo-700", border: "border-indigo-100" },
-  Refusé: { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-100" },
-  Accepté: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-100" },
+const FINAL_STATUSES: ApplicationStatus[] = ["Refusé", "Accepté"];
+
+const statusStyles: Record<ApplicationStatus, { bg: string; text: string; border: string; dot: string }> = {
+  "À envoyer": { bg: "bg-slate-50", text: "text-slate-800", border: "border-slate-200", dot: "bg-slate-500" },
+  Envoyé: { bg: "bg-blue-50", text: "text-blue-800", border: "border-blue-100", dot: "bg-blue-500" },
+  "Relance à faire": { bg: "bg-amber-50", text: "text-amber-900", border: "border-amber-200", dot: "bg-amber-500" },
+  Relancé: { bg: "bg-violet-50", text: "text-violet-800", border: "border-violet-100", dot: "bg-violet-500" },
+  Entretien: { bg: "bg-indigo-50", text: "text-indigo-800", border: "border-indigo-100", dot: "bg-indigo-500" },
+  Refusé: { bg: "bg-rose-50", text: "text-rose-800", border: "border-rose-100", dot: "bg-rose-500" },
+  Accepté: { bg: "bg-emerald-50", text: "text-emerald-800", border: "border-emerald-100", dot: "bg-emerald-500" },
 };
 
 const emptyDraft = {
@@ -64,26 +66,87 @@ const emptyDraft = {
   notes: "",
 };
 
+function dateOnly(date: Date) {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 10);
+}
+
 function addDays(date: Date, days: number) {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
-  return next.toISOString().slice(0, 10);
+  return dateOnly(next);
 }
 
 function recommendedFollowUpDate(appliedAt?: string) {
-  return addDays(appliedAt ? new Date(appliedAt) : new Date(), 6);
+  return addDays(appliedAt ? new Date(`${appliedAt}T00:00:00`) : new Date(), 6);
 }
 
-function isFollowUpRecommended(application: Application) {
-  if (application.status === "Relance à faire") return true;
-  if (application.status !== "Envoyé") return false;
-  const due = application.followUpDate || recommendedFollowUpDate(application.appliedAt);
-  return new Date(`${due}T00:00:00`).getTime() <= Date.now();
+function getFollowUpDate(application: Application) {
+  return application.followUpDate || recommendedFollowUpDate(application.appliedAt);
+}
+
+function daysBetween(from: Date, to: Date) {
+  const start = new Date(from.toDateString()).getTime();
+  const end = new Date(to.toDateString()).getTime();
+  return Math.round((end - start) / 86400000);
+}
+
+function getFollowUpState(application: Application) {
+  const dueDate = getFollowUpDate(application);
+  const due = new Date(`${dueDate}T00:00:00`);
+  const diff = daysBetween(new Date(), due);
+  const relevant = application.status === "Envoyé" || application.status === "Relance à faire";
+  return {
+    dueDate,
+    daysUntil: diff,
+    isDue: relevant && diff <= 0,
+    isOverdue: relevant && diff < 0,
+  };
+}
+
+function shouldAutoMoveToFollowUp(application: Application) {
+  return application.status === "Envoyé" && getFollowUpState(application).isDue;
+}
+
+function getNextAction(application: Application) {
+  const followUp = getFollowUpState(application);
+  if (application.status === "À envoyer") return { label: "À envoyer", tone: "slate" };
+  if (application.status === "Relance à faire") return { label: followUp.isOverdue ? "Relance en retard" : "Relancer aujourd’hui", tone: "amber" };
+  if (application.status === "Envoyé") {
+    if (followUp.isDue) return { label: followUp.isOverdue ? "Relance en retard" : "Relancer aujourd’hui", tone: "amber" };
+    return { label: `Attendre jusqu’au ${formatDate(followUp.dueDate)}`, tone: "blue" };
+  }
+  if (application.status === "Relancé") return { label: "Attendre une réponse", tone: "violet" };
+  if (application.status === "Entretien") return { label: "Préparer entretien", tone: "indigo" };
+  return { label: "Terminé", tone: application.status === "Accepté" ? "emerald" : "rose" };
 }
 
 function formatDate(value?: string) {
-  if (!value) return "";
-  return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "short" }).format(new Date(value));
+  if (!value) return "Non définie";
+  const date = value.includes("T") ? new Date(value) : new Date(`${value}T00:00:00`);
+  return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "short" }).format(date);
+}
+
+function typeLabel(type: ApplicationType) {
+  return type === "job" ? "Job" : type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+function toneClass(tone: string) {
+  const tones: Record<string, string> = {
+    slate: "bg-slate-100 text-slate-700",
+    blue: "bg-blue-50 text-blue-700",
+    amber: "bg-amber-100 text-amber-900",
+    violet: "bg-violet-50 text-violet-700",
+    indigo: "bg-indigo-50 text-indigo-700",
+    rose: "bg-rose-50 text-rose-700",
+    emerald: "bg-emerald-50 text-emerald-700",
+  };
+  return tones[tone] || tones.slate;
+}
+
+function notesPreview(notes?: string) {
+  if (!notes?.trim()) return "";
+  return notes.trim().replace(/\s+/g, " ").slice(0, 96);
 }
 
 export function Applications() {
@@ -96,6 +159,7 @@ export function Applications() {
   const [draft, setDraft] = useState(emptyDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [emailApplication, setEmailApplication] = useState<Application | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [emailDraft, setEmailDraft] = useState({ recipient: "", subject: "", content: "" });
@@ -104,7 +168,11 @@ export function Applications() {
   useEffect(() => {
     if (!user?.id) return;
     loadAccountApplications(user.id).then(async (items) => {
-      const sortedItems = items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      const normalized = await Promise.all(items.map(async (item) => {
+        if (!shouldAutoMoveToFollowUp(item)) return item;
+        return (await updateAccountApplication(item.id, { status: "Relance à faire" })) || item;
+      }));
+      const sortedItems = normalized.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setApplications(sortedItems);
       const nextEmails: Record<string, EmailSent[]> = {};
       await Promise.all(sortedItems.map(async (item) => {
@@ -118,12 +186,18 @@ export function Applications() {
   const stats = useMemo(() => {
     const total = applications.length;
     const interviews = applications.filter((item) => item.status === "Entretien").length;
+    const finished = applications.filter((item) => FINAL_STATUSES.includes(item.status)).length;
+    const waiting = applications.filter((item) => ["Envoyé", "Relancé"].includes(item.status) && !getFollowUpState(item).isDue).length;
+    const followUps = applications.filter((item) => item.status === "Relance à faire" || getFollowUpState(item).isDue).length;
+    const overdue = applications.filter((item) => getFollowUpState(item).isOverdue).length;
     const responses = applications.filter((item) => ["Entretien", "Refusé", "Accepté"].includes(item.status)).length;
-    const followUps = applications.filter(isFollowUpRecommended).length;
     return {
       total,
       interviews,
+      finished,
+      waiting,
       followUps,
+      overdue,
       responseRate: total ? Math.round((responses / total) * 100) : 0,
     };
   }, [applications]);
@@ -135,6 +209,12 @@ export function Applications() {
     setEditingId(null);
   };
 
+  const updateApplicationInState = (updated: Application) => {
+    setApplications((items) => items.map((item) => (item.id === updated.id ? updated : item)));
+    setSelectedApplication((current) => (current?.id === updated.id ? updated : current));
+    setEmailApplication((current) => (current?.id === updated.id ? updated : current));
+  };
+
   const submitApplication = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!user?.id) return;
@@ -143,17 +223,18 @@ export function Applications() {
       return;
     }
 
+    const appliedAt = draft.appliedAt || (draft.status === "À envoyer" ? "" : dateOnly(new Date()));
     const payload = {
       ...draft,
       userId: user.id,
-      appliedAt: draft.appliedAt || new Date().toISOString().slice(0, 10),
-      followUpDate: draft.followUpDate || recommendedFollowUpDate(draft.appliedAt),
+      appliedAt,
+      followUpDate: draft.followUpDate || (appliedAt ? recommendedFollowUpDate(appliedAt) : ""),
     };
 
     if (editingId) {
       const updated = await updateAccountApplication(editingId, payload);
       if (updated) {
-        setApplications((items) => items.map((item) => (item.id === editingId ? updated : item)));
+        updateApplicationInState(updated);
         toast.success("Candidature mise à jour.");
       }
     } else {
@@ -184,14 +265,46 @@ export function Applications() {
     const deleted = await deleteAccountApplication(id);
     if (deleted) {
       setApplications((items) => items.filter((item) => item.id !== id));
+      setSelectedApplication((current) => (current?.id === id ? null : current));
       toast.success("Candidature supprimée.");
     }
   };
 
+  const updateApplication = async (id: string, updates: Partial<Application>, message?: string) => {
+    const updated = await updateAccountApplication(id, updates);
+    if (!updated) return null;
+    updateApplicationInState(updated);
+    if (message) toast.success(message);
+    return updated;
+  };
+
   const moveApplication = async (id: string, status: ApplicationStatus) => {
-    const updated = await updateAccountApplication(id, { status });
-    if (!updated) return;
-    setApplications((items) => items.map((item) => (item.id === id ? updated : item)));
+    await updateApplication(id, { status });
+  };
+
+  const markAsSent = async (application: Application) => {
+    const appliedAt = application.appliedAt || dateOnly(new Date());
+    await updateApplication(application.id, {
+      status: "Envoyé",
+      appliedAt,
+      followUpDate: application.followUpDate || recommendedFollowUpDate(appliedAt),
+    }, "Candidature marquée comme envoyée.");
+  };
+
+  const markAsFollowedUp = async (application: Application) => {
+    await updateApplication(application.id, {
+      status: "Relancé",
+      lastFollowUpAt: new Date().toISOString(),
+      followUpDate: addDays(new Date(), 7),
+    } as Partial<Application>, "Relance enregistrée.");
+  };
+
+  const scheduleFollowUp = async (application: Application, followUpDate: string) => {
+    const status = application.status === "Relance à faire" ? "Envoyé" : application.status;
+    await updateApplication(application.id, {
+      followUpDate,
+      status,
+    }, "Date de relance planifiée.");
   };
 
   const openEmail = (application: Application, templateName = "Relance") => {
@@ -232,10 +345,115 @@ export function Applications() {
       ...items,
       [emailApplication.id]: [sent, ...(items[emailApplication.id] || [])],
     }));
-    await moveApplication(emailApplication.id, "Relancé");
+    await updateApplication(emailApplication.id, {
+      status: "Relancé",
+      lastFollowUpAt: sent.sentAt,
+      followUpDate: addDays(new Date(), 7),
+    } as Partial<Application>);
     setSending(false);
     setEmailApplication(null);
-    toast.success(sent.status === "sent" ? "Email envoyé." : "Email enregistré côté serveur.");
+    toast.success(sent.status === "sent" ? "Email envoyé." : "Email enregistré.");
+  };
+
+  const Card = ({ application }: { application: Application }) => {
+    const followUp = getFollowUpState(application);
+    const nextAction = getNextAction(application);
+    const preview = notesPreview(application.notes);
+    const emailCount = emails[application.id]?.length || 0;
+
+    return (
+      <article
+        role="button"
+        tabIndex={0}
+        draggable
+        onDragStart={() => setDraggedId(application.id)}
+        onDragEnd={() => setDraggedId(null)}
+        onClick={() => setSelectedApplication(application)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setSelectedApplication(application);
+          }
+        }}
+        className={`cursor-grab rounded-[8px] border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing ${
+          followUp.isOverdue ? "border-amber-300 ring-2 ring-amber-100" : "border-black/5"
+        }`}
+      >
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-base font-black text-slate-950">{application.company || "Entreprise"}</p>
+            <p className="mt-0.5 line-clamp-2 text-sm font-semibold leading-5 text-slate-600">{application.position || "Poste"}</p>
+          </div>
+          <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-black uppercase ${toneClass(nextAction.tone)}`}>
+            {typeLabel(application.type)}
+          </span>
+        </div>
+
+        <div className={`mb-3 rounded-[8px] px-3 py-2 text-xs font-black ${toneClass(nextAction.tone)}`}>
+          {nextAction.label}
+        </div>
+
+        <div className="grid gap-2 text-[12px] text-slate-600">
+          <div className="flex items-center justify-between gap-2">
+            <span>Envoyée</span>
+            <strong className="text-slate-900">{application.appliedAt ? formatDate(application.appliedAt) : "Pas encore"}</strong>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span>Relance</span>
+            <strong className={followUp.isDue ? "text-amber-800" : "text-slate-900"}>{formatDate(followUp.dueDate)}</strong>
+          </div>
+        </div>
+
+        {followUp.isDue && (
+          <div className="mt-3 flex items-center gap-2 rounded-[8px] bg-amber-50 px-3 py-2 text-[12px] font-bold text-amber-900">
+            <AlertTriangle className="size-3.5" />
+            {followUp.isOverdue ? `En retard de ${Math.abs(followUp.daysUntil)} j` : "À relancer aujourd’hui"}
+          </div>
+        )}
+
+        {preview && (
+          <p className="mt-3 rounded-[8px] bg-slate-50 p-3 text-[12px] leading-5 text-slate-600">
+            {preview}{application.notes && application.notes.length > 96 ? "..." : ""}
+          </p>
+        )}
+
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {application.status === "À envoyer" ? (
+            <button type="button" onClick={(event) => { event.stopPropagation(); markAsSent(application); }} className="rounded-[8px] bg-slate-950 px-3 py-2 text-[12px] font-black text-white">
+              Envoyée
+            </button>
+          ) : (
+            <button type="button" disabled={!application.email} onClick={(event) => { event.stopPropagation(); openEmail(application); }} className="inline-flex items-center justify-center gap-1.5 rounded-[8px] bg-slate-950 px-3 py-2 text-[12px] font-black text-white disabled:opacity-40">
+              <Mail className="size-3.5" />
+              Relancer
+            </button>
+          )}
+          <button type="button" onClick={(event) => { event.stopPropagation(); editApplication(application); }} className="rounded-[8px] bg-slate-100 px-3 py-2 text-[12px] font-black text-slate-700">
+            Modifier
+          </button>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <select
+            value={application.status}
+            onClick={(event) => event.stopPropagation()}
+            onChange={(event) => moveApplication(application.id, event.target.value as ApplicationStatus)}
+            className="h-8 min-w-0 flex-1 rounded-[8px] border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-700"
+          >
+            {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
+          </select>
+          {application.link && (
+            <a onClick={(event) => event.stopPropagation()} href={application.link} target="_blank" rel="noreferrer" className="flex size-8 items-center justify-center rounded-[8px] bg-slate-100 text-slate-700">
+              <ExternalLink className="size-3.5" />
+            </a>
+          )}
+        </div>
+
+        {emailCount > 0 && (
+          <p className="mt-3 text-[11px] font-bold text-slate-500">{emailCount} email{emailCount > 1 ? "s" : ""} envoyé{emailCount > 1 ? "s" : ""}</p>
+        )}
+      </article>
+    );
   };
 
   return (
@@ -243,45 +461,61 @@ export function Applications() {
       <div className="mx-auto max-w-7xl" style={{ fontFamily: "DM Sans, system-ui, sans-serif" }}>
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-500">Suivi</p>
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600">Suivi</p>
             <h1 className="font-black leading-none text-slate-950" style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(2.4rem, 5vw, 4rem)", letterSpacing: "-0.05em" }}>
-              Pilote tes candidatures.
+              Tes candidatures à suivre.
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Garde les offres, statuts, relances et emails au même endroit pour ne plus perdre le fil.
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
+              Vois ce qui est envoyé, ce qui attend une réponse, ce qui doit être relancé et ce qui est terminé.
             </p>
           </div>
           {!isPro && (
             <Link to="/checkout" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[8px] bg-slate-950 px-5 text-sm font-bold text-white">
-              Débloquer le suivi illimité
+              Suivi illimité
               <ArrowRight className="size-4" />
             </Link>
           )}
         </div>
 
-        <div className="mb-6 grid gap-4 md:grid-cols-4">
+        <div className="mb-6 grid gap-4 md:grid-cols-3 xl:grid-cols-7">
           {[
-            { label: "Candidatures", value: stats.total },
-            { label: "Taux réponse", value: `${stats.responseRate}%` },
+            { label: "Total", value: stats.total },
+            { label: "En attente", value: stats.waiting },
+            { label: "À relancer", value: stats.followUps },
+            { label: "En retard", value: stats.overdue },
             { label: "Entretiens", value: stats.interviews },
-            { label: "Relances", value: stats.followUps },
+            { label: "Terminées", value: stats.finished },
+            { label: "Réponse", value: `${stats.responseRate}%` },
           ].map((item) => (
-            <div key={item.label} className="rounded-[8px] border border-black/5 bg-white p-5 shadow-sm">
+            <div key={item.label} className="rounded-[8px] border border-black/5 bg-white p-4 shadow-sm">
               <p className="text-3xl font-black text-slate-950" style={{ fontFamily: "Syne, sans-serif" }}>{item.value}</p>
-              <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.13em] text-slate-400">{item.label}</p>
+              <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.13em] text-slate-500">{item.label}</p>
             </div>
           ))}
         </div>
+
+        {stats.followUps > 0 && (
+          <div className="mb-6 flex flex-col gap-3 rounded-[8px] border border-amber-200 bg-amber-50 p-4 text-amber-950 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+              <div>
+                <p className="font-black">{stats.followUps} candidature{stats.followUps > 1 ? "s" : ""} à relancer</p>
+                <p className="text-sm text-amber-900">Priorise ces cartes aujourd’hui pour éviter les oublis.</p>
+              </div>
+            </div>
+            <ChevronRight className="hidden size-5 md:block" />
+          </div>
+        )}
 
         <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
           <form onSubmit={submitApplication} className="rounded-[8px] border border-black/5 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <p className="text-sm font-black text-slate-950">{editingId ? "Modifier" : "Nouvelle candidature"}</p>
-                <p className="text-xs text-slate-500">{isPro ? "Suivi illimité" : `${applications.length}/5 sur le plan gratuit`}</p>
+                <p className="text-xs text-slate-600">{isPro ? "Suivi illimité" : `${applications.length}/5 sur le plan gratuit`}</p>
               </div>
               {editingId && (
-                <button type="button" onClick={resetForm} className="text-xs font-bold text-slate-400 hover:text-slate-700">
+                <button type="button" onClick={resetForm} className="text-xs font-bold text-slate-500 hover:text-slate-800">
                   Annuler
                 </button>
               )}
@@ -344,7 +578,7 @@ export function Applications() {
 
           <div className="min-w-0">
             <div className="overflow-x-auto pb-3">
-              <div className="grid min-w-[1120px] grid-cols-7 gap-3">
+              <div className="grid min-w-[1820px] grid-cols-7 gap-4">
                 {STATUSES.map((status) => {
                   const items = applications.filter((item) => item.status === status);
                   const style = statusStyles[status];
@@ -353,62 +587,17 @@ export function Applications() {
                       key={status}
                       onDragOver={(event) => event.preventDefault()}
                       onDrop={() => draggedId && moveApplication(draggedId, status)}
-                      className={`min-h-[520px] rounded-[8px] border ${style.border} ${style.bg} p-3`}
+                      className={`min-h-[560px] rounded-[8px] border ${style.border} ${style.bg} p-3`}
                     >
                       <div className="mb-3 flex items-center justify-between">
-                        <p className={`text-xs font-black ${style.text}`}>{status}</p>
-                        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-slate-500">{items.length}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`size-2 rounded-full ${style.dot}`} />
+                          <p className={`text-sm font-black ${style.text}`}>{status}</p>
+                        </div>
+                        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-slate-700">{items.length}</span>
                       </div>
                       <div className="space-y-3">
-                        {items.map((application) => {
-                          const recommended = isFollowUpRecommended(application);
-                          return (
-                            <article
-                              key={application.id}
-                              draggable
-                              onDragStart={() => setDraggedId(application.id)}
-                              onDragEnd={() => setDraggedId(null)}
-                              className="cursor-grab rounded-[8px] border border-black/5 bg-white p-3 shadow-sm active:cursor-grabbing"
-                            >
-                              <div className="mb-2 flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-black text-slate-950">{application.company}</p>
-                                  <p className="truncate text-xs font-semibold text-slate-500">{application.position}</p>
-                                </div>
-                                <button onClick={() => editApplication(application)} className="text-[11px] font-bold text-indigo-600">Edit</button>
-                              </div>
-                              <div className="flex flex-wrap gap-1.5">
-                                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase text-slate-500">{application.type}</span>
-                                {application.appliedAt && (
-                                  <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">{formatDate(application.appliedAt)}</span>
-                                )}
-                              </div>
-                              {recommended && (
-                                <div className="mt-3 flex items-center gap-1.5 rounded-[8px] bg-amber-50 px-2 py-1.5 text-[11px] font-bold text-amber-700">
-                                  <Sparkles className="size-3" />
-                                  Relance recommandée
-                                </div>
-                              )}
-                              <div className="mt-3 flex items-center gap-2">
-                                <button type="button" disabled={!application.email} onClick={() => openEmail(application)} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-slate-950 px-3 py-2 text-[11px] font-bold text-white disabled:opacity-40">
-                                  <Mail className="size-3" />
-                                  Relancer
-                                </button>
-                                {application.link && (
-                                  <a href={application.link} target="_blank" rel="noreferrer" className="flex size-8 items-center justify-center rounded-[8px] bg-slate-100 text-slate-600">
-                                    <ExternalLink className="size-3.5" />
-                                  </a>
-                                )}
-                                <button type="button" onClick={() => removeApplication(application.id)} className="flex size-8 items-center justify-center rounded-[8px] bg-rose-50 text-rose-600">
-                                  <Trash2 className="size-3.5" />
-                                </button>
-                              </div>
-                              {(emails[application.id]?.length || 0) > 0 && (
-                                <p className="mt-2 text-[11px] font-semibold text-slate-400">{emails[application.id].length} email(s)</p>
-                              )}
-                            </article>
-                          );
-                        })}
+                        {items.map((application) => <Card key={application.id} application={application} />)}
                       </div>
                     </section>
                   );
@@ -417,32 +606,112 @@ export function Applications() {
             </div>
 
             <div className="mt-3 rounded-[8px] border border-black/5 bg-white shadow-sm lg:hidden">
-              {applications.map((application) => (
-                <div key={application.id} className="flex items-center justify-between border-b border-slate-100 px-4 py-3 last:border-0">
-                  <div>
-                    <p className="text-sm font-bold text-slate-950">{application.company}</p>
-                    <p className="text-xs text-slate-500">{application.position} - {application.status}</p>
-                  </div>
-                  <button onClick={() => editApplication(application)} className="text-xs font-bold text-indigo-600">Modifier</button>
-                </div>
-              ))}
+              {applications.map((application) => {
+                const nextAction = getNextAction(application);
+                return (
+                  <button key={application.id} type="button" onClick={() => setSelectedApplication(application)} className="flex w-full items-center justify-between border-b border-slate-100 px-4 py-3 text-left last:border-0">
+                    <div>
+                      <p className="text-sm font-bold text-slate-950">{application.company}</p>
+                      <p className="text-xs text-slate-600">{application.position} - {nextAction.label}</p>
+                    </div>
+                    <span className="text-xs font-bold text-indigo-700">Ouvrir</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {emailApplication && (
-          <div className="fixed inset-0 z-[4000] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-            <form onSubmit={sendEmail} className="w-full max-w-2xl rounded-[12px] bg-white p-5 shadow-2xl">
+        {selectedApplication && (
+          <div className="fixed inset-0 z-[3900] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+            <div role="dialog" aria-modal="true" aria-label="Détail de la candidature" className="w-full max-w-2xl rounded-[8px] bg-white p-5 shadow-2xl">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-lg font-black text-slate-950">Envoyer un email</p>
-                  <p className="text-sm text-slate-500">{emailApplication.company} - {emailApplication.position}</p>
+                  <p className="text-xl font-black text-slate-950">{selectedApplication.company}</p>
+                  <p className="text-sm font-semibold text-slate-600">{selectedApplication.position}</p>
                 </div>
-                <button type="button" onClick={() => setEmailApplication(null)} className="text-sm font-bold text-slate-400">Fermer</button>
+                <button type="button" onClick={() => setSelectedApplication(null)} className="text-sm font-bold text-slate-500">Fermer</button>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[8px] bg-slate-50 p-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Prochaine action</p>
+                  <p className="mt-1 text-sm font-black text-slate-950">{getNextAction(selectedApplication).label}</p>
+                </div>
+                <div className="rounded-[8px] bg-slate-50 p-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Relance prévue</p>
+                  <p className="mt-1 text-sm font-black text-slate-950">{formatDate(getFollowUpDate(selectedApplication))}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <Button type="button" onClick={() => openEmail(selectedApplication)} disabled={!selectedApplication.email} className="gap-2 bg-slate-950 hover:bg-slate-800">
+                  <Mail className="size-4" />
+                  Ouvrir l’email de relance
+                </Button>
+                <Button type="button" variant="outline" onClick={() => markAsFollowedUp(selectedApplication)}>
+                  Marquer comme relancée
+                </Button>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_190px]">
+                <div>
+                  <Label>Planifier une relance</Label>
+                  <Input type="date" defaultValue={getFollowUpDate(selectedApplication)} onBlur={(event) => event.target.value && scheduleFollowUp(selectedApplication, event.target.value)} />
+                </div>
+                <div>
+                  <Label>Changer de statut</Label>
+                  <select value={selectedApplication.status} onChange={(event) => moveApplication(selectedApplication.id, event.target.value as ApplicationStatus)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
+                    {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {selectedApplication.notes && (
+                <div className="mt-4 rounded-[8px] bg-slate-50 p-4">
+                  <p className="mb-2 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Notes</p>
+                  <p className="whitespace-pre-line text-sm leading-6 text-slate-700">{selectedApplication.notes}</p>
+                </div>
+              )}
+
+              <div className="mt-4 rounded-[8px] bg-slate-50 p-4">
+                <p className="mb-3 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Emails envoyés</p>
+                {(emails[selectedApplication.id]?.length || 0) > 0 ? (
+                  <div className="space-y-2">
+                    {emails[selectedApplication.id].map((email) => (
+                      <div key={email.id} className="flex items-center gap-2 text-sm text-slate-700">
+                        <Check className="size-3.5 text-emerald-600" />
+                        <span className="font-semibold">{email.subject}</span>
+                        <span className="text-slate-500">{formatDate(email.sentAt)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-600">Aucun email enregistré pour cette candidature.</p>
+                )}
+              </div>
+
+              <div className="mt-5 flex justify-between gap-3">
+                <Button type="button" variant="outline" onClick={() => editApplication(selectedApplication)}>Modifier</Button>
+                <Button type="button" variant="outline" onClick={() => removeApplication(selectedApplication.id)} className="text-rose-700">Supprimer</Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {emailApplication && (
+          <div className="fixed inset-0 z-[4000] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+            <form role="dialog" aria-modal="true" aria-label="Email de relance" onSubmit={sendEmail} className="w-full max-w-2xl rounded-[8px] bg-white p-5 shadow-2xl">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-lg font-black text-slate-950">Email de relance</p>
+                  <p className="text-sm text-slate-600">{emailApplication.company} - {emailApplication.position}</p>
+                </div>
+                <button type="button" onClick={() => setEmailApplication(null)} className="text-sm font-bold text-slate-500">Fermer</button>
               </div>
               <div className="space-y-3">
                 <div>
-                  <Label>Template</Label>
+                  <Label>Modèle</Label>
                   <select value={selectedTemplateId} onChange={(event) => applyTemplate(event.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
                     {templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
                   </select>
@@ -467,20 +736,6 @@ export function Applications() {
                   Envoyer
                 </Button>
               </div>
-              {(emails[emailApplication.id]?.length || 0) > 0 && (
-                <div className="mt-5 rounded-[8px] bg-slate-50 p-3">
-                  <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-slate-400">Historique</p>
-                  <div className="space-y-2">
-                    {emails[emailApplication.id].slice(0, 4).map((email) => (
-                      <div key={email.id} className="flex items-center gap-2 text-xs text-slate-600">
-                        <Check className="size-3 text-emerald-600" />
-                        <span className="font-semibold">{email.subject}</span>
-                        <span>{formatDate(email.sentAt)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </form>
           </div>
         )}

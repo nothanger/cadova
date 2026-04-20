@@ -9,11 +9,11 @@ import { loadAccountWorkspace } from "../lib/account-data";
 import type { AccountWorkspace } from "../lib/account-data";
 
 const actions = [
-  { label: "Creer un CV", text: "ReussIA", href: "/cv-generator", icon: FileText, color: "#5548F5" },
-  { label: "Ecrire une lettre", text: "ReussIA", href: "/cover-letter", icon: PenTool, color: "#5548F5" },
-  { label: "Analyser un CV", text: "ReussIA", href: "/ats-analysis", icon: Search, color: "#5548F5" },
-  { label: "Suivre mes candidatures", text: "Relances et emails", href: "/suivi", icon: Briefcase, color: "#0F172A" },
-  { label: "Simuler un entretien", text: "OralIA", href: "/interview", icon: MessageSquare, color: "#EC4899" },
+  { label: "Créer un CV", text: "Document clair", href: "/cv-generator", icon: FileText, color: "#5548F5" },
+  { label: "Écrire une lettre", text: "Message adapté", href: "/cover-letter", icon: PenTool, color: "#5548F5" },
+  { label: "Analyser un CV", text: "Mots à vérifier", href: "/ats-analysis", icon: Search, color: "#5548F5" },
+  { label: "Suivre mes candidatures", text: "Relances à faire", href: "/suivi", icon: Briefcase, color: "#0F172A" },
+  { label: "Préparer un entretien", text: "Réponses à travailler", href: "/interview", icon: MessageSquare, color: "#EC4899" },
 ];
 
 function timeAgo(dateStr: string) {
@@ -21,14 +21,14 @@ function timeAgo(dateStr: string) {
   const mins = Math.floor(diff / 60000);
   const hours = Math.floor(mins / 60);
   const days = Math.floor(hours / 24);
-  if (mins < 2) return "a l'instant";
+  if (mins < 2) return "à l’instant";
   if (mins < 60) return `${mins} min`;
   if (hours < 24) return `${hours} h`;
   return `${days} j`;
 }
 
 export function Dashboard() {
-  useSEO({ title: "Dashboard - Cadova", noindex: true });
+  useSEO({ title: "Accueil - Cadova", noindex: true });
   const { user } = useAuth();
   const [workspace, setWorkspace] = useState<AccountWorkspace | null>(null);
 
@@ -49,13 +49,13 @@ export function Dashboard() {
 
     const activity = [
       ...cvs.map((item) => ({
-        label: item.title || "CV sauvegarde",
+        label: item.title || "CV sauvegardé",
         tag: "CV",
         date: item.updatedAt || item.createdAt,
         color: "#5548F5",
       })),
       ...letters.map((item) => ({
-        label: item.company || item.position || item.title || "Lettre sauvegardee",
+        label: item.company || item.position || item.title || "Lettre sauvegardée",
         tag: "Lettre",
         date: item.updatedAt || item.createdAt,
         color: "#7C3AED",
@@ -146,7 +146,7 @@ export function Dashboard() {
                   Actions
                 </p>
                 <h2 className="mt-1 text-xl font-black" style={{ fontFamily: "Syne, sans-serif", color: "#0C0B1A" }}>
-                  Tout ton espace candidature
+                  Tes actions utiles
                 </h2>
               </div>
             </div>
@@ -174,7 +174,7 @@ export function Dashboard() {
                 Compte
               </p>
               <h2 className="mt-1 text-xl font-black" style={{ fontFamily: "Syne, sans-serif", color: "#0C0B1A" }}>
-                Activite recente
+                Activité récente
               </h2>
             </div>
             <div className="min-h-[320px] rounded-[8px] border border-black/5 bg-white p-5 shadow-sm">
@@ -193,14 +193,14 @@ export function Dashboard() {
               ) : (
                 <div className="flex h-[280px] flex-col items-center justify-center text-center">
                   <div className="mb-4 flex size-14 items-center justify-center rounded-[8px] bg-indigo-50">
-                    <FileText className="size-6 text-[#5548F5]" />
+                    <Briefcase className="size-6 text-[#5548F5]" />
                   </div>
-                  <h3 className="text-base font-bold" style={{ color: "#0C0B1A" }}>Aucune donnee sauvegardee</h3>
+                  <h3 className="text-base font-bold" style={{ color: "#0C0B1A" }}>Aucune candidature suivie</h3>
                   <p className="mt-2 max-w-xs text-sm leading-6" style={{ color: "#6B7280" }}>
-                    Cree un CV, une lettre ou une simulation pour alimenter ton dashboard avec tes vraies donnees de compte.
+                    Ajoute une candidature pour voir les relances, les réponses et les entretiens ici.
                   </p>
-                  <Link to="/cv-generator" className="mt-4 text-sm font-bold text-[#5548F5]">
-                    Creer mon premier CV
+                  <Link to="/suivi" className="mt-4 text-sm font-bold text-[#5548F5]">
+                    Ajouter une candidature
                   </Link>
                 </div>
               )}

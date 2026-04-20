@@ -18,10 +18,10 @@ import { CadovaLogo } from "./CadovaLogo";
 
 const navSections = [
   {
-    module: "Workspace",
+    module: "Espace",
     accent: "#5044f5",
     items: [
-      { icon: LayoutDashboard, label: "Dashboard", sub: "Vue d'ensemble", path: "/dashboard" },
+      { icon: LayoutDashboard, label: "Accueil", sub: "Vue d’ensemble", path: "/dashboard" },
       { icon: Briefcase, label: "Suivi", sub: "Candidatures et relances", path: "/suivi" },
     ],
   },
@@ -29,8 +29,8 @@ const navSections = [
     module: "ReussIA",
     accent: "#5044f5",
     items: [
-      { icon: FileText, label: "Mon CV", sub: "A rendre plus clair", path: "/cv-generator" },
-      { icon: PenTool, label: "Ma lettre", sub: "A adapter sans galere", path: "/cover-letter" },
+      { icon: FileText, label: "Mon CV", sub: "À rendre plus clair", path: "/cv-generator" },
+      { icon: PenTool, label: "Ma lettre", sub: "À adapter sans galère", path: "/cover-letter" },
       { icon: Search, label: "Analyse ATS", sub: "Ce qui manque", path: "/ats-analysis" },
     ],
   },
@@ -38,7 +38,7 @@ const navSections = [
     module: "OralIA",
     accent: "#d946ef",
     items: [
-      { icon: MessageSquare, label: "Entretien", sub: "S'entrainer avant", path: "/interview" },
+      { icon: MessageSquare, label: "Entretien", sub: "S’entraîner avant", path: "/interview" },
     ],
   },
 ];
@@ -51,10 +51,10 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const handleLogout = async () => {
     try {
       await signOut();
-      toast.success("A bientot");
+      toast.success("À bientôt");
       navigate("/");
     } catch {
-      toast.error("La deconnexion a bloque.");
+      toast.error("La déconnexion a bloqué.");
     }
   };
 
@@ -78,7 +78,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         {onClose && (
           <button
             onClick={onClose}
-            className="flex size-9 items-center justify-center rounded-[8px] bg-white/5 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+            className="flex size-9 items-center justify-center rounded-[8px] bg-white/5 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
           >
             <X className="size-4" />
           </button>
@@ -111,13 +111,13 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                     >
                       <item.icon
                         className="size-4 shrink-0"
-                        style={{ color: isActive ? section.accent : "rgba(255,255,255,0.34)" }}
+                        style={{ color: isActive ? section.accent : "rgba(255,255,255,0.52)" }}
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="mb-0.5 truncate text-[13px] font-semibold leading-none" style={{ color: isActive ? "white" : "rgba(255,255,255,0.58)" }}>
+                        <p className="mb-0.5 truncate text-[13px] font-semibold leading-none" style={{ color: isActive ? "white" : "rgba(255,255,255,0.76)" }}>
                           {item.label}
                         </p>
-                        <p className="truncate text-[10px] leading-none text-white/24">{item.sub}</p>
+                        <p className="truncate text-[10px] leading-none text-white/65">{item.sub}</p>
                       </div>
                       {isActive && <div className="size-1.5 shrink-0 rounded-full" style={{ background: section.accent }} />}
                     </div>
@@ -135,7 +135,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
               style={{
                 background: location.pathname === "/settings" ? "rgba(255,255,255,0.08)" : "transparent",
                 borderColor: location.pathname === "/settings" ? "rgba(255,255,255,0.14)" : "transparent",
-                color: location.pathname === "/settings" ? "white" : "rgba(255,255,255,0.48)",
+                color: location.pathname === "/settings" ? "white" : "rgba(255,255,255,0.72)",
               }}
             >
               <Settings className="size-4 shrink-0" />
@@ -152,12 +152,12 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[12px] font-bold text-white/80">{firstName}</p>
-            <p className="text-[10px] text-white/32">Espace candidature</p>
+            <p className="text-[10px] text-white/60">Espace candidature</p>
           </div>
           <button
             onClick={handleLogout}
-            className="flex size-8 shrink-0 items-center justify-center rounded-[8px] text-white/30 transition hover:bg-red-500/10 hover:text-red-200"
-            title="Deconnexion"
+            className="flex size-8 shrink-0 items-center justify-center rounded-[8px] text-white/65 transition hover:bg-red-500/10 hover:text-red-200"
+            title="Déconnexion"
           >
             <LogOut className="size-3.5" />
           </button>

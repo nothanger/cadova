@@ -26,7 +26,7 @@ export function ModuleCard({
       <h3 style={{ fontSize: compact ? 20 : 22 }}>{module.name}</h3>
       <p className="marketing-card-copy">{module.shortDescription}</p>
       <div className="marketing-card-footer">
-        <span>Voir le module</span>
+        <span>Ouvrir</span>
         <ArrowRight size={18} style={{ color: module.accentColor }} />
       </div>
     </Link>

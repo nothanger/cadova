@@ -8,14 +8,14 @@ import { PRO_PRICING } from "../lib/payment-service";
 
 const heroCards = [
   { title: "Documents prêts", text: "CV et lettres adaptés" },
-  { title: "Relances suivies", text: "5 à 7 jours sans oubli" },
-  { title: "Pipeline clair", text: "Toutes tes offres au même endroit" },
+  { title: "Relances utiles", text: "Rappel après 5 à 7 jours" },
+  { title: "Suivi clair", text: "Offres, réponses et entretiens" },
 ];
 
 const valueCards = [
   "CV, lettres, suivi et entretiens réunis",
   "Un plan gratuit pour commencer",
-  "Un espace simple pour piloter toute ta recherche",
+  "Un espace simple pour voir quoi faire ensuite",
 ];
 
 export function Landing() {
@@ -59,7 +59,7 @@ export function Landing() {
             </div>
           </div>
 
-          <div className="marketing-hero-stats" aria-label="Points cles Cadova">
+          <div className="marketing-hero-stats" aria-label="Points clés Cadova">
             {heroCards.map((card, index) => (
               <div key={card.title} className={`marketing-proof-stat marketing-proof-stat-${index + 1}`}>
                 <span className="marketing-proof-dot" />
@@ -77,11 +77,11 @@ export function Landing() {
         <div className="marketing-container">
           <div className="marketing-section-head">
             <div>
-              <div className="marketing-kicker">Les modules</div>
+              <div className="marketing-kicker">Les outils</div>
               <h2 className="marketing-title-section">Tout ce qu’il faut pour avancer proprement</h2>
             </div>
             <Link to="/pricing" className="marketing-link">
-              Voir les formules
+              Voir les tarifs
             </Link>
           </div>
           <div className="marketing-grid-2">
@@ -96,10 +96,10 @@ export function Landing() {
         <div className="marketing-container marketing-grid-2">
           <div className="marketing-panel-dark marketing-cta-panel">
             <h2 className="marketing-title-section">
-              Maintenant que tu sais? Pourquoi pas commencer aujourd'hui?
+              Sache quoi faire chaque jour.
             </h2>
             <p className="marketing-copy-muted" style={{ marginTop: 16 }}>
-              Passe d’une candidature dispersée à un espace clair, suivi et actionnable.
+              Ajoute tes offres, vois les relances à faire et garde tes documents au bon endroit.
             </p>
             <div className="marketing-actions">
               <Link to="/signup" className="marketing-button-light">
@@ -120,7 +120,7 @@ export function Landing() {
               <span className="marketing-price-note">par mois</span>
             </div>
             <p className="marketing-card-copy" style={{ marginTop: 14 }}>
-              CV, lettres, suivi, relances, entretiens et dashboard dans un seul espace.
+              CV, lettres, suivi, relances et entretiens dans un seul espace.
             </p>
             <div className="marketing-list" style={{ marginTop: 18 }}>
               {["Tout illimité", "Suivi candidatures complet", "Mensuel ou annuel"].map((item) => (

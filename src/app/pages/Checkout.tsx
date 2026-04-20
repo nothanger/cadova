@@ -34,7 +34,7 @@ export function Checkout() {
   return (
     <AppLayout>
       <div className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-5xl place-items-center" style={{ fontFamily: "DM Sans, system-ui, sans-serif" }}>
-        <div className="grid w-full overflow-hidden rounded-[12px] border border-black/5 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.10)] lg:grid-cols-[1fr_420px]">
+        <div className="grid w-full overflow-hidden rounded-[8px] border border-black/5 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.10)] lg:grid-cols-[1fr_420px]">
           <section className="p-6 md:p-8">
             <div className="mb-8">
               <p className="mb-3 text-[11px] font-black uppercase tracking-[0.18em] text-indigo-500">Cadova Pro</p>
@@ -101,11 +101,11 @@ export function Checkout() {
                   <ShieldCheck className="size-7" />
                 </div>
                 <h2 className="text-2xl font-black">Plan Pro activé</h2>
-                <p className="mt-3 text-sm leading-6 text-white/60">
-                  Ton espace Cadova est débloqué. Tu peux maintenant suivre toutes tes candidatures et utiliser les modules sans limite temporaire.
+                <p className="mt-3 text-sm leading-6 text-white/70">
+                  Ton espace Cadova est débloqué. Tu peux maintenant suivre toutes tes candidatures et utiliser les outils sans limite temporaire.
                 </p>
                 <Link to="/dashboard" className="mt-8 inline-flex min-h-11 items-center justify-center rounded-[8px] bg-white px-5 text-sm font-black text-slate-950">
-                  Retour au dashboard
+                  Retour à l’accueil
                 </Link>
               </div>
             ) : (
@@ -122,17 +122,17 @@ export function Checkout() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm font-black">Cadova Pro</p>
-                      <p className="mt-1 text-xs text-white/45">{PRO_PRICING[billing].label}</p>
+                      <p className="mt-1 text-xs text-white/60">{PRO_PRICING[billing].label}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-black">{PRO_PRICING[billing].price}</p>
-                      <p className="text-xs text-white/45">{PRO_PRICING[billing].note}</p>
+                      <p className="text-xs text-white/60">{PRO_PRICING[billing].note}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-auto">
-                  <p className="mb-4 text-xs leading-5 text-white/45">
+                  <p className="mb-4 text-xs leading-5 text-white/60">
                     Version temporaire sans transaction réelle. Le code est isolé pour remplacer ce flux par Stripe ensuite.
                   </p>
                   <Button onClick={startCheckout} disabled={loading} className="h-12 w-full gap-2 bg-white font-black text-slate-950 hover:bg-white/90">

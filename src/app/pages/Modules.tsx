@@ -8,8 +8,8 @@ import { PRO_PRICING } from "../lib/payment-service";
 
 export function Modules() {
   useSEO({
-    title: "Modules Cadova",
-    description: "Choisis le module Cadova qui t'aide selon ton blocage du moment: dossier, entretien, suivi ou profil.",
+    title: "Outils Cadova",
+    description: "Choisis l’outil Cadova qui t’aide selon ton besoin du moment : dossier, entretien, suivi ou profil.",
     noindex: false,
   });
 
@@ -19,10 +19,10 @@ export function Modules() {
         <div className="marketing-container marketing-panel" style={{ padding: 30 }}>
           <div className="marketing-section-head">
             <div style={{ maxWidth: 760 }}>
-              <div className="marketing-kicker">Par ou commencer</div>
-              <h1 className="marketing-title-section">Chaque module repond a un blocage precis.</h1>
+              <div className="marketing-kicker">Par où commencer</div>
+              <h1 className="marketing-title-section">Chaque outil répond à un besoin précis.</h1>
               <p className="marketing-copy" style={{ marginTop: 16 }}>
-                Tu n'as pas besoin de tout utiliser d'un coup. Commence par ce qui te bloque aujourd'hui, puis ajoute le reste si ta recherche devient plus dense.
+                Tu n’as pas besoin de tout utiliser d’un coup. Commence par ce qui te bloque aujourd’hui, puis ajoute le reste si ta recherche devient plus dense.
               </p>
             </div>
             <div className="marketing-actions" style={{ marginTop: 0 }}>
@@ -56,7 +56,7 @@ export function Modules() {
               Tu peux avancer morceau par morceau.
             </h2>
             <p className="marketing-copy" style={{ marginTop: 16 }}>
-              Un jour tu as besoin d'un CV propre. Le lendemain, d'un entrainement a l'oral. La semaine suivante, d'un suivi de relances. Cadova garde tout dans le meme fil.
+              Un jour tu as besoin d’un CV propre. Le lendemain, d’un entraînement à l’oral. La semaine suivante, d’un suivi de relances. Cadova garde tout au même endroit.
             </p>
           </div>
 
