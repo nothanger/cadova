@@ -381,32 +381,41 @@ export function Applications() {
             setSelectedApplication(application);
           }
         }}
-        className={`cursor-grab rounded-[8px] border bg-white p-[18px] shadow-[0_10px_30px_rgba(15,23,42,0.06)] outline-none transition-all duration-150 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-[0_18px_44px_rgba(15,23,42,0.10)] focus-visible:border-indigo-400 focus-visible:ring-4 focus-visible:ring-indigo-100 active:cursor-grabbing ${
+        className={`cursor-grab rounded-[8px] border bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] outline-none transition-all duration-150 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-[0_18px_44px_rgba(15,23,42,0.10)] focus-visible:border-indigo-400 focus-visible:ring-4 focus-visible:ring-indigo-100 active:cursor-grabbing ${
           followUp.isOverdue ? "border-amber-300 ring-2 ring-amber-100" : "border-slate-200/80"
         }`}
       >
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-[15px] font-black leading-5 text-slate-950">{application.company || "Entreprise"}</p>
-            <p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-5 text-slate-600">{application.position || "Poste"}</p>
-          </div>
-          <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] ${toneClass(nextAction.tone)}`}>
+        <div className="min-w-0">
+          <p title={application.company || "Entreprise"} className="line-clamp-2 break-words text-[15px] font-black leading-5 text-slate-950">
+            {application.company || "Entreprise"}
+          </p>
+          <p title={application.position || "Poste"} className="mt-1 line-clamp-2 break-words text-[13px] font-semibold leading-5 text-slate-600">
+            {application.position || "Poste"}
+          </p>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] ${toneClass(nextAction.tone)}`}>
             {typeLabel(application.type)}
+          </span>
+          <span className={`min-w-0 rounded-full px-2.5 py-1 text-[10px] font-black leading-4 ${toneClass(nextAction.tone)}`}>
+            {nextAction.label}
           </span>
         </div>
 
-        <div className={`mb-4 rounded-[8px] px-3 py-2 text-[12px] font-black leading-4 ${toneClass(nextAction.tone)}`}>
-          {nextAction.label}
-        </div>
-
-        <div className="grid gap-2 rounded-[8px] bg-slate-50/80 p-3 text-[12px] text-slate-600">
-          <div className="flex items-center justify-between gap-2">
-            <span>Envoyée</span>
-            <strong className="text-slate-900">{application.appliedAt ? formatDate(application.appliedAt) : "Pas encore"}</strong>
+        <div className="mt-4 grid gap-2 rounded-[8px] border border-slate-100 bg-slate-50/80 p-3">
+          <div className="grid gap-0.5">
+            <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">Envoyé le</span>
+            <strong className="whitespace-nowrap text-[13px] font-black text-slate-900">
+              {application.appliedAt ? formatDate(application.appliedAt) : "Pas encore"}
+            </strong>
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <span>Relance</span>
-            <strong className={followUp.isDue ? "text-amber-800" : "text-slate-900"}>{formatDate(followUp.dueDate)}</strong>
+          <div className="h-px bg-slate-200/70" />
+          <div className="grid gap-0.5">
+            <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">Relance le</span>
+            <strong className={`whitespace-nowrap text-[13px] font-black ${followUp.isDue ? "text-amber-800" : "text-slate-900"}`}>
+              {formatDate(followUp.dueDate)}
+            </strong>
           </div>
         </div>
 
@@ -423,36 +432,38 @@ export function Applications() {
           </p>
         )}
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid gap-2">
           {application.status === "À envoyer" ? (
-            <button type="button" onClick={(event) => { event.stopPropagation(); markAsSent(application); }} className="rounded-[8px] bg-slate-950 px-3 py-2.5 text-[12px] font-black text-white transition hover:bg-indigo-700">
+            <button type="button" onClick={(event) => { event.stopPropagation(); markAsSent(application); }} className="h-9 rounded-[8px] bg-slate-950 px-3 text-[12px] font-black text-white transition hover:bg-indigo-700">
               Envoyée
             </button>
           ) : (
-            <button type="button" disabled={!application.email} onClick={(event) => { event.stopPropagation(); openEmail(application); }} className="inline-flex items-center justify-center gap-1.5 rounded-[8px] bg-slate-950 px-3 py-2.5 text-[12px] font-black text-white transition hover:bg-indigo-700 disabled:opacity-40">
+            <button type="button" disabled={!application.email} onClick={(event) => { event.stopPropagation(); openEmail(application); }} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[8px] bg-slate-950 px-3 text-[12px] font-black text-white transition hover:bg-indigo-700 disabled:opacity-40">
               <Mail className="size-3.5" />
               Relancer
             </button>
           )}
-          <button type="button" onClick={(event) => { event.stopPropagation(); editApplication(application); }} className="rounded-[8px] bg-slate-100 px-3 py-2.5 text-[12px] font-black text-slate-700 transition hover:bg-slate-200">
-            Modifier
-          </button>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            <button type="button" onClick={(event) => { event.stopPropagation(); editApplication(application); }} className="h-9 rounded-[8px] bg-slate-100 px-3 text-[12px] font-black text-slate-700 transition hover:bg-slate-200">
+              Modifier
+            </button>
+            {application.link && (
+              <a onClick={(event) => event.stopPropagation()} href={application.link} target="_blank" rel="noreferrer" className="flex size-9 items-center justify-center rounded-[8px] bg-slate-100 text-slate-700 transition hover:bg-slate-200">
+                <ExternalLink className="size-3.5" />
+              </a>
+            )}
+          </div>
         </div>
 
-        <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="mt-2">
           <select
             value={application.status}
             onClick={(event) => event.stopPropagation()}
             onChange={(event) => moveApplication(application.id, event.target.value as ApplicationStatus)}
-            className="h-8 min-w-0 flex-1 rounded-[8px] border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            className="h-9 w-full rounded-[8px] border border-slate-200 bg-white px-2.5 text-[11px] font-bold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
           >
             {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
           </select>
-          {application.link && (
-            <a onClick={(event) => event.stopPropagation()} href={application.link} target="_blank" rel="noreferrer" className="flex size-8 items-center justify-center rounded-[8px] bg-slate-100 text-slate-700 transition hover:bg-slate-200">
-              <ExternalLink className="size-3.5" />
-            </a>
-          )}
         </div>
 
         {emailCount > 0 && (
