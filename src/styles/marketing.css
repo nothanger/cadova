@@ -516,6 +516,18 @@
   letter-spacing: -0.05em;
 }
 
+.marketing-pricing-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.marketing-pricing-heading .marketing-pricing-badge {
+  margin: 0;
+}
+
 .marketing-pricing-subtitle {
   margin-top: 8px;
   color: #5044f5;
@@ -528,7 +540,7 @@
   width: fit-content;
   align-items: center;
   border: 1px solid rgba(80, 68, 245, 0.18);
-  border-radius: 999px;
+  border-radius: 8px;
   background: #efedff;
   color: #5044f5;
   font-size: 11px;

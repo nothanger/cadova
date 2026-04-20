@@ -17,7 +17,7 @@ export async function apiCall(
   const accessToken = data.session?.access_token;
 
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    "Content-Type": "application/json; charset=UTF-8",
     ...((options.headers as Record<string, string>) || {}),
   };
 

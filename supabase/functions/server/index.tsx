@@ -17,7 +17,7 @@ async function callOpenAI(systemPrompt: string, userPrompt: string, maxTokens = 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "application/json; charset=UTF-8",
       Authorization: `Bearer ${OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
@@ -33,7 +33,7 @@ async function callOpenAI(systemPrompt: string, userPrompt: string, maxTokens = 
 
   if (!res.ok) {
     const errBody = await res.text();
-    console.error("❌ OpenAI API error:", res.status, errBody);
+    console.error("OpenAI API error:", res.status, errBody);
     throw new Error(`OpenAI API error (${res.status}): ${errBody}`);
   }
 
@@ -66,6 +66,11 @@ app.use(
   })
 );
 
+app.use("*", async (c, next) => {
+  await next();
+  c.header("Content-Type", "application/json; charset=UTF-8");
+});
+
 app.get("/make-server-0a5eb56b/health", (c) => {
   return c.json({
     status: "ok",
@@ -84,7 +89,7 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
       return c.json({ error: "Email, password, and name are required" }, 400);
     }
 
-    console.log(`📝 Creating new user account: ${email}`);
+    console.log(`Creating new user account: ${email}`);
 
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -95,7 +100,7 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
     });
 
     if (error) {
-      console.error(`❌ Signup error for ${email}:`, error);
+      console.error(`Signup error for ${email}:`, error);
    
       if (error.code === "email_exists" || error.message?.toLowerCase().includes("already been registered") || error.message?.toLowerCase().includes("already registered")) {
         return c.json({ error: "Un compte existe déjà avec cette adresse email. Connecte-toi plutôt.", code: "email_exists" }, 422);
@@ -103,7 +108,7 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
       return c.json({ error: error.message }, 400);
     }
 
-    console.log(`✅ User created successfully: ${data.user?.id}`);
+    console.log(`User created successfully: ${data.user?.id}`);
 
     await kv.set(`user:${data.user?.id}`, {
       id: data.user?.id,
@@ -128,7 +133,7 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
       },
     });
   } catch (error: any) {
-    console.error("❌ Error during signup:", error);
+    console.error("Error during signup:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -146,16 +151,16 @@ app.get("/make-server-0a5eb56b/user/profile", async (c) => {
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
 
     if (error || !user) {
-      console.error("❌ Auth error while fetching user profile. Error:", error?.message, "| Token prefix:", accessToken?.substring(0, 20));
+      console.error("Auth error while fetching user profile. Error:", error?.message, "| Token prefix:", accessToken?.substring(0, 20));
       return c.json({ error: `Unauthorized - ${error?.message || "Invalid token"}` }, 401);
     }
 
-    console.log(`📖 Fetching profile for user: ${user.id} (${user.email})`);
+    console.log(`Fetching profile for user: ${user.id} (${user.email})`);
 
     let profile = await kv.get(`user:${user.id}`);
 
     if (!profile) {
-      console.log(`📝 Profile not found in KV, auto-creating for: ${user.id}`);
+      console.log(`Profile not found in KV, auto-creating for: ${user.id}`);
       profile = {
         id: user.id,
         email: user.email,
@@ -174,7 +179,7 @@ app.get("/make-server-0a5eb56b/user/profile", async (c) => {
 
     return c.json({ profile });
   } catch (error: any) {
-    console.error("❌ Error fetching user profile:", error);
+    console.error("Error fetching user profile:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -191,12 +196,12 @@ app.put("/make-server-0a5eb56b/user/profile", async (c) => {
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
 
     if (error || !user) {
-      console.error("❌ Auth error while updating user profile:", error);
+      console.error("Auth error while updating user profile:", error);
       return c.json({ error: "Unauthorized - Invalid token" }, 401);
     }
 
     const updates = await c.req.json();
-    console.log(`✏️ Updating profile for user: ${user.id}`);
+    console.log(`Updating profile for user: ${user.id}`);
 
     const currentProfile = await kv.get(`user:${user.id}`);
 
@@ -214,7 +219,7 @@ app.put("/make-server-0a5eb56b/user/profile", async (c) => {
 
     return c.json({ success: true, profile: updatedProfile });
   } catch (error: any) {
-    console.error("❌ Error updating user profile:", error);
+    console.error("Error updating user profile:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -285,13 +290,13 @@ app.get("/make-server-0a5eb56b/reussia/cvs", async (c) => {
       return c.json({ error: "Unauthorized - Invalid token" }, 401);
     }
 
-    console.log(`📄 Fetching CVs for user: ${user.id}`);
+    console.log(`Fetching CVs for user: ${user.id}`);
 
     const cvs = await kv.getByPrefix(`cv:${user.id}:`);
 
     return c.json({ cvs: cvs || [] });
   } catch (error: any) {
-    console.error("❌ Error fetching CVs:", error);
+    console.error("Error fetching CVs:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -313,7 +318,7 @@ app.post("/make-server-0a5eb56b/reussia/cvs", async (c) => {
     const cvData = await c.req.json();
     const cvId = crypto.randomUUID();
 
-    console.log(`💾 Saving new CV for user: ${user.id}, cvId: ${cvId}`);
+    console.log(`Saving new CV for user: ${user.id}, cvId: ${cvId}`);
 
     const cv = {
       id: cvId,
@@ -327,7 +332,7 @@ app.post("/make-server-0a5eb56b/reussia/cvs", async (c) => {
 
     return c.json({ success: true, cv });
   } catch (error: any) {
-    console.error("❌ Error saving CV:", error);
+    console.error("Error saving CV:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -348,13 +353,13 @@ app.get("/make-server-0a5eb56b/reussia/cover-letters", async (c) => {
       return c.json({ error: "Unauthorized - Invalid token" }, 401);
     }
 
-    console.log(`✉️ Fetching cover letters for user: ${user.id}`);
+    console.log(`Fetching cover letters for user: ${user.id}`);
 
     const letters = await kv.getByPrefix(`cover_letter:${user.id}:`);
 
     return c.json({ letters: letters || [] });
   } catch (error: any) {
-    console.error("❌ Error fetching cover letters:", error);
+    console.error("Error fetching cover letters:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -377,7 +382,7 @@ app.post("/make-server-0a5eb56b/reussia/cover-letters", async (c) => {
     const letterData = await c.req.json();
     const letterId = crypto.randomUUID();
 
-    console.log(`💾 Saving new cover letter for user: ${user.id}, letterId: ${letterId}`);
+    console.log(`Saving new cover letter for user: ${user.id}, letterId: ${letterId}`);
 
     const letter = {
       id: letterId,
@@ -391,14 +396,13 @@ app.post("/make-server-0a5eb56b/reussia/cover-letters", async (c) => {
 
     return c.json({ success: true, letter });
   } catch (error: any) {
-    console.error("❌ Error saving cover letter:", error);
+    console.error("Error saving cover letter:", error);
     return c.json({ error: error.message }, 500);
   }
 });
 
 
 
-// Analyze CV for ATS
 app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -415,10 +419,10 @@ app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
 
     const { cvText, jobDescription } = await c.req.json();
 
-    console.log(`🔍 Running ATS analysis for user: ${user.id}`);
+    console.log(`Running ATS analysis for user: ${user.id}`);
 
     const analysis = {
-      score: Math.floor(Math.random() * 30) + 70, // 70-100
+      score: Math.floor(Math.random() * 30) + 70,
       strengths: [
         "Mots-clés sectoriels bien présents",
         "Format optimisé pour les ATS",
@@ -450,7 +454,7 @@ app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
 
     return c.json({ success: true, analysis });
   } catch (error: any) {
-    console.error("❌ Error running ATS analysis:", error);
+    console.error("Error running ATS analysis:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -474,7 +478,7 @@ app.post("/make-server-0a5eb56b/oralia/questions", async (c) => {
 
     const { jobTitle, difficulty } = await c.req.json();
 
-    console.log(`🎤 Generating interview questions for user: ${user.id}, job: ${jobTitle}`);
+    console.log(`Generating interview questions for user: ${user.id}, job: ${jobTitle}`);
 
     const questions = [
       {
@@ -511,7 +515,7 @@ app.post("/make-server-0a5eb56b/oralia/questions", async (c) => {
 
     return c.json({ success: true, questions });
   } catch (error: any) {
-    console.error("❌ Error generating interview questions:", error);
+    console.error("Error generating interview questions:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -533,11 +537,11 @@ app.post("/make-server-0a5eb56b/oralia/analyze-answer", async (c) => {
 
     const { question, answer } = await c.req.json();
 
-    console.log(`📊 Analyzing interview answer for user: ${user.id}`);
+    console.log(`Analyzing interview answer for user: ${user.id}`);
 
   
     const feedback = {
-      score: Math.floor(Math.random() * 30) + 70, // 70-100
+      score: Math.floor(Math.random() * 30) + 70,
       strengths: [
         "Structure claire de la réponse",
         "Exemples concrets fournis",
@@ -552,7 +556,7 @@ app.post("/make-server-0a5eb56b/oralia/analyze-answer", async (c) => {
 
     return c.json({ success: true, feedback });
   } catch (error: any) {
-    console.error("❌ Error analyzing interview answer:", error);
+    console.error("Error analyzing interview answer:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -573,13 +577,13 @@ app.get("/make-server-0a5eb56b/trackia/applications", async (c) => {
       return c.json({ error: "Unauthorized - Invalid token" }, 401);
     }
 
-    console.log(`📊 Fetching applications for user: ${user.id}`);
+    console.log(`Fetching applications for user: ${user.id}`);
 
     const applications = await kv.getByPrefix(`application:${user.id}:`);
 
     return c.json({ applications: applications || [] });
   } catch (error: any) {
-    console.error("❌ Error fetching applications:", error);
+    console.error("Error fetching applications:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -601,7 +605,7 @@ app.post("/make-server-0a5eb56b/trackia/applications", async (c) => {
     const applicationData = await c.req.json();
     const applicationId = crypto.randomUUID();
 
-    console.log(`💾 Creating new application for user: ${user.id}, applicationId: ${applicationId}`);
+    console.log(`Creating new application for user: ${user.id}, applicationId: ${applicationId}`);
 
     const application = {
       id: applicationId,
@@ -616,7 +620,7 @@ app.post("/make-server-0a5eb56b/trackia/applications", async (c) => {
 
     return c.json({ success: true, application });
   } catch (error: any) {
-    console.error("❌ Error creating application:", error);
+    console.error("Error creating application:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -638,7 +642,7 @@ app.put("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
     const applicationId = c.req.param("id");
     const updates = await c.req.json();
 
-    console.log(`✏️ Updating application: ${applicationId} for user: ${user.id}`);
+    console.log(`Updating application: ${applicationId} for user: ${user.id}`);
 
     const currentApplication = await kv.get(`application:${user.id}:${applicationId}`);
 
@@ -656,7 +660,7 @@ app.put("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
 
     return c.json({ success: true, application: updatedApplication });
   } catch (error: any) {
-    console.error("❌ Error updating application:", error);
+    console.error("Error updating application:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -678,13 +682,13 @@ app.delete("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
 
     const applicationId = c.req.param("id");
 
-    console.log(`🗑️ Deleting application: ${applicationId} for user: ${user.id}`);
+    console.log(`Deleting application: ${applicationId} for user: ${user.id}`);
 
     await kv.del(`application:${user.id}:${applicationId}`);
 
     return c.json({ success: true });
   } catch (error: any) {
-    console.error("❌ Error deleting application:", error);
+    console.error("Error deleting application:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -708,11 +712,11 @@ app.post("/make-server-0a5eb56b/skillia/analyze-linkedin", async (c) => {
 
     const { profileText } = await c.req.json();
 
-    console.log(`🧠 Analyzing LinkedIn profile for user: ${user.id}`);
+    console.log(`Analyzing LinkedIn profile for user: ${user.id}`);
 
   
     const analysis = {
-      score: Math.floor(Math.random() * 30) + 70, // 70-100
+      score: Math.floor(Math.random() * 30) + 70,
       strengths: [
         "Photo professionnelle présente",
         "Expériences bien détaillées",
@@ -749,7 +753,7 @@ app.post("/make-server-0a5eb56b/skillia/analyze-linkedin", async (c) => {
 
     return c.json({ success: true, analysis });
   } catch (error: any) {
-    console.error("❌ Error analyzing LinkedIn profile:", error);
+    console.error("Error analyzing LinkedIn profile:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -770,9 +774,8 @@ app.post("/make-server-0a5eb56b/skillia/skill-suggestions", async (c) => {
 
     const { jobTitle } = await c.req.json();
 
-    console.log(`💡 Generating skill suggestions for user: ${user.id}, job: ${jobTitle}`);
+    console.log(`Generating skill suggestions for user: ${user.id}, job: ${jobTitle}`);
 
-    // Mock suggestions (replace with real AI API call)
     const suggestions = {
       essentialSkills: [
         "JavaScript",
@@ -796,7 +799,7 @@ app.post("/make-server-0a5eb56b/skillia/skill-suggestions", async (c) => {
 
     return c.json({ success: true, suggestions });
   } catch (error: any) {
-    console.error("❌ Error generating skill suggestions:", error);
+    console.error("Error generating skill suggestions:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -868,14 +871,14 @@ Génère un CV optimisé et professionnel. Si certaines sections sont vides, pro
       const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : aiResponse;
       cvData = JSON.parse(jsonStr);
     } catch (parseError) {
-      console.error("❌ Failed to parse AI response as JSON:", parseError);
+      console.error("Failed to parse AI response as JSON:", parseError);
       console.log("Raw AI response:", aiResponse);
       return c.json({ error: "L'IA a renvoyé un format invalide. Réessayez." }, 500);
     }
 
     return c.json({ success: true, cvData });
   } catch (error: any) {
-    console.error("❌ Error in AI CV generation:", error);
+    console.error("Error in AI CV generation:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -935,7 +938,7 @@ Rédige une lettre de motivation complète, personnalisée et percutante.`;
 
     return c.json({ success: true, letterContent });
   } catch (error: any) {
-    console.error("❌ Error in AI cover letter generation:", error);
+    console.error("Error in AI cover letter generation:", error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -1006,12 +1009,11 @@ Analyse ce CV par rapport à cette offre et donne un score ATS détaillé.`;
       const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : aiResponse;
       analysisData = JSON.parse(jsonStr);
     } catch (parseError) {
-      console.error("❌ Failed to parse AI ATS response:", parseError);
+      console.error("Failed to parse AI ATS response:", parseError);
       console.log("Raw AI response:", aiResponse);
       return c.json({ error: "L'IA a renvoyé un format invalide. Réessayez." }, 500);
     }
 
-    // Save analysis
     const analysisId = crypto.randomUUID();
     await kv.set(`ats_analysis:${user.id}:${analysisId}`, {
       id: analysisId,
@@ -1022,7 +1024,7 @@ Analyse ce CV par rapport à cette offre et donne un score ATS détaillé.`;
 
     return c.json({ success: true, analysis: analysisData });
   } catch (error: any) {
-    console.error("❌ Error in AI ATS analysis:", error);
+    console.error("Error in AI ATS analysis:", error);
     return c.json({ error: error.message }, 500);
   }
 });

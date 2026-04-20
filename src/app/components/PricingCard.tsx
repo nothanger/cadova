@@ -33,10 +33,12 @@ export function PricingCard({
         borderColor: featured ? `${accentColor}33` : "rgba(22,20,38,0.08)",
       }}
     >
-      {badge ? <span className="marketing-recommended-badge">{badge}</span> : null}
-      <span className="marketing-pricing-badge" style={{ color: featured ? accentColor : undefined }}>
-        {title}
-      </span>
+      <div className="marketing-pricing-heading">
+        {badge ? <span className="marketing-recommended-badge">{badge}</span> : null}
+        <span className="marketing-pricing-badge" style={{ color: featured ? accentColor : undefined }}>
+          {title}
+        </span>
+      </div>
       <div className="marketing-price-line">
         <strong>{price}</strong>
         <span className="marketing-price-note">{note}</span>

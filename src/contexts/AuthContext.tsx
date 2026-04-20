@@ -311,7 +311,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch(`${API_URL}/user/delete`, {
         method: "DELETE",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json; charset=UTF-8",
           Authorization: `Bearer ${token}`,
         },
       });
