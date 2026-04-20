@@ -3,10 +3,13 @@ import { Link } from "react-router";
 import {
   AlertTriangle,
   ArrowRight,
+  Briefcase,
   CalendarClock,
   Check,
   ChevronRight,
+  Clock3,
   ExternalLink,
+  Inbox,
   Mail,
   Plus,
   Send,
@@ -45,13 +48,13 @@ const STATUSES: ApplicationStatus[] = [
 const FINAL_STATUSES: ApplicationStatus[] = ["Refusé", "Accepté"];
 
 const statusStyles: Record<ApplicationStatus, { bg: string; text: string; border: string; dot: string }> = {
-  "À envoyer": { bg: "bg-slate-50", text: "text-slate-800", border: "border-slate-200", dot: "bg-slate-500" },
-  Envoyé: { bg: "bg-blue-50", text: "text-blue-800", border: "border-blue-100", dot: "bg-blue-500" },
-  "Relance à faire": { bg: "bg-amber-50", text: "text-amber-900", border: "border-amber-200", dot: "bg-amber-500" },
-  Relancé: { bg: "bg-violet-50", text: "text-violet-800", border: "border-violet-100", dot: "bg-violet-500" },
-  Entretien: { bg: "bg-indigo-50", text: "text-indigo-800", border: "border-indigo-100", dot: "bg-indigo-500" },
-  Refusé: { bg: "bg-rose-50", text: "text-rose-800", border: "border-rose-100", dot: "bg-rose-500" },
-  Accepté: { bg: "bg-emerald-50", text: "text-emerald-800", border: "border-emerald-100", dot: "bg-emerald-500" },
+  "À envoyer": { bg: "bg-gradient-to-b from-slate-50/90 to-white", text: "text-slate-800", border: "border-slate-200/80", dot: "bg-slate-400" },
+  Envoyé: { bg: "bg-gradient-to-b from-blue-50/80 to-white", text: "text-blue-800", border: "border-blue-100", dot: "bg-blue-400" },
+  "Relance à faire": { bg: "bg-gradient-to-b from-amber-50/90 to-white", text: "text-amber-900", border: "border-amber-100", dot: "bg-amber-400" },
+  Relancé: { bg: "bg-gradient-to-b from-violet-50/80 to-white", text: "text-violet-800", border: "border-violet-100", dot: "bg-violet-400" },
+  Entretien: { bg: "bg-gradient-to-b from-indigo-50/80 to-white", text: "text-indigo-800", border: "border-indigo-100", dot: "bg-indigo-400" },
+  Refusé: { bg: "bg-gradient-to-b from-rose-50/80 to-white", text: "text-rose-800", border: "border-rose-100", dot: "bg-rose-400" },
+  Accepté: { bg: "bg-gradient-to-b from-emerald-50/80 to-white", text: "text-emerald-800", border: "border-emerald-100", dot: "bg-emerald-400" },
 };
 
 const emptyDraft = {
@@ -203,6 +206,9 @@ export function Applications() {
   }, [applications]);
 
   const canCreate = isPro || applications.length < 5;
+  const fieldClass = "h-10 rounded-[8px] border-slate-200 bg-slate-50/70 px-3 text-sm shadow-none transition focus-visible:bg-white";
+  const selectClass = "h-10 w-full rounded-[8px] border border-slate-200 bg-slate-50/70 px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100";
+  const textareaClass = "min-h-[92px] rounded-[8px] border-slate-200 bg-slate-50/70 px-3 py-2 text-sm shadow-none transition focus-visible:bg-white";
 
   const resetForm = () => {
     setDraft(emptyDraft);
@@ -375,25 +381,25 @@ export function Applications() {
             setSelectedApplication(application);
           }
         }}
-        className={`cursor-grab rounded-[8px] border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing ${
-          followUp.isOverdue ? "border-amber-300 ring-2 ring-amber-100" : "border-black/5"
+        className={`cursor-grab rounded-[8px] border bg-white p-[18px] shadow-[0_10px_30px_rgba(15,23,42,0.06)] outline-none transition-all duration-150 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-[0_18px_44px_rgba(15,23,42,0.10)] focus-visible:border-indigo-400 focus-visible:ring-4 focus-visible:ring-indigo-100 active:cursor-grabbing ${
+          followUp.isOverdue ? "border-amber-300 ring-2 ring-amber-100" : "border-slate-200/80"
         }`}
       >
-        <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-base font-black text-slate-950">{application.company || "Entreprise"}</p>
-            <p className="mt-0.5 line-clamp-2 text-sm font-semibold leading-5 text-slate-600">{application.position || "Poste"}</p>
+            <p className="truncate text-[15px] font-black leading-5 text-slate-950">{application.company || "Entreprise"}</p>
+            <p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-5 text-slate-600">{application.position || "Poste"}</p>
           </div>
-          <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-black uppercase ${toneClass(nextAction.tone)}`}>
+          <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] ${toneClass(nextAction.tone)}`}>
             {typeLabel(application.type)}
           </span>
         </div>
 
-        <div className={`mb-3 rounded-[8px] px-3 py-2 text-xs font-black ${toneClass(nextAction.tone)}`}>
+        <div className={`mb-4 rounded-[8px] px-3 py-2 text-[12px] font-black leading-4 ${toneClass(nextAction.tone)}`}>
           {nextAction.label}
         </div>
 
-        <div className="grid gap-2 text-[12px] text-slate-600">
+        <div className="grid gap-2 rounded-[8px] bg-slate-50/80 p-3 text-[12px] text-slate-600">
           <div className="flex items-center justify-between gap-2">
             <span>Envoyée</span>
             <strong className="text-slate-900">{application.appliedAt ? formatDate(application.appliedAt) : "Pas encore"}</strong>
@@ -412,23 +418,23 @@ export function Applications() {
         )}
 
         {preview && (
-          <p className="mt-3 rounded-[8px] bg-slate-50 p-3 text-[12px] leading-5 text-slate-600">
+          <p className="mt-3 rounded-[8px] border border-slate-100 bg-white p-3 text-[12px] leading-5 text-slate-600">
             {preview}{application.notes && application.notes.length > 96 ? "..." : ""}
           </p>
         )}
 
         <div className="mt-4 grid grid-cols-2 gap-2">
           {application.status === "À envoyer" ? (
-            <button type="button" onClick={(event) => { event.stopPropagation(); markAsSent(application); }} className="rounded-[8px] bg-slate-950 px-3 py-2 text-[12px] font-black text-white">
+            <button type="button" onClick={(event) => { event.stopPropagation(); markAsSent(application); }} className="rounded-[8px] bg-slate-950 px-3 py-2.5 text-[12px] font-black text-white transition hover:bg-indigo-700">
               Envoyée
             </button>
           ) : (
-            <button type="button" disabled={!application.email} onClick={(event) => { event.stopPropagation(); openEmail(application); }} className="inline-flex items-center justify-center gap-1.5 rounded-[8px] bg-slate-950 px-3 py-2 text-[12px] font-black text-white disabled:opacity-40">
+            <button type="button" disabled={!application.email} onClick={(event) => { event.stopPropagation(); openEmail(application); }} className="inline-flex items-center justify-center gap-1.5 rounded-[8px] bg-slate-950 px-3 py-2.5 text-[12px] font-black text-white transition hover:bg-indigo-700 disabled:opacity-40">
               <Mail className="size-3.5" />
               Relancer
             </button>
           )}
-          <button type="button" onClick={(event) => { event.stopPropagation(); editApplication(application); }} className="rounded-[8px] bg-slate-100 px-3 py-2 text-[12px] font-black text-slate-700">
+          <button type="button" onClick={(event) => { event.stopPropagation(); editApplication(application); }} className="rounded-[8px] bg-slate-100 px-3 py-2.5 text-[12px] font-black text-slate-700 transition hover:bg-slate-200">
             Modifier
           </button>
         </div>
@@ -438,12 +444,12 @@ export function Applications() {
             value={application.status}
             onClick={(event) => event.stopPropagation()}
             onChange={(event) => moveApplication(application.id, event.target.value as ApplicationStatus)}
-            className="h-8 min-w-0 flex-1 rounded-[8px] border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-700"
+            className="h-8 min-w-0 flex-1 rounded-[8px] border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
           >
             {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
           </select>
           {application.link && (
-            <a onClick={(event) => event.stopPropagation()} href={application.link} target="_blank" rel="noreferrer" className="flex size-8 items-center justify-center rounded-[8px] bg-slate-100 text-slate-700">
+            <a onClick={(event) => event.stopPropagation()} href={application.link} target="_blank" rel="noreferrer" className="flex size-8 items-center justify-center rounded-[8px] bg-slate-100 text-slate-700 transition hover:bg-slate-200">
               <ExternalLink className="size-3.5" />
             </a>
           )}
@@ -458,8 +464,8 @@ export function Applications() {
 
   return (
     <AppLayout>
-      <div className="mx-auto max-w-7xl" style={{ fontFamily: "DM Sans, system-ui, sans-serif" }}>
-        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="mx-auto max-w-[1600px]" style={{ fontFamily: "DM Sans, system-ui, sans-serif" }}>
+        <div className="mb-7 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600">Suivi</p>
             <h1 className="font-black leading-none text-slate-950" style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(2.4rem, 5vw, 4rem)", letterSpacing: "-0.05em" }}>
@@ -477,21 +483,27 @@ export function Applications() {
           )}
         </div>
 
-        <div className="mb-6 grid gap-4 md:grid-cols-3 xl:grid-cols-7">
+        <div className="mb-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
           {[
-            { label: "Total", value: stats.total },
-            { label: "En attente", value: stats.waiting },
-            { label: "À relancer", value: stats.followUps },
-            { label: "En retard", value: stats.overdue },
-            { label: "Entretiens", value: stats.interviews },
-            { label: "Terminées", value: stats.finished },
-            { label: "Réponse", value: `${stats.responseRate}%` },
-          ].map((item) => (
-            <div key={item.label} className="rounded-[8px] border border-black/5 bg-white p-4 shadow-sm">
-              <p className="text-3xl font-black text-slate-950" style={{ fontFamily: "Syne, sans-serif" }}>{item.value}</p>
-              <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.13em] text-slate-500">{item.label}</p>
-            </div>
-          ))}
+            { label: "Total", value: stats.total, icon: Briefcase, tone: "bg-slate-100 text-slate-700" },
+            { label: "En attente", value: stats.waiting, icon: Clock3, tone: "bg-blue-50 text-blue-700" },
+            { label: "À relancer", value: stats.followUps, icon: CalendarClock, tone: "bg-amber-50 text-amber-800" },
+            { label: "En retard", value: stats.overdue, icon: AlertTriangle, tone: "bg-rose-50 text-rose-700" },
+            { label: "Entretiens", value: stats.interviews, icon: Mail, tone: "bg-indigo-50 text-indigo-700" },
+            { label: "Terminées", value: stats.finished, icon: Check, tone: "bg-emerald-50 text-emerald-700" },
+            { label: "Réponse", value: `${stats.responseRate}%`, icon: ChevronRight, tone: "bg-violet-50 text-violet-700" },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.label} className="rounded-[8px] border border-slate-200/70 bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,0.06)]">
+                <div className={`mb-4 flex size-9 items-center justify-center rounded-[8px] ${item.tone}`}>
+                  <Icon className="size-4" />
+                </div>
+                <p className="text-3xl font-black leading-none text-slate-950" style={{ fontFamily: "Syne, sans-serif" }}>{item.value}</p>
+                <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">{item.label}</p>
+              </div>
+            );
+          })}
         </div>
 
         {stats.followUps > 0 && (
@@ -507,9 +519,9 @@ export function Applications() {
           </div>
         )}
 
-        <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <form onSubmit={submitApplication} className="rounded-[8px] border border-black/5 bg-white p-5 shadow-sm">
-            <div className="mb-5 flex items-center justify-between">
+        <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
+          <form onSubmit={submitApplication} className="h-fit rounded-[8px] border border-slate-200/80 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.06)] [&_label]:mb-1.5 [&_label]:text-[12px] [&_label]:font-bold [&_label]:text-slate-700">
+            <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="text-sm font-black text-slate-950">{editingId ? "Modifier" : "Nouvelle candidature"}</p>
                 <p className="text-xs text-slate-600">{isPro ? "Suivi illimité" : `${applications.length}/5 sur le plan gratuit`}</p>
@@ -524,16 +536,16 @@ export function Applications() {
             <div className="space-y-3">
               <div>
                 <Label>Entreprise</Label>
-                <Input value={draft.company} onChange={(event) => setDraft((item) => ({ ...item, company: event.target.value }))} required />
+                <Input className={fieldClass} value={draft.company} onChange={(event) => setDraft((item) => ({ ...item, company: event.target.value }))} required />
               </div>
               <div>
                 <Label>Poste</Label>
-                <Input value={draft.position} onChange={(event) => setDraft((item) => ({ ...item, position: event.target.value }))} required />
+                <Input className={fieldClass} value={draft.position} onChange={(event) => setDraft((item) => ({ ...item, position: event.target.value }))} required />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Type</Label>
-                  <select value={draft.type} onChange={(event) => setDraft((item) => ({ ...item, type: event.target.value as ApplicationType }))} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
+                  <select value={draft.type} onChange={(event) => setDraft((item) => ({ ...item, type: event.target.value as ApplicationType }))} className={selectClass}>
                     <option value="stage">Stage</option>
                     <option value="alternance">Alternance</option>
                     <option value="job">Job</option>
@@ -541,7 +553,7 @@ export function Applications() {
                 </div>
                 <div>
                   <Label>Statut</Label>
-                  <select value={draft.status} onChange={(event) => setDraft((item) => ({ ...item, status: event.target.value as ApplicationStatus }))} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm">
+                  <select value={draft.status} onChange={(event) => setDraft((item) => ({ ...item, status: event.target.value as ApplicationStatus }))} className={selectClass}>
                     {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
                   </select>
                 </div>
@@ -549,28 +561,28 @@ export function Applications() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Date d’envoi</Label>
-                  <Input type="date" value={draft.appliedAt} onChange={(event) => setDraft((item) => ({ ...item, appliedAt: event.target.value, followUpDate: item.followUpDate || recommendedFollowUpDate(event.target.value) }))} />
+                  <Input className={fieldClass} type="date" value={draft.appliedAt} onChange={(event) => setDraft((item) => ({ ...item, appliedAt: event.target.value, followUpDate: item.followUpDate || recommendedFollowUpDate(event.target.value) }))} />
                 </div>
                 <div>
                   <Label>Date relance</Label>
-                  <Input type="date" value={draft.followUpDate} onChange={(event) => setDraft((item) => ({ ...item, followUpDate: event.target.value }))} />
+                  <Input className={fieldClass} type="date" value={draft.followUpDate} onChange={(event) => setDraft((item) => ({ ...item, followUpDate: event.target.value }))} />
                 </div>
               </div>
               <div>
                 <Label>Email contact</Label>
-                <Input type="email" value={draft.email} onChange={(event) => setDraft((item) => ({ ...item, email: event.target.value }))} />
+                <Input className={fieldClass} type="email" value={draft.email} onChange={(event) => setDraft((item) => ({ ...item, email: event.target.value }))} />
               </div>
               <div>
                 <Label>Lien offre</Label>
-                <Input value={draft.link} onChange={(event) => setDraft((item) => ({ ...item, link: event.target.value }))} />
+                <Input className={fieldClass} value={draft.link} onChange={(event) => setDraft((item) => ({ ...item, link: event.target.value }))} />
               </div>
               <div>
                 <Label>Notes</Label>
-                <Textarea value={draft.notes} onChange={(event) => setDraft((item) => ({ ...item, notes: event.target.value }))} rows={4} />
+                <Textarea className={textareaClass} value={draft.notes} onChange={(event) => setDraft((item) => ({ ...item, notes: event.target.value }))} rows={4} />
               </div>
             </div>
 
-            <Button type="submit" disabled={!canCreate && !editingId} className="mt-5 w-full gap-2 bg-indigo-600 hover:bg-indigo-700">
+            <Button type="submit" disabled={!canCreate && !editingId} className="mt-5 h-11 w-full gap-2 bg-[linear-gradient(135deg,#5044f5,#7c3aed)] font-black shadow-[0_16px_36px_rgba(80,68,245,0.24)] hover:shadow-[0_18px_42px_rgba(80,68,245,0.30)]">
               <Plus className="size-4" />
               {editingId ? "Enregistrer" : "Ajouter"}
             </Button>
@@ -578,7 +590,7 @@ export function Applications() {
 
           <div className="min-w-0">
             <div className="overflow-x-auto pb-3">
-              <div className="grid min-w-[1820px] grid-cols-7 gap-4">
+              <div className="grid min-w-[1660px] grid-cols-7 gap-3">
                 {STATUSES.map((status) => {
                   const items = applications.filter((item) => item.status === status);
                   const style = statusStyles[status];
@@ -587,17 +599,25 @@ export function Applications() {
                       key={status}
                       onDragOver={(event) => event.preventDefault()}
                       onDrop={() => draggedId && moveApplication(draggedId, status)}
-                      className={`min-h-[560px] rounded-[8px] border ${style.border} ${style.bg} p-3`}
+                      className={`min-h-[500px] rounded-[8px] border ${style.border} ${style.bg} p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]`}
                     >
-                      <div className="mb-3 flex items-center justify-between">
+                      <div className="mb-4 flex items-center justify-between rounded-[8px] bg-white/70 px-3 py-2 shadow-sm shadow-slate-900/[0.03]">
                         <div className="flex items-center gap-2">
-                          <span className={`size-2 rounded-full ${style.dot}`} />
-                          <p className={`text-sm font-black ${style.text}`}>{status}</p>
+                          <span className={`size-2.5 rounded-full ${style.dot}`} />
+                          <p className={`text-[13px] font-black ${style.text}`}>{status}</p>
                         </div>
-                        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-slate-700">{items.length}</span>
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-black text-slate-700">{items.length}</span>
                       </div>
-                      <div className="space-y-3">
-                        {items.map((application) => <Card key={application.id} application={application} />)}
+                      <div className="space-y-3.5">
+                        {items.length > 0 ? (
+                          items.map((application) => <Card key={application.id} application={application} />)
+                        ) : (
+                          <div className="mt-2 flex min-h-[170px] flex-col items-center justify-center rounded-[8px] border border-dashed border-slate-200/90 bg-white/45 px-4 text-center">
+                            <Inbox className="mb-3 size-5 text-slate-300" />
+                            <p className="text-sm font-bold text-slate-400">Aucune candidature</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-400">Dépose une carte ici.</p>
+                          </div>
+                        )}
                       </div>
                     </section>
                   );
