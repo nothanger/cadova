@@ -381,7 +381,7 @@ export function Applications() {
             setSelectedApplication(application);
           }
         }}
-        className={`min-w-0 cursor-grab overflow-hidden break-words rounded-[8px] border bg-white p-4 whitespace-normal shadow-[0_10px_30px_rgba(15,23,42,0.06)] outline-none transition-all duration-150 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-[0_18px_44px_rgba(15,23,42,0.10)] focus-visible:border-indigo-400 focus-visible:ring-4 focus-visible:ring-indigo-100 active:cursor-grabbing ${
+        className={`flex min-w-0 cursor-grab flex-col overflow-hidden break-words rounded-[8px] border bg-white p-4 whitespace-normal shadow-[0_10px_30px_rgba(15,23,42,0.06)] outline-none transition-all duration-150 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-[0_18px_44px_rgba(15,23,42,0.10)] focus-visible:border-indigo-400 focus-visible:ring-4 focus-visible:ring-indigo-100 active:cursor-grabbing ${
           followUp.isOverdue ? "border-amber-300 ring-2 ring-amber-100" : "border-slate-200/80"
         }`}
       >
@@ -431,23 +431,23 @@ export function Applications() {
           </p>
         )}
 
-        <div className="mt-4 grid gap-2">
+        <div className="mt-4 grid min-w-0 gap-2">
           {application.status === "À envoyer" ? (
-            <button type="button" onClick={(event) => { event.stopPropagation(); markAsSent(application); }} className="min-h-9 rounded-[8px] bg-slate-950 px-3 py-2 text-[12px] leading-4 font-black break-words text-white transition hover:bg-indigo-700">
+            <button type="button" onClick={(event) => { event.stopPropagation(); markAsSent(application); }} className="min-h-9 w-full rounded-[8px] bg-slate-950 px-3 py-2 text-[12px] leading-4 font-black break-words text-white transition hover:bg-indigo-700">
               Envoyée
             </button>
           ) : (
-            <button type="button" disabled={!application.email} onClick={(event) => { event.stopPropagation(); openEmail(application); }} className="inline-flex min-h-9 flex-wrap items-center justify-center gap-1.5 rounded-[8px] bg-slate-950 px-3 py-2 text-[12px] leading-4 font-black break-words text-white transition hover:bg-indigo-700 disabled:opacity-40">
+            <button type="button" disabled={!application.email} onClick={(event) => { event.stopPropagation(); openEmail(application); }} className="inline-flex min-h-9 w-full flex-wrap items-center justify-center gap-1.5 rounded-[8px] bg-slate-950 px-3 py-2 text-[12px] leading-4 font-black break-words text-white transition hover:bg-indigo-700 disabled:opacity-40">
               <Mail className="size-3.5" />
               Relancer
             </button>
           )}
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-            <button type="button" onClick={(event) => { event.stopPropagation(); editApplication(application); }} className="min-h-9 rounded-[8px] bg-slate-100 px-3 py-2 text-[12px] leading-4 font-black break-words text-slate-700 transition hover:bg-slate-200">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2">
+            <button type="button" onClick={(event) => { event.stopPropagation(); editApplication(application); }} className="min-h-9 w-full rounded-[8px] bg-slate-100 px-3 py-2 text-[12px] leading-4 font-black break-words text-slate-700 transition hover:bg-slate-200">
               Modifier
             </button>
             {application.link && (
-              <a onClick={(event) => event.stopPropagation()} href={application.link} target="_blank" rel="noreferrer" className="flex size-9 items-center justify-center rounded-[8px] bg-slate-100 text-slate-700 transition hover:bg-slate-200">
+              <a onClick={(event) => event.stopPropagation()} href={application.link} target="_blank" rel="noreferrer" className="flex size-9 shrink-0 items-center justify-center rounded-[8px] bg-slate-100 text-slate-700 transition hover:bg-slate-200">
                 <ExternalLink className="size-3.5" />
               </a>
             )}
@@ -459,7 +459,7 @@ export function Applications() {
             value={application.status}
             onClick={(event) => event.stopPropagation()}
             onChange={(event) => moveApplication(application.id, event.target.value as ApplicationStatus)}
-            className="h-9 w-full rounded-[8px] border border-slate-200 bg-white px-2.5 text-[11px] font-bold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            className="h-9 w-full min-w-0 rounded-[8px] border border-slate-200 bg-white px-2.5 text-[11px] font-bold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
           >
             {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
           </select>
@@ -529,7 +529,7 @@ export function Applications() {
           </div>
         )}
 
-        <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
           <form onSubmit={submitApplication} className="h-fit w-full rounded-[8px] border border-slate-200/80 bg-white p-3 shadow-[0_14px_36px_rgba(15,23,42,0.06)] sm:p-4 [&_label]:mb-1.5 [&_label]:text-[12px] [&_label]:font-bold [&_label]:text-slate-700">
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -599,8 +599,8 @@ export function Applications() {
           </form>
 
           <div className="min-w-0">
-            <div className="max-w-full overflow-x-auto overscroll-x-contain pb-3 [scrollbar-gutter:stable]">
-              <div className="grid min-w-[1960px] grid-cols-7 gap-3 lg:min-w-[1660px]">
+            <div className="w-full overflow-x-auto overflow-y-hidden overscroll-x-contain pb-3 [scrollbar-gutter:stable]">
+              <div className="flex min-w-max flex-nowrap items-stretch gap-3">
                 {STATUSES.map((status) => {
                   const items = applications.filter((item) => item.status === status);
                   const style = statusStyles[status];
@@ -609,23 +609,23 @@ export function Applications() {
                       key={status}
                       onDragOver={(event) => event.preventDefault()}
                       onDrop={() => draggedId && moveApplication(draggedId, status)}
-                      className={`min-h-[500px] min-w-0 rounded-[8px] border ${style.border} ${style.bg} p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]`}
+                      className={`flex min-h-[500px] min-w-[280px] flex-none flex-col rounded-[8px] border ${style.border} ${style.bg} p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:min-w-[296px]`}
                     >
-                      <div className="mb-4 flex items-center justify-between rounded-[8px] bg-white/70 px-3 py-2 shadow-sm shadow-slate-900/[0.03]">
-                        <div className="flex items-center gap-2">
+                      <div className="mb-4 flex min-w-0 items-start justify-between gap-3 rounded-[8px] bg-white/70 px-3 py-2 shadow-sm shadow-slate-900/[0.03]">
+                        <div className="flex min-w-0 items-start gap-2">
                           <span className={`size-2.5 rounded-full ${style.dot}`} />
-                          <p className={`text-[13px] font-black ${style.text}`}>{status}</p>
+                          <p className={`min-w-0 break-words text-[13px] font-black leading-4 whitespace-normal ${style.text}`}>{status}</p>
                         </div>
-                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-black text-slate-700">{items.length}</span>
+                        <span className="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-black text-slate-700">{items.length}</span>
                       </div>
-                      <div className="space-y-3.5">
+                      <div className="min-w-0 flex-1 space-y-3.5">
                         {items.length > 0 ? (
                           items.map((application) => <Card key={application.id} application={application} />)
                         ) : (
-                          <div className="mt-2 flex min-h-[170px] flex-col items-center justify-center rounded-[8px] border border-dashed border-slate-200/90 bg-white/45 px-4 text-center">
+                          <div className="mt-2 flex min-h-[170px] w-full min-w-0 flex-col items-center justify-center rounded-[8px] border border-dashed border-slate-200/90 bg-white/45 px-4 py-6 text-center">
                             <Inbox className="mb-3 size-5 text-slate-300" />
-                            <p className="text-sm font-bold text-slate-400">Aucune candidature</p>
-                            <p className="mt-1 text-xs leading-5 text-slate-400">Dépose une carte ici.</p>
+                            <p className="max-w-[18ch] break-words text-sm font-bold leading-5 text-slate-400">Aucune candidature</p>
+                            <p className="mt-1 max-w-[20ch] break-words text-xs leading-5 text-slate-400">Dépose une carte ici.</p>
                           </div>
                         )}
                       </div>
