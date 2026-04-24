@@ -54,6 +54,26 @@ select {
   appearance: none;
 }
 
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280;
+  opacity: 1;
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  opacity: 1;
+  -webkit-text-fill-color: #4b5563;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  opacity: 0.72;
+}
+
 img,
 svg,
 video,
@@ -204,6 +224,21 @@ a {
   background-size: 48px 48px, 48px 48px, auto, auto;
   color: white;
   box-shadow: 0 30px 70px rgba(8, 7, 25, 0.22);
+}
+
+.cadova-dark-panel h1,
+.cadova-dark-panel h2,
+.cadova-dark-panel h3,
+.cadova-dark-panel h4,
+.cadova-dark-panel h5,
+.cadova-dark-panel h6 {
+  color: #ffffff;
+}
+
+.cadova-dark-panel p,
+.cadova-dark-panel li,
+.cadova-dark-panel span:not([class*="text-slate"]):not([class*="text-[var(--cadova-text)]"]) {
+  color: inherit;
 }
 
 .cadova-button-primary {

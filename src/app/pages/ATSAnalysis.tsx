@@ -303,7 +303,7 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                           <span className={`text-4xl font-bold ${getScoreColor(result.score)}`}>
                             {result.score}
                           </span>
-                          <span className="text-xs text-slate-400">/100</span>
+                          <span className="text-xs text-slate-500">/100</span>
                         </div>
                       </div>
                     </motion.div>

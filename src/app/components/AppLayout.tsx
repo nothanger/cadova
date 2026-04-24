@@ -78,7 +78,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         {onClose && (
           <button
             onClick={onClose}
-            className="flex size-9 items-center justify-center rounded-[8px] bg-white/5 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            className="flex size-9 items-center justify-center rounded-[8px] bg-white/5 text-white/85 transition-colors hover:bg-white/10 hover:text-white"
           >
             <X className="size-4" />
           </button>
@@ -117,7 +117,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                         <p className="mb-0.5 truncate text-[13px] font-semibold leading-none" style={{ color: isActive ? "white" : "rgba(255,255,255,0.76)" }}>
                           {item.label}
                         </p>
-                        <p className="truncate text-[10px] leading-none text-white/65">{item.sub}</p>
+                        <p className="truncate text-[10px] leading-none text-white/80">{item.sub}</p>
                       </div>
                       {isActive && <div className="size-1.5 shrink-0 rounded-full" style={{ background: section.accent }} />}
                     </div>
@@ -152,11 +152,11 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[12px] font-bold text-white/80">{firstName}</p>
-            <p className="text-[10px] text-white/60">Espace candidature</p>
+            <p className="text-[10px] text-white/80">Espace candidature</p>
           </div>
           <button
             onClick={handleLogout}
-            className="flex size-8 shrink-0 items-center justify-center rounded-[8px] text-white/65 transition hover:bg-red-500/10 hover:text-red-200"
+            className="flex size-8 shrink-0 items-center justify-center rounded-[8px] text-white/80 transition hover:bg-red-500/10 hover:text-red-200"
             title="Déconnexion"
           >
             <LogOut className="size-3.5" />

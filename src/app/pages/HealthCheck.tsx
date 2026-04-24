@@ -270,7 +270,7 @@ export function HealthCheck() {
       case "warning":
         return <AlertCircle className="h-5 w-5 text-yellow-600" />;
       case "pending":
-        return <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />;
+        return <Loader2 className="h-5 w-5 text-gray-500 animate-spin" />;
     }
   };
 

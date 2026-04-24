@@ -17,6 +17,13 @@ import {
 import { toast } from "sonner";
 import { AppLayout } from "../components/AppLayout";
 import { Button } from "../components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "../components/ui/drawer";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
@@ -152,6 +159,10 @@ function notesPreview(notes?: string) {
   return notes.trim().replace(/\s+/g, " ").slice(0, 96);
 }
 
+function shouldUseFormDrawer() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 1279px)").matches;
+}
+
 export function Applications() {
   useSEO({ title: "Suivi candidatures - Cadova", noindex: true });
   const { user } = useAuth();
@@ -167,6 +178,7 @@ export function Applications() {
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [emailDraft, setEmailDraft] = useState({ recipient: "", subject: "", content: "" });
   const [sending, setSending] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -204,6 +216,16 @@ export function Applications() {
       responseRate: total ? Math.round((responses / total) * 100) : 0,
     };
   }, [applications]);
+
+  const statItems = [
+    { label: "Total", value: stats.total, icon: Briefcase, tone: "bg-slate-100 text-slate-700" },
+    { label: "En attente", value: stats.waiting, icon: Clock3, tone: "bg-blue-50 text-blue-700" },
+    { label: "À relancer", value: stats.followUps, icon: CalendarClock, tone: "bg-amber-50 text-amber-800" },
+    { label: "En retard", value: stats.overdue, icon: AlertTriangle, tone: "bg-rose-50 text-rose-700" },
+    { label: "Entretiens", value: stats.interviews, icon: Mail, tone: "bg-indigo-50 text-indigo-700" },
+    { label: "Terminées", value: stats.finished, icon: Check, tone: "bg-emerald-50 text-emerald-700" },
+    { label: "Réponse", value: `${stats.responseRate}%`, icon: ChevronRight, tone: "bg-violet-50 text-violet-700" },
+  ];
 
   const canCreate = isPro || applications.length < 5;
   const fieldClass = "h-10 rounded-[8px] border-slate-200 bg-slate-50/70 px-3 text-sm shadow-none transition focus-visible:bg-white";
@@ -250,9 +272,11 @@ export function Applications() {
     }
 
     resetForm();
+    setFormOpen(false);
   };
 
   const editApplication = (application: Application) => {
+    const openDrawer = shouldUseFormDrawer();
     setEditingId(application.id);
     setDraft({
       company: application.company,
@@ -265,6 +289,20 @@ export function Applications() {
       link: application.link,
       notes: application.notes || "",
     });
+    if (openDrawer) {
+      setSelectedApplication(null);
+      setFormOpen(true);
+    }
+  };
+
+  const openNewApplicationForm = () => {
+    resetForm();
+    setFormOpen(true);
+  };
+
+  const closeFormDrawer = () => {
+    resetForm();
+    setFormOpen(false);
   };
 
   const removeApplication = async (id: string) => {
@@ -361,6 +399,110 @@ export function Applications() {
     toast.success(sent.status === "sent" ? "Email envoyé." : "Email enregistré.");
   };
 
+  const renderApplicationForm = (mode: "desktop" | "drawer") => {
+    const isDrawer = mode === "drawer";
+
+    return (
+      <form
+        onSubmit={submitApplication}
+        className={
+          isDrawer
+            ? "max-h-[calc(88svh-3rem)] overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-1 sm:px-5 [&_label]:mb-1.5 [&_label]:text-[12px] [&_label]:font-bold [&_label]:text-slate-700"
+            : "hidden h-fit w-full rounded-[8px] border border-slate-200/80 bg-white p-3 shadow-[0_14px_36px_rgba(15,23,42,0.06)] sm:p-4 xl:block [&_label]:mb-1.5 [&_label]:text-[12px] [&_label]:font-bold [&_label]:text-slate-700"
+        }
+      >
+        {isDrawer ? (
+          <DrawerHeader className="px-0 pb-4 pt-0 text-left">
+            <div className="flex items-start justify-between gap-4 pr-8">
+              <div>
+                <DrawerTitle className="text-base font-black text-slate-950">{editingId ? "Modifier" : "Nouvelle candidature"}</DrawerTitle>
+                <DrawerDescription className="mt-1 text-xs text-slate-600">{isPro ? "Suivi illimité" : `${applications.length}/5 sur le plan gratuit`}</DrawerDescription>
+              </div>
+              {editingId && (
+                <button type="button" onClick={resetForm} className="text-xs font-bold text-slate-500 hover:text-slate-800">
+                  Annuler
+                </button>
+              )}
+            </div>
+          </DrawerHeader>
+        ) : (
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-black text-slate-950">{editingId ? "Modifier" : "Nouvelle candidature"}</p>
+              <p className="text-xs text-slate-600">{isPro ? "Suivi illimité" : `${applications.length}/5 sur le plan gratuit`}</p>
+            </div>
+            {editingId && (
+              <button type="button" onClick={resetForm} className="text-xs font-bold text-slate-500 hover:text-slate-800">
+                Annuler
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <div>
+            <Label>Entreprise</Label>
+            <Input className={fieldClass} value={draft.company} onChange={(event) => setDraft((item) => ({ ...item, company: event.target.value }))} required />
+          </div>
+          <div>
+            <Label>Poste</Label>
+            <Input className={fieldClass} value={draft.position} onChange={(event) => setDraft((item) => ({ ...item, position: event.target.value }))} required />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Type</Label>
+              <select value={draft.type} onChange={(event) => setDraft((item) => ({ ...item, type: event.target.value as ApplicationType }))} className={selectClass}>
+                <option value="stage">Stage</option>
+                <option value="alternance">Alternance</option>
+                <option value="job">Job</option>
+              </select>
+            </div>
+            <div>
+              <Label>Statut</Label>
+              <select value={draft.status} onChange={(event) => setDraft((item) => ({ ...item, status: event.target.value as ApplicationStatus }))} className={selectClass}>
+                {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Date d’envoi</Label>
+              <Input className={fieldClass} type="date" value={draft.appliedAt} onChange={(event) => setDraft((item) => ({ ...item, appliedAt: event.target.value, followUpDate: item.followUpDate || recommendedFollowUpDate(event.target.value) }))} />
+            </div>
+            <div>
+              <Label>Date relance</Label>
+              <Input className={fieldClass} type="date" value={draft.followUpDate} onChange={(event) => setDraft((item) => ({ ...item, followUpDate: event.target.value }))} />
+            </div>
+          </div>
+          <div>
+            <Label>Email contact</Label>
+            <Input className={fieldClass} type="email" value={draft.email} onChange={(event) => setDraft((item) => ({ ...item, email: event.target.value }))} />
+          </div>
+          <div>
+            <Label>Lien offre</Label>
+            <Input className={fieldClass} value={draft.link} onChange={(event) => setDraft((item) => ({ ...item, link: event.target.value }))} />
+          </div>
+          <div>
+            <Label>Notes</Label>
+            <Textarea className={textareaClass} value={draft.notes} onChange={(event) => setDraft((item) => ({ ...item, notes: event.target.value }))} rows={4} />
+          </div>
+        </div>
+
+        <div className={isDrawer ? "mt-5 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-2" : ""}>
+          {isDrawer && (
+            <Button type="button" variant="outline" onClick={closeFormDrawer} className="h-11 rounded-[8px] font-black">
+              Annuler
+            </Button>
+          )}
+          <Button type="submit" disabled={!canCreate && !editingId} className={`${isDrawer ? "" : "mt-5"} h-11 w-full gap-2 bg-[linear-gradient(135deg,#5044f5,#7c3aed)] font-black shadow-[0_16px_36px_rgba(80,68,245,0.24)] hover:shadow-[0_18px_42px_rgba(80,68,245,0.30)]`}>
+            <Plus className="size-4" />
+            {editingId ? "Enregistrer" : "Ajouter"}
+          </Button>
+        </div>
+      </form>
+    );
+  };
+
   const Card = ({ application }: { application: Application }) => {
     const followUp = getFollowUpState(application);
     const nextAction = getNextAction(application);
@@ -405,13 +547,13 @@ export function Applications() {
 
         <div className="my-4 flex min-w-0 flex-col gap-2.5">
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-[11px] leading-4 font-bold text-slate-400">Envoyé le</span>
+            <span className="text-[11px] leading-4 font-bold text-slate-500">Envoyé le</span>
             <strong className="min-w-0 text-[13px] leading-5 font-black break-words text-slate-900">
               {application.appliedAt ? formatDate(application.appliedAt) : "Pas encore"}
             </strong>
           </div>
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-[11px] leading-4 font-bold text-slate-400">Relance le</span>
+            <span className="text-[11px] leading-4 font-bold text-slate-500">Relance le</span>
             <strong className={`min-w-0 text-[13px] leading-5 font-black break-words ${followUp.isDue ? "text-amber-800" : "text-slate-900"}`}>
               {formatDate(followUp.dueDate)}
             </strong>
@@ -437,7 +579,7 @@ export function Applications() {
               Envoyée
             </button>
           ) : (
-            <button type="button" disabled={!application.email} onClick={(event) => { event.stopPropagation(); openEmail(application); }} className="inline-flex min-h-9 w-full flex-wrap items-center justify-center gap-1.5 rounded-[8px] bg-slate-950 px-3 py-2 text-[12px] leading-4 font-black break-words text-white transition hover:bg-indigo-700 disabled:opacity-40">
+            <button type="button" disabled={!application.email} onClick={(event) => { event.stopPropagation(); openEmail(application); }} className="inline-flex min-h-9 w-full flex-wrap items-center justify-center gap-1.5 rounded-[8px] bg-slate-950 px-3 py-2 text-[12px] leading-4 font-black break-words text-white transition hover:bg-indigo-700 disabled:opacity-70">
               <Mail className="size-3.5" />
               Relancer
             </button>
@@ -493,19 +635,11 @@ export function Applications() {
           )}
         </div>
 
-        <div className="mb-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
-          {[
-            { label: "Total", value: stats.total, icon: Briefcase, tone: "bg-slate-100 text-slate-700" },
-            { label: "En attente", value: stats.waiting, icon: Clock3, tone: "bg-blue-50 text-blue-700" },
-            { label: "À relancer", value: stats.followUps, icon: CalendarClock, tone: "bg-amber-50 text-amber-800" },
-            { label: "En retard", value: stats.overdue, icon: AlertTriangle, tone: "bg-rose-50 text-rose-700" },
-            { label: "Entretiens", value: stats.interviews, icon: Mail, tone: "bg-indigo-50 text-indigo-700" },
-            { label: "Terminées", value: stats.finished, icon: Check, tone: "bg-emerald-50 text-emerald-700" },
-            { label: "Réponse", value: `${stats.responseRate}%`, icon: ChevronRight, tone: "bg-violet-50 text-violet-700" },
-          ].map((item) => {
+        <div className="mb-7 flex gap-3 overflow-x-auto overscroll-x-contain pb-2 [-webkit-overflow-scrolling:touch] lg:grid lg:grid-cols-4 lg:overflow-visible lg:pb-0 2xl:grid-cols-7">
+          {statItems.map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.label} className="rounded-[8px] border border-slate-200/70 bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,0.06)]">
+              <div key={item.label} className="w-[156px] flex-none rounded-[8px] border border-slate-200/70 bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,0.06)] sm:w-[168px] lg:w-auto">
                 <div className={`mb-4 flex size-9 items-center justify-center rounded-[8px] ${item.tone}`}>
                   <Icon className="size-4" />
                 </div>
@@ -530,76 +664,15 @@ export function Applications() {
         )}
 
         <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
-          <form onSubmit={submitApplication} className="h-fit w-full rounded-[8px] border border-slate-200/80 bg-white p-3 shadow-[0_14px_36px_rgba(15,23,42,0.06)] sm:p-4 [&_label]:mb-1.5 [&_label]:text-[12px] [&_label]:font-bold [&_label]:text-slate-700">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-black text-slate-950">{editingId ? "Modifier" : "Nouvelle candidature"}</p>
-                <p className="text-xs text-slate-600">{isPro ? "Suivi illimité" : `${applications.length}/5 sur le plan gratuit`}</p>
-              </div>
-              {editingId && (
-                <button type="button" onClick={resetForm} className="text-xs font-bold text-slate-500 hover:text-slate-800">
-                  Annuler
-                </button>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <Label>Entreprise</Label>
-                <Input className={fieldClass} value={draft.company} onChange={(event) => setDraft((item) => ({ ...item, company: event.target.value }))} required />
-              </div>
-              <div>
-                <Label>Poste</Label>
-                <Input className={fieldClass} value={draft.position} onChange={(event) => setDraft((item) => ({ ...item, position: event.target.value }))} required />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label>Type</Label>
-                  <select value={draft.type} onChange={(event) => setDraft((item) => ({ ...item, type: event.target.value as ApplicationType }))} className={selectClass}>
-                    <option value="stage">Stage</option>
-                    <option value="alternance">Alternance</option>
-                    <option value="job">Job</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>Statut</Label>
-                  <select value={draft.status} onChange={(event) => setDraft((item) => ({ ...item, status: event.target.value as ApplicationStatus }))} className={selectClass}>
-                    {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label>Date d’envoi</Label>
-                  <Input className={fieldClass} type="date" value={draft.appliedAt} onChange={(event) => setDraft((item) => ({ ...item, appliedAt: event.target.value, followUpDate: item.followUpDate || recommendedFollowUpDate(event.target.value) }))} />
-                </div>
-                <div>
-                  <Label>Date relance</Label>
-                  <Input className={fieldClass} type="date" value={draft.followUpDate} onChange={(event) => setDraft((item) => ({ ...item, followUpDate: event.target.value }))} />
-                </div>
-              </div>
-              <div>
-                <Label>Email contact</Label>
-                <Input className={fieldClass} type="email" value={draft.email} onChange={(event) => setDraft((item) => ({ ...item, email: event.target.value }))} />
-              </div>
-              <div>
-                <Label>Lien offre</Label>
-                <Input className={fieldClass} value={draft.link} onChange={(event) => setDraft((item) => ({ ...item, link: event.target.value }))} />
-              </div>
-              <div>
-                <Label>Notes</Label>
-                <Textarea className={textareaClass} value={draft.notes} onChange={(event) => setDraft((item) => ({ ...item, notes: event.target.value }))} rows={4} />
-              </div>
-            </div>
-
-            <Button type="submit" disabled={!canCreate && !editingId} className="mt-5 h-11 w-full gap-2 bg-[linear-gradient(135deg,#5044f5,#7c3aed)] font-black shadow-[0_16px_36px_rgba(80,68,245,0.24)] hover:shadow-[0_18px_42px_rgba(80,68,245,0.30)]">
-              <Plus className="size-4" />
-              {editingId ? "Enregistrer" : "Ajouter"}
-            </Button>
-          </form>
+          {renderApplicationForm("desktop")}
 
           <div className="min-w-0">
-            <div className="w-full overflow-x-auto overflow-y-hidden overscroll-x-contain pb-3 [scrollbar-gutter:stable]">
+            <Button type="button" onClick={openNewApplicationForm} className="mb-4 h-12 w-full gap-2 rounded-[8px] bg-[linear-gradient(135deg,#5044f5,#7c3aed)] font-black shadow-[0_16px_36px_rgba(80,68,245,0.24)] hover:shadow-[0_18px_42px_rgba(80,68,245,0.30)] xl:hidden">
+              <Plus className="size-4" />
+              Nouvelle candidature
+            </Button>
+
+            <div className="-mx-5 w-[calc(100%+2.5rem)] overflow-x-auto overflow-y-hidden overscroll-x-contain px-5 pb-3 [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch] md:-mx-8 md:w-[calc(100%+4rem)] md:px-8 xl:mx-0 xl:w-full xl:px-0">
               <div className="flex min-w-max flex-nowrap items-stretch gap-3">
                 {STATUSES.map((status) => {
                   const items = applications.filter((item) => item.status === status);
@@ -609,7 +682,7 @@ export function Applications() {
                       key={status}
                       onDragOver={(event) => event.preventDefault()}
                       onDrop={() => draggedId && moveApplication(draggedId, status)}
-                      className={`flex min-h-[500px] min-w-[280px] flex-none flex-col rounded-[8px] border ${style.border} ${style.bg} p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:min-w-[296px]`}
+                      className={`flex min-h-[500px] min-w-[288px] flex-none flex-col rounded-[8px] border ${style.border} ${style.bg} p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:min-w-[320px] md:min-w-[340px] xl:min-w-[296px]`}
                     >
                       <div className="mb-4 flex min-w-0 items-start justify-between gap-3 rounded-[8px] bg-white/70 px-3 py-2 shadow-sm shadow-slate-900/[0.03]">
                         <div className="flex min-w-0 items-start gap-2">
@@ -624,8 +697,8 @@ export function Applications() {
                         ) : (
                           <div className="mt-2 flex min-h-[170px] w-full min-w-0 flex-col items-center justify-center rounded-[8px] border border-dashed border-slate-200/90 bg-white/45 px-4 py-6 text-center">
                             <Inbox className="mb-3 size-5 text-slate-300" />
-                            <p className="max-w-[18ch] break-words text-sm font-bold leading-5 text-slate-400">Aucune candidature</p>
-                            <p className="mt-1 max-w-[20ch] break-words text-xs leading-5 text-slate-400">Dépose une carte ici.</p>
+                            <p className="max-w-[18ch] break-words text-sm font-bold leading-5 text-slate-500">Aucune candidature</p>
+                            <p className="mt-1 max-w-[20ch] break-words text-xs leading-5 text-slate-500">Dépose une carte ici.</p>
                           </div>
                         )}
                       </div>
@@ -651,6 +724,12 @@ export function Applications() {
             </div>
           </div>
         </div>
+
+        <Drawer open={formOpen} onOpenChange={(open) => (open ? setFormOpen(true) : closeFormDrawer())}>
+          <DrawerContent className="max-h-[88svh] overflow-hidden rounded-t-[18px] border-slate-200 bg-white p-0 xl:hidden">
+            {renderApplicationForm("drawer")}
+          </DrawerContent>
+        </Drawer>
 
         {selectedApplication && (
           <div className="fixed inset-0 z-[3900] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">

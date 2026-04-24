@@ -91,7 +91,7 @@ export function LoadingScreen({
           </motion.div>
           <p
             className="text-[11px] uppercase tracking-[0.2em]"
-            style={{ color: "rgba(255,255,255,0.25)" }}
+            style={{ color: "rgba(255,255,255,0.62)" }}
           >
             {label}
           </p>
@@ -147,7 +147,7 @@ export function LoadingScreen({
                       ? "rgba(255,255,255,0.7)"
                       : isActive
                       ? "rgba(255,255,255,0.95)"
-                      : "rgba(255,255,255,0.25)",
+                      : "rgba(255,255,255,0.62)",
                     fontFamily: "DM Sans, system-ui, sans-serif",
                   }}
                 >

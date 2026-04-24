@@ -97,7 +97,7 @@ export function ForgotPassword() {
             <p className="text-sm font-semibold mb-4" style={{ color: "#0C0B1A" }}>
               {email}
             </p>
-            <p className="text-xs mb-6" style={{ color: "#9CA3AF" }}>
+            <p className="text-xs mb-6" style={{ color: "#6B7280" }}>
               Vérifie tes spams si tu ne le vois pas. Le lien expire dans 1 heure.
             </p>
 
@@ -105,7 +105,7 @@ export function ForgotPassword() {
             {cooldown > 0 ? (
               <div
                 className="flex items-center justify-center gap-2 text-xs mb-6 py-2.5 px-4 rounded-xl"
-                style={{ background: "#F3F4F6", color: "#9CA3AF" }}
+                style={{ background: "#F3F4F6", color: "#6B7280" }}
               >
                 <Clock className="size-3.5" />
                 Renvoyer possible dans {cooldown}s
@@ -154,7 +154,7 @@ export function ForgotPassword() {
                 <div className="relative">
                   <Mail
                     className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4"
-                    style={{ color: "#9CA3AF" }}
+                    style={{ color: "#6B7280" }}
                   />
                   <input
                     type="email"
@@ -203,7 +203,7 @@ export function ForgotPassword() {
               <button
                 type="submit"
                 disabled={!canResend || !email.trim()}
-                className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed"
                 style={{
                   background: "linear-gradient(135deg, #5548F5, #8B5CF6)",
                   boxShadow: canResend ? "0 6px 24px rgba(85,72,245,0.4)" : "none",
@@ -232,7 +232,7 @@ export function ForgotPassword() {
               <Link
                 to="/login"
                 className="inline-flex items-center gap-1.5 text-sm transition-opacity hover:opacity-70"
-                style={{ color: "#9CA3AF" }}
+                style={{ color: "#6B7280" }}
               >
                 <ArrowLeft className="size-3.5" />
                 Retour à la connexion

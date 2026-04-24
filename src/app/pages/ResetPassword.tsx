@@ -171,7 +171,7 @@ export function ResetPassword() {
                   Nouveau mot de passe
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4" style={{ color: "#9CA3AF" }} />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4" style={{ color: "#6B7280" }} />
                   <input
                     type={showPw ? "text" : "password"}
                     placeholder="••••••••"
@@ -192,7 +192,7 @@ export function ResetPassword() {
                     type="button"
                     onClick={() => setShowPw((v) => !v)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-60"
-                    style={{ color: "#9CA3AF" }}
+                    style={{ color: "#6B7280" }}
                   >
                     {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
@@ -219,7 +219,7 @@ export function ResetPassword() {
                   Confirmer le mot de passe
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4" style={{ color: "#9CA3AF" }} />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4" style={{ color: "#6B7280" }} />
                   <input
                     type={showConfirm ? "text" : "password"}
                     placeholder="••••••••"
@@ -240,7 +240,7 @@ export function ResetPassword() {
                     type="button"
                     onClick={() => setShowConfirm((v) => !v)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-60"
-                    style={{ color: "#9CA3AF" }}
+                    style={{ color: "#6B7280" }}
                   >
                     {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>

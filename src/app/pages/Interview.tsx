@@ -120,7 +120,7 @@ function FeedbackCard({ feedback }: { feedback: AnswerFeedback }) {
                 className="size-6 rounded flex items-center justify-center text-[10px] font-bold"
                 style={{
                   background: detected ? "#5548F520" : "rgba(0,0,0,0.05)",
-                  color: detected ? "#5548F5" : "#C4C4D4",
+                  color: detected ? "#5548F5" : "#6B7280",
                   fontFamily: "ui-monospace, monospace",
                 }}
                 title={detected ? `${part} détecté` : `${part} non détecté`}
@@ -129,7 +129,7 @@ function FeedbackCard({ feedback }: { feedback: AnswerFeedback }) {
               </div>
             );
           })}
-          <span className="text-[10px] self-center ml-1" style={{ color: "#9CA3AF" }}>Méthode STAR</span>
+          <span className="text-[10px] self-center ml-1" style={{ color: "#6B7280" }}>Méthode STAR</span>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -186,7 +186,7 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
           style={{ background: `radial-gradient(circle at 50% 30%, ${report.scoreColor}30 0%, transparent 65%)` }}
         />
         <div className="relative">
-          <p className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{ color: "rgba(255,255,255,0.3)" }}>
+          <p className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{ color: "rgba(255,255,255,0.68)" }}>
             Résultat de session
           </p>
           <div
@@ -195,7 +195,7 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
           >
             {report.averageScore}
           </div>
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>points sur 100</p>
+          <p className="text-sm" style={{ color: "rgba(255,255,255,0.76)" }}>points sur 100</p>
           <div
             className="mt-4 inline-block px-4 py-1.5 rounded-full text-sm font-semibold"
             style={{ background: `${report.scoreColor}20`, color: report.scoreColor }}
@@ -212,7 +212,7 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
       >
         {report.categoryScores.map((cat, i) => (
           <div key={i} className="p-5" style={{ background: "white" }}>
-            <p className="text-[10px] uppercase tracking-wider mb-2" style={{ color: "#9CA3AF" }}>{cat.label}</p>
+            <p className="text-[10px] uppercase tracking-wider mb-2" style={{ color: "#6B7280" }}>{cat.label}</p>
             <div className="flex items-end gap-2 mb-2">
               <span
                 className="text-2xl font-black tabular-nums leading-none"
@@ -220,7 +220,7 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
               >
                 {cat.score}
               </span>
-              <span className="text-xs mb-0.5" style={{ color: "#C4C4D4" }}>/100</span>
+              <span className="text-xs mb-0.5" style={{ color: "#6B7280" }}>/100</span>
             </div>
             <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.06)" }}>
               <motion.div
@@ -426,7 +426,7 @@ export function Interview() {
               </h1>
             </div>
           </div>
-          <p className="text-sm ml-12" style={{ color: "#9CA3AF" }}>
+          <p className="text-sm ml-12" style={{ color: "#6B7280" }}>
             Réponds aux questions et reçois un feedback détaillé basé sur la méthode STAR.
           </p>
         </motion.div>
@@ -444,7 +444,7 @@ export function Interview() {
               {/* Config card */}
               <div className="overflow-hidden rounded-3xl shadow-sm" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
                 <div className="px-6 py-4" style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
-                  <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "#C4C4D4" }}>
+                  <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "#6B7280" }}>
                     Configuration
                   </p>
                 </div>
@@ -452,7 +452,7 @@ export function Interview() {
 
                   {/* Type */}
                   <div>
-                    <label className="text-[11px] uppercase tracking-wider block mb-2" style={{ color: "#9CA3AF" }}>
+                    <label className="text-[11px] uppercase tracking-wider block mb-2" style={{ color: "#6B7280" }}>
                       Type d'entretien
                     </label>
                     <div className="grid grid-cols-2 gap-2">
@@ -475,7 +475,7 @@ export function Interview() {
 
                  
                   <div>
-                    <label className="text-[11px] uppercase tracking-wider block mb-2" style={{ color: "#9CA3AF" }}>
+                    <label className="text-[11px] uppercase tracking-wider block mb-2" style={{ color: "#6B7280" }}>
                       Secteur (optionnel)
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -486,7 +486,7 @@ export function Interview() {
                           className="px-3 py-1.5 rounded-lg text-[11px] transition-all"
                           style={{
                             background: sector === s ? "#5548F515" : "rgba(0,0,0,0.03)",
-                            color: sector === s ? "#5548F5" : "#9CA3AF",
+                            color: sector === s ? "#5548F5" : "#6B7280",
                             border: sector === s ? "1px solid #5548F530" : "1px solid transparent",
                           }}
                         >
@@ -503,7 +503,7 @@ export function Interview() {
                   >
                     <div>
                       <p className="text-[13px] font-semibold" style={{ color: "#0C0B1A" }}>Mode pression</p>
-                      <p className="text-[11px]" style={{ color: "#9CA3AF" }}>Questions enchaînées plus rapidement — simule un vrai entretien</p>
+                      <p className="text-[11px]" style={{ color: "#6B7280" }}>Questions enchaînées plus rapidement — simule un vrai entretien</p>
                     </div>
                     <button
                       onClick={() => setPressureMode(!pressureMode)}
@@ -542,7 +542,7 @@ export function Interview() {
               
               <div className="hidden rounded-2xl overflow-hidden" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
                 <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
-                  <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "#C4C4D4" }}>
+                  <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "#6B7280" }}>
                     Exemples de questions
                   </p>
                 </div>
@@ -567,7 +567,7 @@ export function Interview() {
                     </div>
                   ))}
                   <div className="pt-3" style={{ borderTop: "1px solid rgba(0,0,0,0.05)" }}>
-                    <p className="text-[11px]" style={{ color: "#9CA3AF" }}>
+                    <p className="text-[11px]" style={{ color: "#6B7280" }}>
                       Les questions varient selon le type d'entretien et le secteur choisi.
                     </p>
                   </div>
@@ -599,14 +599,14 @@ export function Interview() {
                       </div>
                       <div>
                         <p className="text-[13px] font-semibold" style={{ color: "#0C0B1A" }}>Recruteur OralIA</p>
-                        <p className="text-[11px]" style={{ color: "#9CA3AF" }}>
+                        <p className="text-[11px]" style={{ color: "#6B7280" }}>
                           Question {Math.min(questionIdx + 1, questions.length)}/{questions.length}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Clock className="size-4" style={{ color: "#C4C4D4" }} />
-                      <span className="text-[11px]" style={{ color: "#C4C4D4" }}>~15 min</span>
+                      <Clock className="size-4" style={{ color: "#6B7280" }} />
+                      <span className="text-[11px]" style={{ color: "#6B7280" }}>~15 min</span>
                     </div>
                   </div>
 
@@ -725,7 +725,7 @@ export function Interview() {
                       <button
                         onClick={handleSend}
                         disabled={!currentAnswer.trim() || isTyping}
-                        className="self-end px-4 py-3 rounded-xl transition-all hover:opacity-90 disabled:opacity-30"
+                        className="self-end px-4 py-3 rounded-xl transition-all hover:opacity-90 disabled:opacity-60"
                         style={{ background: "linear-gradient(135deg, #EC4899, #BE185D)", color: "white" }}
                       >
                         <Send className="size-4" />
@@ -741,16 +741,16 @@ export function Interview() {
                 
                 <div className="rounded-2xl overflow-hidden" style={{ background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
                   <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
-                    <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "#C4C4D4" }}>Score en direct</p>
+                    <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "#6B7280" }}>Score en direct</p>
                   </div>
                   <div className="p-5 text-center">
                     <div
                       className="text-5xl font-black tabular-nums mb-1"
-                      style={{ fontFamily: "Syne, sans-serif", color: avgScore ? (avgScore >= 70 ? "#10B981" : avgScore >= 50 ? "#F59E0B" : "#EF4444") : "#E5E7EB", letterSpacing: "-0.04em" }}
+                      style={{ fontFamily: "Syne, sans-serif", color: avgScore ? (avgScore >= 70 ? "#10B981" : avgScore >= 50 ? "#F59E0B" : "#EF4444") : "#6B7280", letterSpacing: "-0.04em" }}
                     >
                       {avgScore ?? "—"}
                     </div>
-                    <p className="text-[11px]" style={{ color: "#9CA3AF" }}>sur 100</p>
+                    <p className="text-[11px]" style={{ color: "#6B7280" }}>sur 100</p>
                     <div className="mt-3 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.05)" }}>
                       <motion.div
                         animate={{ width: `${avgScore ?? 0}%` }}
@@ -758,7 +758,7 @@ export function Interview() {
                         style={{ background: avgScore ? (avgScore >= 70 ? "#10B981" : "#F59E0B") : "#E5E7EB" }}
                       />
                     </div>
-                    <div className="mt-3 flex justify-between text-[11px]" style={{ color: "#C4C4D4" }}>
+                    <div className="mt-3 flex justify-between text-[11px]" style={{ color: "#6B7280" }}>
                       <span>{feedbacks.length} rép.</span>
                       <span>{questions.length - feedbacks.length} restantes</span>
                     </div>
@@ -771,7 +771,7 @@ export function Interview() {
                   className="w-full px-4 py-3 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-2 transition-all"
                   style={{
                     background: showFeedback ? "#5548F510" : "rgba(0,0,0,0.04)",
-                    color: showFeedback ? "#5548F5" : "#9CA3AF",
+                    color: showFeedback ? "#5548F5" : "#6B7280",
                     border: `1px solid ${showFeedback ? "#5548F530" : "transparent"}`,
                   }}
                 >
@@ -781,7 +781,7 @@ export function Interview() {
 
                 
                 <div className="rounded-2xl p-5" style={{ background: "#0A0914", border: "1px solid rgba(85,72,245,0.12)" }}>
-                  <p className="text-[10px] uppercase tracking-[0.15em] mb-3" style={{ color: "rgba(255,255,255,0.25)" }}>
+                  <p className="text-[10px] uppercase tracking-[0.15em] mb-3" style={{ color: "rgba(255,255,255,0.62)" }}>
                     Méthode STAR
                   </p>
                   {[
@@ -801,7 +801,7 @@ export function Interview() {
                         <span className="text-[12px] font-semibold" style={{ color: "rgba(255,255,255,0.7)" }}>
                           {item.word}
                         </span>
-                        <span className="text-[11px] ml-2" style={{ color: "rgba(255,255,255,0.3)" }}>
+                        <span className="text-[11px] ml-2" style={{ color: "rgba(255,255,255,0.68)" }}>
                           {item.desc}
                         </span>
                       </div>
@@ -812,7 +812,7 @@ export function Interview() {
                 <button
                   onClick={handleReset}
                   className="w-full py-2.5 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-2 transition-all hover:opacity-70"
-                  style={{ background: "rgba(0,0,0,0.04)", color: "#9CA3AF" }}
+                  style={{ background: "rgba(0,0,0,0.04)", color: "#6B7280" }}
                 >
                   <RotateCcw className="size-3.5" />
                   Abandonner

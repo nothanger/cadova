@@ -147,7 +147,7 @@
   h4,
   h5,
   h6 {
-    color: var(--cadova-text);
+    color: inherit;
     font-family: var(--font-family);
     font-weight: 800;
     letter-spacing: -0.035em;

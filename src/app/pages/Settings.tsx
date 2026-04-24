@@ -81,13 +81,13 @@ function ChangePasswordSection() {
           </div>
           <div>
             <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Mot de passe</p>
-            <p className="text-xs" style={{ color: "#9CA3AF" }}>Modifier ton mot de passe de connexion</p>
+            <p className="text-xs" style={{ color: "#6B7280" }}>Modifier ton mot de passe de connexion</p>
           </div>
         </div>
         {open ? (
-          <ChevronUp className="size-4 shrink-0" style={{ color: "#9CA3AF" }} />
+          <ChevronUp className="size-4 shrink-0" style={{ color: "#6B7280" }} />
         ) : (
-          <ChevronDown className="size-4 shrink-0" style={{ color: "#9CA3AF" }} />
+          <ChevronDown className="size-4 shrink-0" style={{ color: "#6B7280" }} />
         )}
       </button>
 
@@ -112,7 +112,7 @@ function ChangePasswordSection() {
                   Mot de passe actuel
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5" style={{ color: "#9CA3AF" }} />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5" style={{ color: "#6B7280" }} />
                   <input
                     type={showCurrent ? "text" : "password"}
                     placeholder="••••••••"
@@ -125,7 +125,7 @@ function ChangePasswordSection() {
                     onBlur={(e) => (e.target.style.borderColor = "rgba(85,72,245,0.12)")}
                   />
                   <button type="button" onClick={() => setShowCurrent(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-60" style={{ color: "#9CA3AF" }}>
+                    className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-60" style={{ color: "#6B7280" }}>
                     {showCurrent ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
                   </button>
                 </div>
@@ -142,7 +142,7 @@ function ChangePasswordSection() {
                   Nouveau mot de passe
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5" style={{ color: "#9CA3AF" }} />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5" style={{ color: "#6B7280" }} />
                   <input
                     type={showNew ? "text" : "password"}
                     placeholder="••••••••"
@@ -155,7 +155,7 @@ function ChangePasswordSection() {
                     onBlur={(e) => (e.target.style.borderColor = "rgba(85,72,245,0.12)")}
                   />
                   <button type="button" onClick={() => setShowNew(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-60" style={{ color: "#9CA3AF" }}>
+                    className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-60" style={{ color: "#6B7280" }}>
                     {showNew ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
                   </button>
                 </div>
@@ -175,7 +175,7 @@ function ChangePasswordSection() {
                   Confirmer le nouveau mot de passe
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5" style={{ color: "#9CA3AF" }} />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5" style={{ color: "#6B7280" }} />
                   <input
                     type={showConfirm ? "text" : "password"}
                     placeholder="••••••••"
@@ -188,7 +188,7 @@ function ChangePasswordSection() {
                     onBlur={(e) => (e.target.style.borderColor = "rgba(85,72,245,0.12)")}
                   />
                   <button type="button" onClick={() => setShowConfirm(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-60" style={{ color: "#9CA3AF" }}>
+                    className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-60" style={{ color: "#6B7280" }}>
                     {showConfirm ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
                   </button>
                 </div>
@@ -215,7 +215,7 @@ function ChangePasswordSection() {
                 <button
                   type="submit"
                   disabled={loading || !current || !newPw || !confirm}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-90"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-70 disabled:cursor-not-allowed transition-all hover:opacity-90"
                   style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
                 >
                   {loading ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
@@ -346,7 +346,7 @@ function TwoFactorSection() {
                 </span>
               )}
             </p>
-            <p className="text-xs" style={{ color: "#9CA3AF" }}>
+            <p className="text-xs" style={{ color: "#6B7280" }}>
               {step === "active"
                 ? "Ton compte est protégé par Google Authenticator / Authy"
                 : "Protège ton compte avec une app d'authentification (TOTP)"}
@@ -354,7 +354,7 @@ function TwoFactorSection() {
           </div>
         </div>
 
-        {loading && <Loader2 className="size-4 animate-spin" style={{ color: "#9CA3AF" }} />}
+        {loading && <Loader2 className="size-4 animate-spin" style={{ color: "#6B7280" }} />}
 
         {!loading && step === "idle" && (
           <button
@@ -370,7 +370,7 @@ function TwoFactorSection() {
           <button
             onClick={handleDisable}
             disabled={disabling}
-            className="text-xs font-semibold px-3.5 py-2 rounded-xl transition-all hover:opacity-80 disabled:opacity-50"
+            className="text-xs font-semibold px-3.5 py-2 rounded-xl transition-all hover:opacity-80 disabled:opacity-70"
             style={{ background: "rgba(239,68,68,0.08)", color: "#EF4444" }}
           >
             {disabling ? <Loader2 className="size-3.5 animate-spin" /> : "Désactiver"}
@@ -410,7 +410,7 @@ function TwoFactorSection() {
                   </div>
                 )}
               </div>
-              <p className="text-xs mt-2" style={{ color: "#9CA3AF" }}>
+              <p className="text-xs mt-2" style={{ color: "#6B7280" }}>
                 Compatible : Google Authenticator, Authy, 1Password...
               </p>
             </div>
@@ -477,7 +477,7 @@ function TwoFactorSection() {
                   <button
                     type="submit"
                     disabled={verifying || code.length !== 6}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all hover:opacity-90"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white disabled:opacity-70 transition-all hover:opacity-90"
                     style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
                   >
                     {verifying ? <Loader2 className="size-3.5 animate-spin" /> : <ShieldCheck className="size-3.5" />}
@@ -607,7 +607,7 @@ export function SettingsPage() {
           >
             Paramètres
           </h1>
-          <p className="text-sm" style={{ color: "#9CA3AF" }}>
+          <p className="text-sm" style={{ color: "#6B7280" }}>
             Gère ton profil, ta sécurité et tes préférences
           </p>
         </div>
@@ -625,7 +625,7 @@ export function SettingsPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Profil</p>
-                <p className="text-xs" style={{ color: "#9CA3AF" }}>Informations de ton compte</p>
+                <p className="text-xs" style={{ color: "#6B7280" }}>Informations de ton compte</p>
               </div>
             </div>
 
@@ -639,7 +639,7 @@ export function SettingsPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>{name || "-"}</p>
-                  <p className="text-xs" style={{ color: "#9CA3AF" }}>{email}</p>
+                  <p className="text-xs" style={{ color: "#6B7280" }}>{email}</p>
                 </div>
               </div>
 
@@ -675,10 +675,10 @@ export function SettingsPage() {
                   style={{
                     background: "#F9F9F9",
                     border: "1.5px solid rgba(0,0,0,0.06)",
-                    color: "#9CA3AF",
+                    color: "#6B7280",
                   }}
                 />
-                <p className="text-xs mt-1" style={{ color: "#C4C4D4" }}>
+                <p className="text-xs mt-1" style={{ color: "#6B7280" }}>
                   L'email ne peut pas être modifié pour le moment
                 </p>
               </div>
@@ -722,7 +722,7 @@ export function SettingsPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Double authentification</p>
-                    <p className="text-xs leading-5" style={{ color: "#9CA3AF" }}>
+                    <p className="text-xs leading-5" style={{ color: "#6B7280" }}>
                       Masquee jusqu'a ce que la verification au login soit entierement active.
                     </p>
                   </div>
@@ -738,7 +738,7 @@ export function SettingsPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Notifications</p>
-                <p className="text-xs" style={{ color: "#9CA3AF" }}>Gère tes préférences d'alertes</p>
+                <p className="text-xs" style={{ color: "#6B7280" }}>Gère tes préférences d'alertes</p>
               </div>
             </div>
             {[
@@ -748,7 +748,7 @@ export function SettingsPage() {
               <div key={n.label} className="flex items-center justify-between py-1">
                 <div>
                   <p className="text-sm font-medium" style={{ color: "#0C0B1A" }}>{n.label}</p>
-                  <p className="text-xs" style={{ color: "#9CA3AF" }}>{n.desc}</p>
+                  <p className="text-xs" style={{ color: "#6B7280" }}>{n.desc}</p>
                 </div>
                 <div
                   className="text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer transition-all hover:opacity-80"
@@ -768,7 +768,7 @@ export function SettingsPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Abonnement</p>
-                <p className="text-xs" style={{ color: "#9CA3AF" }}>Plan actuel et facturation</p>
+                <p className="text-xs" style={{ color: "#6B7280" }}>Plan actuel et facturation</p>
               </div>
             </div>
             <div className="flex items-center justify-between">
@@ -776,7 +776,7 @@ export function SettingsPage() {
                 <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>
                   Plan {isPro ? "Pro" : "Gratuit"}
                 </p>
-                <p className="text-xs" style={{ color: "#9CA3AF" }}>
+                <p className="text-xs" style={{ color: "#6B7280" }}>
                   {isPro
                     ? "Accès complet à Cadova"
                     : "CV, lettres et suivi limités"}

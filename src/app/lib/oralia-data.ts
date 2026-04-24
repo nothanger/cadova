@@ -593,7 +593,7 @@ export function buildSessionReport(
     return {
       averageScore: 0,
       scoreLabel: "—",
-      scoreColor: "#9CA3AF",
+      scoreColor: "#6B7280",
       topStrengths: [],
       topImprovements: [],
       categoryScores: [],

@@ -96,7 +96,7 @@ export function Login() {
             </div>
             <div>
               <p className="text-sm font-semibold text-white">Marie L.</p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.76)" }}>
                 Étudiante Marketing · Lyon
               </p>
             </div>
@@ -117,7 +117,7 @@ export function Login() {
                 {"icon" in s && s.icon ? <s.icon className="w-5 h-5 text-current" /> : null}
                 {s.value}
               </div>
-              <div className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <div className="text-xs" style={{ color: "rgba(255,255,255,0.72)" }}>
                 {s.label}
               </div>
             </div>
@@ -154,7 +154,7 @@ export function Login() {
               <div className="relative">
                 <Mail
                   className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4"
-                  style={{ color: "#9CA3AF" }}
+                  style={{ color: "#6B7280" }}
                 />
                 <input
                   type="email"
@@ -193,7 +193,7 @@ export function Login() {
               <div className="relative">
                 <Lock
                   className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4"
-                  style={{ color: "#9CA3AF" }}
+                  style={{ color: "#6B7280" }}
                 />
                 <input
                   type="password"
@@ -240,7 +240,7 @@ export function Login() {
           </form>
 
           <div className="mt-8 text-center">
-            <p className="text-sm" style={{ color: "#9CA3AF" }}>
+            <p className="text-sm" style={{ color: "#6B7280" }}>
               Pas encore de compte ?{" "}
               <Link
                 to="/signup"
@@ -256,7 +256,7 @@ export function Login() {
             <Link
               to="/"
               className="text-xs transition-opacity hover:opacity-70"
-              style={{ color: "#C4C4D4" }}
+              style={{ color: "#6B7280" }}
             >
               ← Retour à l'accueil
             </Link>

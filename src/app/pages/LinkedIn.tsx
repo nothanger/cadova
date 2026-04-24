@@ -263,7 +263,7 @@ export function LinkedIn() {
                           {step.description}
                         </p>
                       </div>
-                      <ArrowRight className="size-5 text-slate-400 flex-shrink-0" />
+                      <ArrowRight className="size-5 text-slate-500 flex-shrink-0" />
                     </div>
                   ))}
                 </div>

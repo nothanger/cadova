@@ -580,7 +580,7 @@ export function CVGenerator() {
               )}
             </div>
             {templateId === "compact" && (
-              <p className="mt-2 text-xs text-slate-400">Le modele Compact masque la photo pour garder plus d'espace.</p>
+              <p className="mt-2 text-xs text-slate-500">Le modele Compact masque la photo pour garder plus d'espace.</p>
             )}
           </div>
         </div>
@@ -595,7 +595,7 @@ export function CVGenerator() {
                     ? "bg-indigo-600 text-white shadow-md"
                     : i < step
                     ? "bg-indigo-100 text-indigo-700 cursor-pointer hover:bg-indigo-200"
-                    : "bg-slate-100 text-slate-400 cursor-default"
+                    : "bg-slate-100 text-slate-500 cursor-default"
                 }`}
               >
                 {i < step ? (
@@ -1244,7 +1244,7 @@ export function CVGenerator() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 text-xs text-slate-400"
+                              className="h-6 text-xs text-slate-500"
                               onClick={() => setEditedSummary(null)}
                             >
                               Reset
@@ -1402,7 +1402,7 @@ export function CVGenerator() {
             Precedent
           </Button>
 
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-500">
             {step + 1} / {STEPS.length}
           </span>
 

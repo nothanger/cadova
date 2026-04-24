@@ -164,6 +164,13 @@
   color: #ffffff;
 }
 
+.marketing-panel-dark .marketing-copy,
+.marketing-panel-dark .marketing-card-copy,
+.marketing-panel-dark .marketing-copy-muted,
+.marketing-panel-dark .marketing-list-item {
+  color: rgba(255, 255, 255, 0.88);
+}
+
 .marketing-hero-grid,
 .marketing-grid-2,
 .marketing-grid-3,
@@ -255,7 +262,7 @@
 }
 
 .marketing-copy-muted {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .marketing-actions {
@@ -607,7 +614,7 @@
 }
 
 .marketing-recommendation-result span {
-  color: #8c91a3;
+  color: #6b7280;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.1em;

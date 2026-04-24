@@ -95,7 +95,7 @@ export function Dashboard() {
     <AppLayout>
       <div className="mx-auto max-w-6xl" style={{ fontFamily: "DM Sans, system-ui, sans-serif" }}>
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <p className="mb-3 text-[11px] uppercase tracking-[0.16em]" style={{ color: "#9CA3AF" }}>
+          <p className="mb-3 text-[11px] uppercase tracking-[0.16em]" style={{ color: "#6B7280" }}>
             Espace candidat
           </p>
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -131,7 +131,7 @@ export function Dashboard() {
               <div className="text-4xl font-black leading-none" style={{ fontFamily: "Syne, sans-serif", color: "#0C0B1A" }}>
                 {item.value}
               </div>
-              <p className="mt-2 text-[11px] uppercase tracking-[0.12em]" style={{ color: "#9CA3AF" }}>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.12em]" style={{ color: "#6B7280" }}>
                 {item.label}
               </p>
             </motion.div>
@@ -159,7 +159,7 @@ export function Dashboard() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold" style={{ color: "#0C0B1A" }}>{action.label}</p>
-                      <p className="text-xs" style={{ color: "#9CA3AF" }}>{action.text}</p>
+                      <p className="text-xs" style={{ color: "#6B7280" }}>{action.text}</p>
                     </div>
                     <ArrowRight className="size-4 opacity-0 transition-opacity group-hover:opacity-100" style={{ color: action.color }} />
                   </div>
@@ -185,7 +185,7 @@ export function Dashboard() {
                       <span className="size-2 rounded-full" style={{ background: item.color }} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold" style={{ color: "#111827" }}>{item.label}</p>
-                        <p className="text-[11px]" style={{ color: "#9CA3AF" }}>{item.tag} - {timeAgo(item.date)}</p>
+                        <p className="text-[11px]" style={{ color: "#6B7280" }}>{item.tag} - {timeAgo(item.date)}</p>
                       </div>
                     </div>
                   ))}

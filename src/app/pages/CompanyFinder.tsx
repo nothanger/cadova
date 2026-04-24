@@ -1780,7 +1780,7 @@ function CompanyDetail({
           </div>
           <button
             onClick={onClose}
-            className="text-white/70 hover:text-white transition-colors"
+            className="text-white/85 hover:text-white transition-colors"
           >
             <X className="size-5" />
           </button>
@@ -1814,7 +1814,7 @@ function CompanyDetail({
         <p className="text-sm text-slate-600">{company.description}</p>
 
         <div className="space-y-2">
-          <h4 className="text-xs text-slate-400 uppercase tracking-wide">
+          <h4 className="text-xs text-slate-500 uppercase tracking-wide">
             Contact
           </h4>
           <div className="space-y-1.5">
@@ -1828,18 +1828,18 @@ function CompanyDetail({
               {company.website}
             </a>
             <p className="flex items-center gap-2 text-sm text-slate-600">
-              <Phone className="size-4 text-slate-400" />
+              <Phone className="size-4 text-slate-500" />
               {company.phone}
             </p>
             <p className="flex items-center gap-2 text-sm text-slate-600">
-              <Mail className="size-4 text-slate-400" />
+              <Mail className="size-4 text-slate-500" />
               {company.email}
             </p>
           </div>
         </div>
 
         <div className="space-y-2">
-          <h4 className="text-xs text-slate-400 uppercase tracking-wide">
+          <h4 className="text-xs text-slate-500 uppercase tracking-wide">
             Domaines de recrutement
           </h4>
           <div className="flex flex-wrap gap-1.5">
@@ -2006,7 +2006,7 @@ export function CompanyFinder() {
         <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-500" />
               <input
                 type="text"
                 placeholder="Rechercher une entreprise, ville, domaine..."

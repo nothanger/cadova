@@ -52,7 +52,7 @@ export function AuthShell({
         </div>
 
         <div className="relative z-10 rounded-[8px] border border-white/10 bg-white/[0.045] p-5">
-          <p className="mb-4 text-xs text-white/65">Des candidats qui avancent, chacun à son rythme</p>
+          <p className="mb-4 text-xs text-white/80">Des candidats qui avancent, chacun à son rythme</p>
           <div className="flex items-center gap-3">
             <div className="-space-x-2 flex">
               {["M", "T", "S", "A"].map((letter, index) => (
@@ -67,7 +67,7 @@ export function AuthShell({
             </div>
             <div>
               <p className="text-sm font-extrabold text-white">Lycéens, étudiants, jeunes diplômés</p>
-              <p className="flex items-center gap-2 text-xs text-white/65">
+              <p className="flex items-center gap-2 text-xs text-white/80">
                 <Star className="size-4" />
                 <span>Un espace pour retrouver le fil</span>
               </p>

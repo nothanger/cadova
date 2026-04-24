@@ -104,7 +104,7 @@ export function Signup() {
         </div>
 
         <div className="relative z-10 rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.4)" }}>Rejoins nos utilisateurs satisfaits</p>
+          <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.76)" }}>Rejoins nos utilisateurs satisfaits</p>
           <div className="flex items-center gap-3">
             <div className="flex -space-x-2">
               {["M", "T", "S", "A"].map((l, i) => (
@@ -115,7 +115,7 @@ export function Signup() {
             </div>
             <div>
               <p className="text-sm font-semibold text-white">10 000+ étudiants</p>
-              <p className="text-xs flex items-center gap-2" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <p className="text-xs flex items-center gap-2" style={{ color: "rgba(255,255,255,0.72)" }}>
                 <Star className="w-5 h-5 text-current" />
                 <span>Note moyenne 4.8/5</span>
               </p>
@@ -168,7 +168,7 @@ export function Signup() {
             <div>
               <label className="block text-sm font-semibold mb-2" style={{ color: "#0C0B1A" }}>Nom complet</label>
               <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4" style={{ color: "#9CA3AF" }} />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4" style={{ color: "#6B7280" }} />
                 <input
                   type="text"
                   placeholder="Jean Dupont"
@@ -188,7 +188,7 @@ export function Signup() {
             <div>
               <label className="block text-sm font-semibold mb-2" style={{ color: "#0C0B1A" }}>Email</label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4" style={{ color: "#9CA3AF" }} />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4" style={{ color: "#6B7280" }} />
                 <input
                   type="email"
                   placeholder="vous@exemple.com"
@@ -211,7 +211,7 @@ export function Signup() {
             <div>
               <label className="block text-sm font-semibold mb-2" style={{ color: "#0C0B1A" }}>Mot de passe</label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4" style={{ color: "#9CA3AF" }} />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4" style={{ color: "#6B7280" }} />
                 <input
                   type="password"
                   placeholder="Minimum 6 caractères"
@@ -226,7 +226,7 @@ export function Signup() {
                   onBlur={(e) => (e.target.style.borderColor = "rgba(85,72,245,0.15)")}
                 />
               </div>
-              <p className="text-xs mt-1.5" style={{ color: "#C4C4D4" }}>Chiffré et stocké de manière sécurisée</p>
+              <p className="text-xs mt-1.5" style={{ color: "#6B7280" }}>Chiffré et stocké de manière sécurisée</p>
             </div>
 
            
@@ -253,7 +253,7 @@ export function Signup() {
             </button>
           </form>
 
-          <p className="text-xs text-center mt-5" style={{ color: "#C4C4D4" }}>
+          <p className="text-xs text-center mt-5" style={{ color: "#6B7280" }}>
             En créant un compte, tu acceptes nos{" "}
             <span className="cursor-pointer hover:opacity-70" style={{ color: "#5548F5" }}>CGU</span>
             {" "}et notre{" "}
@@ -261,7 +261,7 @@ export function Signup() {
           </p>
 
           <div className="mt-6 text-center">
-            <p className="text-sm" style={{ color: "#9CA3AF" }}>
+            <p className="text-sm" style={{ color: "#6B7280" }}>
               Déjà un compte ?{" "}
               <Link to="/login" className="font-semibold hover:opacity-70" style={{ color: "#5548F5" }}>
                 Se connecter
@@ -270,7 +270,7 @@ export function Signup() {
           </div>
 
           <div className="mt-4 text-center">
-            <Link to="/" className="text-xs hover:opacity-70" style={{ color: "#C4C4D4" }}>
+            <Link to="/" className="text-xs hover:opacity-70" style={{ color: "#6B7280" }}>
               ← Retour à l'accueil
             </Link>
           </div>
