@@ -10,6 +10,7 @@ import {
 import { AppLayout } from "../components/AppLayout";
 import { isProSubscription } from "../lib/payment-service";
 import { useAuth } from "@/contexts/AuthContext";
+import { UserAvatar, getUserDisplayEmail, getUserDisplayName } from "../components/UserAvatar";
 import { toast } from "sonner";
 
 
@@ -514,6 +515,8 @@ export function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isPro = isProSubscription(user?.subscription);
+  const profileName = getUserDisplayName(name);
+  const profileEmail = getUserDisplayEmail(email);
 
   useEffect(() => {
     if (user) {
@@ -615,31 +618,38 @@ export function SettingsPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
 
           
-          <div className={card} style={cardStyle}>
-            <div className={sectionTitle}>
-              <div
-                className="size-9 rounded-xl flex items-center justify-center"
-                style={{ background: "rgba(85,72,245,0.08)" }}
-              >
-                <User className="size-4" style={{ color: "#5548F5" }} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Profil</p>
-                <p className="text-xs" style={{ color: "#6B7280" }}>Informations de ton compte</p>
+          <div className="rounded-3xl p-5 shadow-sm md:p-6" style={cardStyle}>
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <div
+                  className="flex size-9 shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: "rgba(85,72,245,0.08)" }}
+                >
+                  <User className="size-4" style={{ color: "#5548F5" }} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>Profil</p>
+                  <p className="truncate text-xs" style={{ color: "#6B7280" }}>Informations de ton compte</p>
+                </div>
               </div>
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div
-                  className="size-14 rounded-2xl flex items-center justify-center text-lg font-bold text-white shrink-0"
-                  style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
-                >
-                  {name.charAt(0).toUpperCase() || "?"}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: "#0C0B1A" }}>{name || "-"}</p>
-                  <p className="text-xs" style={{ color: "#6B7280" }}>{email}</p>
+              <div
+                className="flex items-center gap-4 rounded-2xl border p-3"
+                style={{
+                  borderColor: "rgba(85,72,245,0.1)",
+                  background: "linear-gradient(135deg, rgba(85,72,245,0.055), rgba(14,165,233,0.045))",
+                }}
+              >
+                <UserAvatar name={name} email={email} size="lg" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-bold leading-5" style={{ color: "#0C0B1A" }}>
+                    {profileName}
+                  </p>
+                  <p className="mt-1 truncate text-xs leading-5" style={{ color: "#5F6477" }}>
+                    {profileEmail}
+                  </p>
                 </div>
               </div>
 
@@ -694,15 +704,17 @@ export function SettingsPage() {
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 transition-all hover:opacity-90"
-                style={{ background: "linear-gradient(135deg, #5548F5, #8B5CF6)" }}
-              >
-                {saving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-                {saving ? "Enregistrement..." : "Enregistrer"}
-              </button>
+              <div className="flex justify-end pt-1">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-60 sm:w-auto"
+                  style={{ background: "linear-gradient(135deg, #5548F5, #0EA5E9)" }}
+                >
+                  {saving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                  {saving ? "Enregistrement..." : "Enregistrer"}
+                </button>
+              </div>
             </form>
           </div>
 

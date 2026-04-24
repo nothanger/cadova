@@ -15,6 +15,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { CadovaLogo } from "./CadovaLogo";
+import { UserAvatar, getUserDisplayName } from "./UserAvatar";
 
 const navSections = [
   {
@@ -58,8 +59,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
     }
   };
 
-  const firstName = user?.name ? user.name.split(" ")[0] : user?.email?.split("@")[0] || "Utilisateur";
-  const initials = firstName.slice(0, 2).toUpperCase();
+  const displayName = getUserDisplayName(user?.name);
 
   return (
     <div className="flex h-full select-none flex-col bg-[var(--cadova-navy)] text-white">
@@ -146,18 +146,17 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       </nav>
 
       <div className="relative z-10 border-t border-white/10 p-4">
-        <div className="flex items-center gap-3 rounded-[8px] border border-white/10 bg-white/[0.035] p-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-[8px] bg-[linear-gradient(135deg,#5044f5,#7c5cff)] text-xs font-extrabold text-white">
-            {initials}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[12px] font-bold text-white/80">{firstName}</p>
-            <p className="text-[10px] text-white/80">Espace candidature</p>
+        <div className="flex items-center gap-3 rounded-[8px] border border-white/10 bg-white/[0.045] p-3 shadow-[0_14px_35px_rgba(0,0,0,0.16)]">
+          <UserAvatar name={user?.name} email={user?.email} size="sm" />
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <p className="truncate text-[12px] font-bold leading-4 text-white">{displayName}</p>
+            <p className="truncate text-[10px] leading-4 text-white/70">Espace candidature</p>
           </div>
           <button
             onClick={handleLogout}
-            className="flex size-8 shrink-0 items-center justify-center rounded-[8px] text-white/80 transition hover:bg-red-500/10 hover:text-red-200"
+            className="flex size-8 shrink-0 items-center justify-center rounded-[8px] text-white/60 transition hover:bg-red-500/10 hover:text-red-200"
             title="Déconnexion"
+            aria-label="Déconnexion"
           >
             <LogOut className="size-3.5" />
           </button>
