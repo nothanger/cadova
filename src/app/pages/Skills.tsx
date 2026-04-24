@@ -9,6 +9,7 @@ import { apiCall } from "@/lib/supabase";
 import { toast } from "sonner";
 import { UpgradeModal } from "../components/UpgradeModal";
 import { useFreemiumGate } from "../hooks/useFreemiumGate";
+import { fixMojibakeDisplayPayload } from "../lib/text-normalization";
 import { Award, BookOpen, Briefcase, Handshake, Lightbulb, Loader2, Target, TrendingUp, Zap } from "lucide-react";
 
 export function Skills() {
@@ -42,7 +43,7 @@ export function Skills() {
         return;
       }
 
-      setSuggestions(data.suggestions);
+      setSuggestions(fixMojibakeDisplayPayload(data.suggestions));
       await refreshProfile();
       toast.success("Suggestions de compétences générées !");
     } catch (error: any) {

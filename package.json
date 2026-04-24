@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "check:encoding": "node scripts/check-encoding.mjs",
     "generate-icons": "tsx scripts/generate-pwa-icons.ts",
     "dev": "vite"
   },

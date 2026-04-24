@@ -9,6 +9,7 @@ import { apiCall } from "@/lib/supabase";
 import { toast } from "sonner";
 import { UpgradeModal } from "../components/UpgradeModal";
 import { useFreemiumGate } from "../hooks/useFreemiumGate";
+import { fixMojibakeDisplayPayload } from "../lib/text-normalization";
 import {
   Lightbulb,
   Linkedin,
@@ -50,7 +51,7 @@ export function LinkedIn() {
         return;
       }
 
-      setAnalysis(data.analysis);
+      setAnalysis(fixMojibakeDisplayPayload(data.analysis));
       await refreshProfile();
       toast.success("Analyse LinkedIn terminée !");
     } catch (error: any) {
