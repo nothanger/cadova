@@ -34,6 +34,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "@/contexts/AuthContext";
 import { saveAccountCV } from "../lib/account-data";
 import { downloadSimplePdf } from "../lib/pdf-export";
+import { UpgradeModal } from "../components/UpgradeModal";
+import { useFreemiumGate } from "../hooks/useFreemiumGate";
 import {
   SECTORS,
   BULLETS,
@@ -145,6 +147,7 @@ function genderText(text: string, gender: Gender) {
 export function CVGenerator() {
  useSEO({ title: "Générateur de CV — Cadova", noindex: false });
   const { user } = useAuth();
+  const { upgradeOpen, closeUpgrade, ensureGenerationAccess, consumeGeneration } = useFreemiumGate();
   // Navigation
   const [step, setStep] = useState(0);
 
@@ -446,6 +449,7 @@ export function CVGenerator() {
   };
 
   const handlePrint = async () => {
+    if (!(await ensureGenerationAccess())) return;
     const fullName = `${firstName} ${lastName}`.trim();
     const allSkills = [...selectedSkills, ...selectedSoftSkills];
     const langStr = languageEntries
@@ -505,11 +509,13 @@ export function CVGenerator() {
       sections,
       { template: templateId, photoDataUrl }
     );
+    await consumeGeneration("cv");
   };
 
   
   return (
     <AppLayout>
+      <UpgradeModal open={upgradeOpen} onClose={closeUpgrade} />
       {false && (
         <LoadingScreen
           label="Génération du CV"

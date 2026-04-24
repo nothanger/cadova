@@ -51,6 +51,136 @@ const supabaseClient = createClient(
   Deno.env.get("SUPABASE_ANON_KEY") ?? ""
 );
 
+type CadovaProfile = {
+  id: string;
+  email?: string;
+  name?: string;
+  plan?: "free" | "pro";
+  subscription?: "free" | "pro" | "premium";
+  billingInterval?: string;
+  free_generation_used?: boolean;
+  credits?: {
+    cv: number;
+    coverLetter: number;
+    atsAnalysis: number;
+    interview: number;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+async function getAuthenticatedUser(c: any) {
+  const accessToken = c.req.header("Authorization")?.split(" ")[1];
+  if (!accessToken) {
+    return { user: null, errorResponse: c.json({ error: "Unauthorized - No token provided" }, 401) };
+  }
+
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
+  if (error || !user) {
+    return { user: null, errorResponse: c.json({ error: "Unauthorized - Invalid token" }, 401) };
+  }
+
+  return { user, errorResponse: null };
+}
+
+function isProPlan(profile?: CadovaProfile | null) {
+  return profile?.plan === "pro" || profile?.subscription === "pro" || profile?.subscription === "premium";
+}
+
+function normalizeProfile(rawProfile: CadovaProfile | null, authUser: any): CadovaProfile {
+  const metadataPlan = authUser.user_metadata?.subscription === "premium" ? "pro" : authUser.user_metadata?.subscription;
+  const plan = rawProfile?.plan || (rawProfile?.subscription === "premium" ? "pro" : rawProfile?.subscription) || metadataPlan || "free";
+  const freeGenerationUsed =
+    typeof rawProfile?.free_generation_used === "boolean"
+      ? rawProfile.free_generation_used
+      : false;
+
+  return {
+    ...(rawProfile || {}),
+    id: authUser.id,
+    email: rawProfile?.email || authUser.email || "",
+    name: rawProfile?.name || authUser.user_metadata?.name || "Utilisateur",
+    plan: plan === "pro" ? "pro" : "free",
+    subscription: plan === "pro" ? "pro" : "free",
+    billingInterval: rawProfile?.billingInterval || authUser.user_metadata?.billingInterval,
+    free_generation_used: freeGenerationUsed,
+    credits: rawProfile?.credits || {
+      cv: freeGenerationUsed ? 0 : 1,
+      coverLetter: 0,
+      atsAnalysis: 0,
+      interview: 0,
+    },
+    createdAt: rawProfile?.createdAt || new Date().toISOString(),
+  };
+}
+
+async function getProfileForUser(authUser: any): Promise<CadovaProfile> {
+  const rawProfile = await kv.get(`user:${authUser.id}`) as CadovaProfile | null;
+  const profile = normalizeProfile(rawProfile, authUser);
+
+  if (!rawProfile || rawProfile.plan !== profile.plan || rawProfile.free_generation_used !== profile.free_generation_used) {
+    await kv.set(`user:${authUser.id}`, profile);
+  }
+
+  return profile;
+}
+
+async function markFreeGenerationUsed(authUser: any, module: string) {
+  const profile = await getProfileForUser(authUser);
+  if (isProPlan(profile)) return profile;
+
+  const updatedProfile: CadovaProfile = {
+    ...profile,
+    free_generation_used: true,
+    credits: {
+      cv: 0,
+      coverLetter: 0,
+      atsAnalysis: 0,
+      interview: 0,
+    },
+    lastGenerationModule: module,
+    lastGenerationAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  } as CadovaProfile;
+
+  await kv.set(`user:${authUser.id}`, updatedProfile);
+  return updatedProfile;
+}
+
+function canRunGeneration(profile: CadovaProfile) {
+  return isProPlan(profile) || profile.free_generation_used !== true;
+}
+
+function upgradeRequired(c: any, profile: CadovaProfile, message = "Tu as utilisé ta génération gratuite. Passe à Cadova Pro pour continuer.") {
+  return c.json({
+    error: message,
+    code: "UPGRADE_REQUIRED",
+    upgradeRequired: true,
+    profile,
+  }, 402);
+}
+
+async function requireGenerationAccess(c: any, authUser: any, module: string) {
+  const profile = await getProfileForUser(authUser);
+  if (!canRunGeneration(profile)) {
+    return { profile, errorResponse: upgradeRequired(c, profile) };
+  }
+  return { profile, errorResponse: null };
+}
+
+async function requireProAccess(c: any, authUser: any) {
+  const profile = await getProfileForUser(authUser);
+  if (!isProPlan(profile)) {
+    return { profile, errorResponse: c.json({
+      error: "OralIA est réservé au plan Pro.",
+      code: "PRO_REQUIRED",
+      upgradeRequired: true,
+      profile,
+    }, 402) };
+  }
+  return { profile, errorResponse: null };
+}
+
 
 app.use("*", logger(console.log));
 
@@ -115,7 +245,9 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
       email: data.user?.email,
       name,
       createdAt: new Date().toISOString(),
+      plan: "free",
       subscription: "free",
+      free_generation_used: false,
       credits: {
         cv: 1,
         coverLetter: 0,
@@ -142,40 +274,12 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
 
 app.get("/make-server-0a5eb56b/user/profile", async (c) => {
   try {
-    const accessToken = c.req.header("Authorization")?.split(" ")[1];
-
-    if (!accessToken) {
-      return c.json({ error: "Unauthorized - No token provided" }, 401);
-    }
-
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
-
-    if (error || !user) {
-      console.error("Auth error while fetching user profile. Error:", error?.message, "| Token prefix:", accessToken?.substring(0, 20));
-      return c.json({ error: `Unauthorized - ${error?.message || "Invalid token"}` }, 401);
-    }
+    const { user, errorResponse } = await getAuthenticatedUser(c);
+    if (errorResponse) return errorResponse;
 
     console.log(`Fetching profile for user: ${user.id} (${user.email})`);
 
-    let profile = await kv.get(`user:${user.id}`);
-
-    if (!profile) {
-      console.log(`Profile not found in KV, auto-creating for: ${user.id}`);
-      profile = {
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.name || "Utilisateur",
-        createdAt: new Date().toISOString(),
-        subscription: "free",
-        credits: {
-          cv: 1,
-          coverLetter: 0,
-          atsAnalysis: 0,
-          interview: 0,
-        },
-      };
-      await kv.set(`user:${user.id}`, profile);
-    }
+    const profile = await getProfileForUser(user);
 
     return c.json({ profile });
   } catch (error: any) {
@@ -187,31 +291,17 @@ app.get("/make-server-0a5eb56b/user/profile", async (c) => {
 
 app.put("/make-server-0a5eb56b/user/profile", async (c) => {
   try {
-    const accessToken = c.req.header("Authorization")?.split(" ")[1];
-
-    if (!accessToken) {
-      return c.json({ error: "Unauthorized - No token provided" }, 401);
-    }
-
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
-
-    if (error || !user) {
-      console.error("Auth error while updating user profile:", error);
-      return c.json({ error: "Unauthorized - Invalid token" }, 401);
-    }
+    const { user, errorResponse } = await getAuthenticatedUser(c);
+    if (errorResponse) return errorResponse;
 
     const updates = await c.req.json();
     console.log(`Updating profile for user: ${user.id}`);
 
-    const currentProfile = await kv.get(`user:${user.id}`);
-
-    if (!currentProfile) {
-      return c.json({ error: "Profile not found" }, 404);
-    }
+    const currentProfile = await getProfileForUser(user);
 
     const updatedProfile = {
       ...currentProfile,
-      ...updates,
+      ...(typeof updates.name === "string" ? { name: updates.name.trim() || currentProfile.name } : {}),
       updatedAt: new Date().toISOString(),
     };
 
@@ -417,6 +507,9 @@ app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
       return c.json({ error: "Unauthorized - Invalid token" }, 401);
     }
 
+    const { errorResponse: limitError } = await requireGenerationAccess(c, user, "ats-analysis");
+    if (limitError) return limitError;
+
     const { cvText, jobDescription } = await c.req.json();
 
     console.log(`Running ATS analysis for user: ${user.id}`);
@@ -452,7 +545,8 @@ app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
       ...analysis,
     });
 
-    return c.json({ success: true, analysis });
+    const profile = await markFreeGenerationUsed(user, "ats-analysis");
+    return c.json({ success: true, analysis, profile });
   } catch (error: any) {
     console.error("Error running ATS analysis:", error);
     return c.json({ error: error.message }, 500);
@@ -475,6 +569,9 @@ app.post("/make-server-0a5eb56b/oralia/questions", async (c) => {
     if (error || !user) {
       return c.json({ error: "Unauthorized - Invalid token" }, 401);
     }
+
+    const { errorResponse: proError } = await requireProAccess(c, user);
+    if (proError) return proError;
 
     const { jobTitle, difficulty } = await c.req.json();
 
@@ -534,6 +631,9 @@ app.post("/make-server-0a5eb56b/oralia/analyze-answer", async (c) => {
     if (error || !user) {
       return c.json({ error: "Unauthorized - Invalid token" }, 401);
     }
+
+    const { errorResponse: proError } = await requireProAccess(c, user);
+    if (proError) return proError;
 
     const { question, answer } = await c.req.json();
 
@@ -698,6 +798,83 @@ app.delete("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
   }
 });
 
+app.get("/make-server-0a5eb56b/entitlements/status", async (c) => {
+  try {
+    const { user, errorResponse } = await getAuthenticatedUser(c);
+    if (errorResponse) return errorResponse;
+
+    const profile = await getProfileForUser(user);
+    return c.json({
+      profile,
+      plan: isProPlan(profile) ? "pro" : "free",
+      free_generation_used: profile.free_generation_used === true,
+      canGenerate: canRunGeneration(profile),
+      canUseOralia: isProPlan(profile),
+    });
+  } catch (error: any) {
+    console.error("Error fetching entitlements:", error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.post("/make-server-0a5eb56b/entitlements/consume-generation", async (c) => {
+  try {
+    const { user, errorResponse } = await getAuthenticatedUser(c);
+    if (errorResponse) return errorResponse;
+
+    const { module = "generation" } = await c.req.json().catch(() => ({}));
+    const { profile, errorResponse: accessError } = await requireGenerationAccess(c, user, module);
+    if (accessError) return accessError;
+
+    const updatedProfile = await markFreeGenerationUsed(user, module);
+    return c.json({
+      success: true,
+      profile: updatedProfile,
+      consumed: !isProPlan(profile),
+    });
+  } catch (error: any) {
+    console.error("Error consuming free generation:", error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.post("/make-server-0a5eb56b/billing/activate-pro", async (c) => {
+  try {
+    const { user, errorResponse } = await getAuthenticatedUser(c);
+    if (errorResponse) return errorResponse;
+
+    const { billingInterval = "monthly" } = await c.req.json().catch(() => ({}));
+    const profile = await getProfileForUser(user);
+    const updatedProfile: CadovaProfile = {
+      ...profile,
+      plan: "pro",
+      subscription: "pro",
+      billingInterval,
+      updatedAt: new Date().toISOString(),
+      credits: {
+        cv: 999,
+        coverLetter: 999,
+        atsAnalysis: 999,
+        interview: 999,
+      },
+    };
+
+    await kv.set(`user:${user.id}`, updatedProfile);
+    await supabaseAdmin.auth.admin.updateUserById(user.id, {
+      user_metadata: {
+        ...(user.user_metadata || {}),
+        subscription: "pro",
+        billingInterval,
+      },
+    });
+
+    return c.json({ success: true, profile: updatedProfile });
+  } catch (error: any) {
+    console.error("Error activating Pro plan:", error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 app.post("/make-server-0a5eb56b/trackia/emails/send", async (c) => {
   try {
     const accessToken = c.req.header("Authorization")?.split(" ")[1];
@@ -807,6 +984,9 @@ app.post("/make-server-0a5eb56b/skillia/analyze-linkedin", async (c) => {
       return c.json({ error: "Unauthorized - Invalid token" }, 401);
     }
 
+    const { errorResponse: limitError } = await requireGenerationAccess(c, user, "linkedin-analysis");
+    if (limitError) return limitError;
+
     const { profileText } = await c.req.json();
 
     console.log(`Analyzing LinkedIn profile for user: ${user.id}`);
@@ -848,7 +1028,8 @@ app.post("/make-server-0a5eb56b/skillia/analyze-linkedin", async (c) => {
       analyzedAt: new Date().toISOString(),
     };
 
-    return c.json({ success: true, analysis });
+    const profile = await markFreeGenerationUsed(user, "linkedin-analysis");
+    return c.json({ success: true, analysis, profile });
   } catch (error: any) {
     console.error("Error analyzing LinkedIn profile:", error);
     return c.json({ error: error.message }, 500);
@@ -868,6 +1049,9 @@ app.post("/make-server-0a5eb56b/skillia/skill-suggestions", async (c) => {
     if (error || !user) {
       return c.json({ error: "Unauthorized - Invalid token" }, 401);
     }
+
+    const { errorResponse: limitError } = await requireGenerationAccess(c, user, "skill-suggestions");
+    if (limitError) return limitError;
 
     const { jobTitle } = await c.req.json();
 
@@ -894,7 +1078,8 @@ app.post("/make-server-0a5eb56b/skillia/skill-suggestions", async (c) => {
       ],
     };
 
-    return c.json({ success: true, suggestions });
+    const profile = await markFreeGenerationUsed(user, "skill-suggestions");
+    return c.json({ success: true, suggestions, profile });
   } catch (error: any) {
     console.error("Error generating skill suggestions:", error);
     return c.json({ error: error.message }, 500);
@@ -908,6 +1093,9 @@ app.post("/make-server-0a5eb56b/reussia/ai/generate-cv", async (c) => {
 
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
     if (error || !user) return c.json({ error: "Unauthorized" }, 401);
+
+    const { errorResponse: limitError } = await requireGenerationAccess(c, user, "cv-generation");
+    if (limitError) return limitError;
 
     const { fullName, email, phone, city, title, summary, experiences, education, skills, languages, targetJob } = await c.req.json();
 
@@ -973,7 +1161,8 @@ Génère un CV optimisé et professionnel. Si certaines sections sont vides, pro
       return c.json({ error: "L'IA a renvoyé un format invalide. Réessayez." }, 500);
     }
 
-    return c.json({ success: true, cvData });
+    const profile = await markFreeGenerationUsed(user, "cv-generation");
+    return c.json({ success: true, cvData, profile });
   } catch (error: any) {
     console.error("Error in AI CV generation:", error);
     return c.json({ error: error.message }, 500);
@@ -988,6 +1177,9 @@ app.post("/make-server-0a5eb56b/reussia/ai/generate-cover-letter", async (c) => 
 
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
     if (error || !user) return c.json({ error: "Unauthorized" }, 401);
+
+    const { errorResponse: limitError } = await requireGenerationAccess(c, user, "cover-letter-generation");
+    if (limitError) return limitError;
 
     const { companyName, jobTitle, jobDescription, tone, type, strengths, motivation } = await c.req.json();
 
@@ -1033,7 +1225,8 @@ Rédige une lettre de motivation complète, personnalisée et percutante.`;
 
     const letterContent = await callOpenAI(systemPrompt, userPrompt, 2000);
 
-    return c.json({ success: true, letterContent });
+    const profile = await markFreeGenerationUsed(user, "cover-letter-generation");
+    return c.json({ success: true, letterContent, profile });
   } catch (error: any) {
     console.error("Error in AI cover letter generation:", error);
     return c.json({ error: error.message }, 500);
@@ -1047,6 +1240,9 @@ app.post("/make-server-0a5eb56b/reussia/ai/ats-analyze", async (c) => {
 
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
     if (error || !user) return c.json({ error: "Unauthorized" }, 401);
+
+    const { errorResponse: limitError } = await requireGenerationAccess(c, user, "ats-analysis");
+    if (limitError) return limitError;
 
     const { cvText, jobDescription } = await c.req.json();
 
@@ -1119,7 +1315,8 @@ Analyse ce CV par rapport à cette offre et donne un score ATS détaillé.`;
       analyzedAt: new Date().toISOString(),
     });
 
-    return c.json({ success: true, analysis: analysisData });
+    const profile = await markFreeGenerationUsed(user, "ats-analysis");
+    return c.json({ success: true, analysis: analysisData, profile });
   } catch (error: any) {
     console.error("Error in AI ATS analysis:", error);
     return c.json({ error: error.message }, 500);

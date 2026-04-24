@@ -19,6 +19,7 @@ import {
 } from "../lib/oralia-data";
 import { saveAccountInterviewSession } from "../lib/account-data";
 import { useAuth } from "@/contexts/AuthContext";
+import { PremiumOraliaGate } from "../components/PremiumOraliaGate";
 
 
 
@@ -285,6 +286,11 @@ function SessionReportView({ report, onReset }: { report: SessionReport; onReset
 export function Interview() {
   useSEO({ title: "Simulation entretien OralIA — Cadova", noindex: true });
   const { user } = useAuth();
+  const isPro = user?.plan === "pro" || user?.subscription === "pro" || user?.subscription === "premium";
+
+  if (!isPro) {
+    return <PremiumOraliaGate />;
+  }
 
  
   const [interviewType, setInterviewType] = useState<InterviewType>("stage");

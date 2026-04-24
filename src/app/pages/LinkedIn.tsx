@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge";
 import { apiCall } from "@/lib/supabase";
 import { toast } from "sonner";
+import { UpgradeModal } from "../components/UpgradeModal";
+import { useFreemiumGate } from "../hooks/useFreemiumGate";
 import {
   Lightbulb,
   Linkedin,
@@ -22,6 +24,7 @@ export function LinkedIn() {
   const [profileText, setProfileText] = useState("");
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<any>(null);
+  const { upgradeOpen, closeUpgrade, handleGenerationResponse, refreshProfile } = useFreemiumGate();
 
   const handleAnalyze = async () => {
     if (!profileText.trim()) {
@@ -39,6 +42,8 @@ export function LinkedIn() {
 
       const data = await response.json();
 
+      if (await handleGenerationResponse(response)) return;
+
       if (!response.ok) {
         toast.error(data.error || "Erreur lors de l'analyse");
         console.error("❌ LinkedIn analysis error:", data);
@@ -46,6 +51,7 @@ export function LinkedIn() {
       }
 
       setAnalysis(data.analysis);
+      await refreshProfile();
       toast.success("Analyse LinkedIn terminée !");
     } catch (error: any) {
       console.error("❌ Error analyzing LinkedIn profile:", error);
@@ -57,6 +63,7 @@ export function LinkedIn() {
 
   return (
     <AppLayout>
+      <UpgradeModal open={upgradeOpen} onClose={closeUpgrade} />
       <div className="max-w-5xl mx-auto space-y-6">
        
         <div>

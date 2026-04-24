@@ -8,6 +8,8 @@ interface UserProfile {
   id: string;
   email: string;
   name: string;
+  plan?: "free" | "pro";
+  free_generation_used?: boolean;
   subscription: SubscriptionPlan;
   billingInterval?: BillingInterval;
   credits: {
@@ -31,6 +33,7 @@ interface AuthContextType {
   sendPasswordReset: (email: string) => Promise<{ error: Error | null }>;
   resetPassword: (newPassword: string) => Promise<{ error: Error | null }>;
   deleteAccount: () => Promise<{ error: Error | null }>;
+  refreshProfile: () => Promise<UserProfile | null>;
   enrollTotp: () => Promise<{ qrUri: string; secret: string; factorId: string; error: Error | null }>;
   verifyTotp: (factorId: string, code: string) => Promise<{ error: Error | null }>;
   unenrollTotp: (factorId: string) => Promise<{ error: Error | null }>;
@@ -41,6 +44,27 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 
 const CACHE_KEY = "cadova_user_cache";
+
+function normalizeProfile(profile: any, fallback?: Partial<UserProfile>): UserProfile {
+  const plan = profile?.plan || (profile?.subscription === "premium" ? "pro" : profile?.subscription) || fallback?.plan || fallback?.subscription || "free";
+  const freeGenerationUsed = profile?.free_generation_used === true || fallback?.free_generation_used === true;
+
+  return {
+    id: profile?.id || fallback?.id || "",
+    email: profile?.email || fallback?.email || "",
+    name: profile?.name || fallback?.name || "Utilisateur",
+    plan: plan === "pro" ? "pro" : "free",
+    subscription: plan === "pro" ? "pro" : "free",
+    billingInterval: profile?.billingInterval || fallback?.billingInterval,
+    free_generation_used: freeGenerationUsed,
+    credits: profile?.credits || fallback?.credits || {
+      cv: freeGenerationUsed ? 0 : 1,
+      coverLetter: 0,
+      atsAnalysis: 0,
+      interview: 0,
+    },
+  };
+}
 
 function getCachedUser(): UserProfile | null {
   try {
@@ -78,12 +102,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
 
+  const fetchServerProfile = useCallback(async (token: string, fallback?: Partial<UserProfile>) => {
+    const response = await fetch(`${API_URL}/user/profile`, {
+      headers: {
+        "Content-Type": "application/json; charset=UTF-8",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) throw new Error("Profile fetch failed");
+    const data = await response.json();
+    const profile = normalizeProfile(data.profile, fallback);
+    updateUser(profile);
+    return profile;
+  }, [updateUser]);
+
   const buildUserFromSession = useCallback(async (token: string) => {
     try {
       const { data: authData } = await supabase.auth.getUser(token);
       if (authData?.user) {
         const storedSubscription = getStoredSubscription(authData.user.id);
-        updateUser({
+        await fetchServerProfile(token, {
           id: authData.user.id,
           email: authData.user.email || "",
           name: authData.user.user_metadata?.name || "Utilisateur",
@@ -95,9 +134,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       }
     } catch {
-    
+      try {
+        const { data: authData } = await supabase.auth.getUser(token);
+        if (authData?.user) {
+          const storedSubscription = getStoredSubscription(authData.user.id);
+          updateUser(normalizeProfile(null, {
+            id: authData.user.id,
+            email: authData.user.email || "",
+            name: authData.user.user_metadata?.name || "Utilisateur",
+            subscription: storedSubscription?.plan || authData.user.user_metadata?.subscription || "free",
+            billingInterval: storedSubscription?.billing || authData.user.user_metadata?.billingInterval,
+          }));
+        }
+      } catch {}
     }
-  }, [updateUser]);
+  }, [fetchServerProfile, updateUser]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -265,7 +316,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) return { error: new Error(error.message) };
-      updateUser({ ...user, ...updates });
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token || accessToken;
+
+      if (token) {
+        try {
+          const response = await fetch(`${API_URL}/user/profile`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json; charset=UTF-8",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(updates),
+          });
+          const result = await response.json().catch(() => ({}));
+          if (response.ok && result.profile) {
+            updateUser(normalizeProfile(result.profile, user));
+          } else {
+            updateUser({ ...user, ...updates });
+          }
+        } catch {
+          updateUser({ ...user, ...updates });
+        }
+      } else {
+        updateUser({ ...user, ...updates });
+      }
       return { error: null };
     } catch (err) {
       return { error: err as Error };
@@ -276,15 +351,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (!user) return { error: new Error("Non connecté") };
 
-      await supabase.auth.updateUser({
-        data: {
-          subscription: "pro",
-          billingInterval: billing,
-        },
-      });
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token || accessToken;
+
+      if (token) {
+        const response = await fetch(`${API_URL}/billing/activate-pro`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=UTF-8",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ billingInterval: billing }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || result.error) {
+          return { error: new Error(result.error || "Activation Pro impossible") };
+        }
+        updateUser(normalizeProfile(result.profile, user));
+        return { error: null };
+      }
 
       updateUser({
         ...user,
+        plan: "pro",
         subscription: "pro",
         billingInterval: billing,
         credits: {
@@ -298,6 +387,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: null };
     } catch (err) {
       return { error: err as Error };
+    }
+  };
+
+  const refreshProfile = async () => {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token || accessToken;
+    if (!token) return null;
+    try {
+      return await fetchServerProfile(token, user || undefined);
+    } catch {
+      return user;
     }
   };
 
@@ -412,7 +512,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, accessToken, signIn, signUp, signOut, updateProfile, upgradeToPro, updatePassword, sendPasswordReset, resetPassword, deleteAccount, enrollTotp, verifyTotp, unenrollTotp, getMfaFactors }}>
+    <AuthContext.Provider value={{ user, loading, accessToken, signIn, signUp, signOut, updateProfile, upgradeToPro, updatePassword, sendPasswordReset, resetPassword, deleteAccount, refreshProfile, enrollTotp, verifyTotp, unenrollTotp, getMfaFactors }}>
       {children}
     </AuthContext.Provider>
   );

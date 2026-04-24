@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge";
 import { apiCall } from "@/lib/supabase";
 import { toast } from "sonner";
+import { UpgradeModal } from "../components/UpgradeModal";
+import { useFreemiumGate } from "../hooks/useFreemiumGate";
 import { Award, BookOpen, Briefcase, Handshake, Lightbulb, Loader2, Target, TrendingUp, Zap } from "lucide-react";
 
 export function Skills() {
@@ -14,6 +16,7 @@ export function Skills() {
   const [jobTitle, setJobTitle] = useState("");
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<any>(null);
+  const { upgradeOpen, closeUpgrade, handleGenerationResponse, refreshProfile } = useFreemiumGate();
 
   const handleGetSuggestions = async () => {
     if (!jobTitle.trim()) {
@@ -31,6 +34,8 @@ export function Skills() {
 
       const data = await response.json();
 
+      if (await handleGenerationResponse(response)) return;
+
       if (!response.ok) {
         toast.error(data.error || "Erreur lors de la récupération des suggestions");
         console.error("❌ Skill suggestions error:", data);
@@ -38,6 +43,7 @@ export function Skills() {
       }
 
       setSuggestions(data.suggestions);
+      await refreshProfile();
       toast.success("Suggestions de compétences générées !");
     } catch (error: any) {
       console.error("❌ Error getting skill suggestions:", error);
@@ -58,6 +64,7 @@ export function Skills() {
 
   return (
     <AppLayout>
+      <UpgradeModal open={upgradeOpen} onClose={closeUpgrade} />
       <div className="max-w-5xl mx-auto space-y-6">
        
         <div>

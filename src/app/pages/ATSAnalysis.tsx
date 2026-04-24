@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { runATSAnalysis, ATSResult, ATSMode, ATS_MODES } from "../lib/reussia-data";
 import { useSEO } from "../hooks/useSEO";
 import { LoadingScreen } from "../components/LoadingScreen";
@@ -13,24 +13,29 @@ import { Button } from "../components/ui/button";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import { Progress } from "../components/ui/progress";
+import { UpgradeModal } from "../components/UpgradeModal";
+import { useFreemiumGate } from "../hooks/useFreemiumGate";
 
 export function ATSAnalysis() {
-useSEO({ title: "Analyse ATS — Cadova", noindex: false });
+  useSEO({ title: "Analyse ATS - Cadova", noindex: false });
+  const { upgradeOpen, closeUpgrade, ensureGenerationAccess, consumeGeneration } = useFreemiumGate();
   const [cvText, setCvText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [mode, setMode] = useState<ATSMode>("stage");
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<ATSResult | null>(null);
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!cvText.trim()) return;
+    if (!(await ensureGenerationAccess())) return;
     setAnalyzing(true);
   };
 
-  const handleAnalyzeComplete = () => {
+  const handleAnalyzeComplete = async () => {
     const res = runATSAnalysis(cvText, jobDescription, mode);
     setResult(res);
     setAnalyzing(false);
+    await consumeGeneration("ats-analysis");
   };
 
   const getScoreColor = (score: number) => {
@@ -49,7 +54,7 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
     if (score >= 82) return "Excellent";
     if (score >= 68) return "Bon";
     if (score >= 50) return "Moyen";
-    if (score >= 35) return "A améliorer";
+    if (score >= 35) return "A amÃ©liorer";
     return "Insuffisant";
   };
 
@@ -65,16 +70,17 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
 
   return (
     <AppLayout>
+      <UpgradeModal open={upgradeOpen} onClose={closeUpgrade} />
       {analyzing && (
         <LoadingScreen
           label="Analyse ATS en cours"
           accent="#10B981"
           steps={[
             { label: "Lecture et tokenisation du CV", duration: 600 },
-            { label: "Extraction des mots-clés critiques", duration: 700 },
+            { label: "Extraction des mots-clÃ©s critiques", duration: 700 },
             { label: "Comparaison avec l'offre d'emploi", duration: 800 },
-            { label: "Calcul des scores par catégorie", duration: 700 },
-            { label: "Génération des recommandations", duration: 600 },
+            { label: "Calcul des scores par catÃ©gorie", duration: 700 },
+            { label: "GÃ©nÃ©ration des recommandations", duration: 600 },
             { label: "Compilation du rapport final", duration: 500 },
           ]}
           onComplete={handleAnalyzeComplete}
@@ -94,7 +100,7 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
             Analyse ATS
           </h1>
           <p className="text-slate-600 mt-1">
-            Score instantané par règles logiques — adapté à ton profil.
+            Score instantanÃ© par rÃ¨gles logiques â€” adaptÃ© Ã  ton profil.
           </p>
         </motion.div>
 
@@ -107,7 +113,7 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
               exit={{ opacity: 0 }}
               className="space-y-6"
             >
-              {/* Sélecteur de mode */}
+              {/* SÃ©lecteur de mode */}
               <div>
                 <p className="text-sm font-medium text-slate-700 mb-3">
                   Quel type de dossier analyses-tu ?
@@ -144,13 +150,13 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                 <div>
                   <p className="text-sm text-cyan-800">
                     {mode === "observation" && (
-                      <>Mode <strong>Stage d'observation</strong> — Le score évalue ton dossier sur la structure, la présentation et les motivations. Pas besoin de chiffres ni de LinkedIn. L'offre est optionnelle.</>
+                      <>Mode <strong>Stage d'observation</strong> â€” Le score Ã©value ton dossier sur la structure, la prÃ©sentation et les motivations. Pas besoin de chiffres ni de LinkedIn. L'offre est optionnelle.</>
                     )}
                     {mode === "stage" && (
-                      <>Mode <strong>Stage / Alternance</strong> — Le score combine la structure de ton CV (60%) et sa compatibilité avec l'offre (40% si tu en colles une).</>
+                      <>Mode <strong>Stage / Alternance</strong> â€” Le score combine la structure de ton CV (60%) et sa compatibilitÃ© avec l'offre (40% si tu en colles une).</>
                     )}
                     {mode === "pro" && (
-                      <>Mode <strong>Emploi</strong> — Analyse exigeante : chiffres, LinkedIn, mots-clés de l'offre, impact de chaque mission. Colle l'offre d'emploi pour un score de compatibilité complet.</>
+                      <>Mode <strong>Emploi</strong> â€” Analyse exigeante : chiffres, LinkedIn, mots-clÃ©s de l'offre, impact de chaque mission. Colle l'offre d'emploi pour un score de compatibilitÃ© complet.</>
                     )}
                   </p>
                 </div>
@@ -176,10 +182,10 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                     <Textarea
                       placeholder={
                         mode === "observation"
-                          ? "Copie-colle le texte de ton dossier...\n\nExemple :\nThomas Dupont — 06 12 34 56 78 — thomas@email.com\nEleve en 3eme B au College Victor Hugo, Paris\n\nMOTIVATION\nJe souhaite découvrir le secteur de la communication...\n\nCENTRES D'INTERET\nBasket, création de contenus YouTube, lecture..."
+                          ? "Copie-colle le texte de ton dossier...\n\nExemple :\nThomas Dupont â€” 06 12 34 56 78 â€” thomas@email.com\nEleve en 3eme B au College Victor Hugo, Paris\n\nMOTIVATION\nJe souhaite dÃ©couvrir le secteur de la communication...\n\nCENTRES D'INTERET\nBasket, crÃ©ation de contenus YouTube, lecture..."
                           : mode === "stage"
-                          ? "Copie-colle le texte de ton CV...\n\nExemple :\nMarie Dupont — marie@email.com — 06 12 34 56 78\nEtudiante en BTS Communication, Paris\n\nFORMATION\nBTS Communication — IUT Paris-Nord (2023-2025)\n\nEXPERIENCE\nStage marketing — Agence XYZ (juin-aout 2024)..."
-                          : "Copie-colle le texte de ton CV...\n\nExemple :\nJean Dupont — jean@email.com — 06 12 34 56 78\nCharge de marketing digital\nlinkedin.com/in/jean-dupont\n\nEXPERIENCE\nCharge de communication — Agence XYZ (2022-2024)\n• Gestion de 4 réseaux sociaux, +35% d'engagement..."
+                          ? "Copie-colle le texte de ton CV...\n\nExemple :\nMarie Dupont â€” marie@email.com â€” 06 12 34 56 78\nEtudiante en BTS Communication, Paris\n\nFORMATION\nBTS Communication â€” IUT Paris-Nord (2023-2025)\n\nEXPERIENCE\nStage marketing â€” Agence XYZ (juin-aout 2024)..."
+                          : "Copie-colle le texte de ton CV...\n\nExemple :\nJean Dupont â€” jean@email.com â€” 06 12 34 56 78\nCharge de marketing digital\nlinkedin.com/in/jean-dupont\n\nEXPERIENCE\nCharge de communication â€” Agence XYZ (2022-2024)\nâ€¢ Gestion de 4 rÃ©seaux sociaux, +35% d'engagement..."
                       }
                       value={cvText}
                       onChange={(e) => setCvText(e.target.value)}
@@ -202,7 +208,7 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                       <Target className="size-5 text-cyan-600" />
                       Offre / Annonce cible
                       <Badge variant="secondary" className="text-xs font-normal">
-                        {mode === "observation" ? "Optionnel" : "Recommandé"}
+                        {mode === "observation" ? "Optionnel" : "RecommandÃ©"}
                       </Badge>
                     </CardTitle>
                   </CardHeader>
@@ -210,8 +216,8 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                     <Textarea
                       placeholder={
                         mode === "observation"
-                          ? "Colle ici la description de l'entreprise ou la demande de stage...\n\nSans ce texte, on analyse uniquement la structure de ton dossier — ce qui est suffisant pour ce mode."
-                          : "Colle ici la description du poste ou de l'offre d'alternance...\n\nAvec l'offre, on calcule ta compatibilité en mots-clés et on t'indique ce qu'il manque."
+                          ? "Colle ici la description de l'entreprise ou la demande de stage...\n\nSans ce texte, on analyse uniquement la structure de ton dossier â€” ce qui est suffisant pour ce mode."
+                          : "Colle ici la description du poste ou de l'offre d'alternance...\n\nAvec l'offre, on calcule ta compatibilitÃ© en mots-clÃ©s et on t'indique ce qu'il manque."
                       }
                       value={jobDescription}
                       onChange={(e) => setJobDescription(e.target.value)}
@@ -276,12 +282,12 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                 </Badge>
                 {!result.hasJobDesc && (
                   <Badge variant="secondary" className="text-xs text-slate-500">
-                    Score structure uniquement — sans offre
+                    Score structure uniquement â€” sans offre
                   </Badge>
                 )}
                 {result.hasJobDesc && (
                   <Badge variant="secondary" className="text-xs text-green-700 bg-green-50 border-green-200">
-                    Score avec compatibilité offre
+                    Score avec compatibilitÃ© offre
                   </Badge>
                 )}
               </div>
@@ -315,10 +321,10 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                       {result.score >= 72
                         ? result.mode === "observation"
                           ? "Excellent dossier pour un stage d'observation !"
-                          : "Ton CV est bien optimisé pour ce type de candidature."
+                          : "Ton CV est bien optimisÃ© pour ce type de candidature."
                         : result.score >= 48
-                        ? "Quelques ajustements vont nettement améliorer ton score."
-                        : "Des points importants sont à corriger — consulte les recommandations."}
+                        ? "Quelques ajustements vont nettement amÃ©liorer ton score."
+                        : "Des points importants sont Ã  corriger â€” consulte les recommandations."}
                     </p>
 
                     {/* Composition du score */}
@@ -330,13 +336,13 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                       </div>
                       {result.hasJobDesc && (
                         <div className="flex justify-between text-xs text-slate-500">
-                          <span>Compatibilité offre</span>
+                          <span>CompatibilitÃ© offre</span>
                           <span className="font-medium">60%</span>
                         </div>
                       )}
                       {!result.hasJobDesc && result.mode !== "observation" && (
                         <p className="text-xs text-amber-600 mt-1 pt-1 border-t border-slate-200">
-                          Colle une offre pour activer l'analyse de compatibilité.
+                          Colle une offre pour activer l'analyse de compatibilitÃ©.
                         </p>
                       )}
                     </div>
@@ -347,7 +353,7 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <TrendingUp className="size-5 text-cyan-600" />
-                      Analyse par critère
+                      Analyse par critÃ¨re
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -383,12 +389,12 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <BarChart2 className="size-5 text-cyan-600" />
-                      Mots-clés de l'offre ({result.topJobKeywords.length})
+                      Mots-clÃ©s de l'offre ({result.topJobKeywords.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-xs text-slate-500 mb-3">
-                      Vert = présent dans ton CV · Rouge = absent
+                      Vert = prÃ©sent dans ton CV Â· Rouge = absent
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {result.topJobKeywords.map((kw, i) => (
@@ -413,7 +419,7 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                             )}
                             {kw.word}
                             {kw.freq > 1 && (
-                              <span className="ml-1 opacity-60 text-[10px]">×{kw.freq}</span>
+                              <span className="ml-1 opacity-60 text-[10px]">Ã—{kw.freq}</span>
                             )}
                           </Badge>
                         </motion.div>
@@ -431,7 +437,7 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           <CheckCircle className="size-5 text-green-600" />
-                          Mots-clés présents ({result.matchedKeywords.length})
+                          Mots-clÃ©s prÃ©sents ({result.matchedKeywords.length})
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
@@ -456,7 +462,7 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           <XCircle className="size-5 text-red-600" />
-                          Mots-clés à intégrer ({result.missingKeywords.length})
+                          Mots-clÃ©s Ã  intÃ©grer ({result.missingKeywords.length})
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
@@ -473,7 +479,7 @@ useSEO({ title: "Analyse ATS — Cadova", noindex: false });
                           ))}
                         </div>
                         <p className="text-xs text-slate-500 mt-3">
-                          Si tu possèdes ces compétences, intégre-les naturellement dans tes descriptions.
+                          Si tu possÃ¨des ces compÃ©tences, intÃ©gre-les naturellement dans tes descriptions.
                         </p>
                       </CardContent>
                     </Card>

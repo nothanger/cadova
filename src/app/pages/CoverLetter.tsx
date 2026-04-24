@@ -27,6 +27,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "@/contexts/AuthContext";
 import { saveAccountCoverLetter } from "../lib/account-data";
 import { downloadSimplePdf } from "../lib/pdf-export";
+import { UpgradeModal } from "../components/UpgradeModal";
+import { useFreemiumGate } from "../hooks/useFreemiumGate";
 import {
   buildCoverLetter,
   SECTORS,
@@ -58,6 +60,7 @@ const LETTER_TEMPLATES = [
 export function CoverLetter() {
 useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
   const { user } = useAuth();
+  const { upgradeOpen, closeUpgrade, ensureGenerationAccess, consumeGeneration } = useFreemiumGate();
   const [generated, setGenerated] = useState(false);
   const [copied, setCopied] = useState(false);
   const [variant, setVariant] = useState(0); // pour forcer une regénération visuelle
@@ -104,8 +107,10 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
 
   const letterContent = editedContent ?? assembledLetter;
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    if (!(await ensureGenerationAccess())) return;
     handleGenerateComplete();
+    await consumeGeneration("cover-letter");
   };
 
   const handleGenerateComplete = () => {
@@ -125,7 +130,8 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
     setGenerated(true);
   };
 
-  const handleRegenerate = () => {
+  const handleRegenerate = async () => {
+    if (!(await ensureGenerationAccess())) return;
     const letter = buildCoverLetter({
       firstName,
       companyName,
@@ -140,6 +146,7 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
     });
     setEditedContent(letter);
     setVariant((v) => v + 1);
+    await consumeGeneration("cover-letter");
   };
 
   const handleCopy = () => {
@@ -208,6 +215,7 @@ useSEO({ title: "Lettre de motivation — Cadova", noindex: false });
 
   return (
     <AppLayout>
+      <UpgradeModal open={upgradeOpen} onClose={closeUpgrade} />
       {false && (
         <LoadingScreen
           label="Génération de la lettre"

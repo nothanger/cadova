@@ -517,6 +517,11 @@ export function SettingsPage() {
   const isPro = isProSubscription(user?.subscription);
   const profileName = getUserDisplayName(name);
   const profileEmail = getUserDisplayEmail(email);
+  const generationStatus = isPro
+    ? "Accès complet"
+    : user?.free_generation_used
+      ? "Limite gratuite utilisée"
+      : "1 génération gratuite";
 
   useEffect(() => {
     if (user) {
@@ -789,9 +794,7 @@ export function SettingsPage() {
                   Plan {isPro ? "Pro" : "Gratuit"}
                 </p>
                 <p className="text-xs" style={{ color: "#6B7280" }}>
-                  {isPro
-                    ? "Accès complet à Cadova"
-                    : "CV, lettres et suivi limités"}
+                  {generationStatus}
                 </p>
               </div>
               {!isPro && (

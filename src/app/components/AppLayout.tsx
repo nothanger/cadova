@@ -60,6 +60,12 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   };
 
   const displayName = getUserDisplayName(user?.name);
+  const isPro = user?.plan === "pro" || user?.subscription === "pro" || user?.subscription === "premium";
+  const planStatus = isPro
+    ? "Accès complet"
+    : user?.free_generation_used
+      ? "Limite gratuite utilisée"
+      : "1 génération gratuite";
 
   return (
     <div className="flex h-full select-none flex-col bg-[var(--cadova-navy)] text-white">
@@ -151,6 +157,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           <div className="min-w-0 flex-1 overflow-hidden">
             <p className="truncate text-[12px] font-bold leading-4 text-white">{displayName}</p>
             <p className="truncate text-[10px] leading-4 text-white/70">Espace candidature</p>
+            <p className="truncate text-[10px] leading-4 text-white/50">{planStatus}</p>
           </div>
           <button
             onClick={handleLogout}
