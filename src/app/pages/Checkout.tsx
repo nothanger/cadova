@@ -104,7 +104,7 @@ export function Checkout() {
                 <p className="mt-3 text-sm leading-6 text-white/85">
                   Ton espace Cadova est débloqué. Tu peux maintenant suivre toutes tes candidatures et utiliser les outils sans limite temporaire.
                 </p>
-                <Link to="/dashboard" className="mt-8 inline-flex min-h-11 items-center justify-center rounded-[8px] bg-white px-5 text-sm font-black text-slate-950">
+                <Link to="/dashboard" className="mt-8 inline-flex min-h-11 items-center justify-center rounded-[8px] bg-white px-5 text-sm font-black !text-slate-950 hover:!text-slate-950 focus-visible:!text-slate-950 active:!text-slate-950" style={{ color: "#080719" }}>
                   Retour à l’accueil
                 </Link>
               </div>
@@ -135,7 +135,7 @@ export function Checkout() {
                   <p className="mb-4 text-xs leading-5 text-white/80">
                     Version temporaire sans transaction réelle. Le code est isolé pour remplacer ce flux par Stripe ensuite.
                   </p>
-                  <Button onClick={startCheckout} disabled={loading} className="h-12 w-full gap-2 bg-white font-black text-slate-950 hover:bg-white/90">
+                  <Button onClick={startCheckout} disabled={loading} className="h-12 w-full gap-2 bg-white font-black !text-slate-950 hover:bg-white/90 hover:!text-slate-950 focus-visible:!text-slate-950 active:!text-slate-950 disabled:!text-slate-950" style={{ color: "#080719" }}>
                     {loading ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
                     Continuer
                   </Button>
