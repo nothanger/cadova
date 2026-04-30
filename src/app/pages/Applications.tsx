@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { Link } from "react-router";
 import {
   AlertTriangle,
@@ -314,7 +314,13 @@ export function Applications() {
     }
   };
 
-  const updateApplication = async (id: string, updates: Partial<Application>, message?: string) => {
+  const updateApplication = async (id: string, updates: Partial<Application>, message?: string, optimistic = false) => {
+    if (optimistic) {
+      setApplications((items) => items.map((item) => (item.id === id ? { ...item, ...updates, updatedAt: new Date().toISOString() } : item)));
+      setSelectedApplication((current) => (current?.id === id ? { ...current, ...updates, updatedAt: new Date().toISOString() } : current));
+      setEmailApplication((current) => (current?.id === id ? { ...current, ...updates, updatedAt: new Date().toISOString() } : current));
+    }
+
     const updated = await updateAccountApplication(id, updates);
     if (!updated) return null;
     updateApplicationInState(updated);
@@ -323,7 +329,26 @@ export function Applications() {
   };
 
   const moveApplication = async (id: string, status: ApplicationStatus) => {
-    await updateApplication(id, { status });
+    await updateApplication(id, { status }, undefined, true);
+  };
+
+  const handleDragStart = (event: DragEvent<HTMLElement>, id: string) => {
+    event.stopPropagation();
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", id);
+    event.dataTransfer.setData("application/x-cadova-application-id", id);
+    setDraggedId(id);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLElement>, status: ApplicationStatus) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const id = event.dataTransfer.getData("application/x-cadova-application-id") || event.dataTransfer.getData("text/plain") || draggedId;
+    setDraggedId(null);
+    if (!id) return;
+    const application = applications.find((item) => item.id === id);
+    if (!application || application.status === status) return;
+    void moveApplication(id, status);
   };
 
   const markAsSent = async (application: Application) => {
@@ -514,7 +539,7 @@ export function Applications() {
         role="button"
         tabIndex={0}
         draggable
-        onDragStart={() => setDraggedId(application.id)}
+        onDragStart={(event) => handleDragStart(event, application.id)}
         onDragEnd={() => setDraggedId(null)}
         onClick={() => setSelectedApplication(application)}
         onKeyDown={(event) => {
@@ -680,8 +705,11 @@ export function Applications() {
                   return (
                     <section
                       key={status}
-                      onDragOver={(event) => event.preventDefault()}
-                      onDrop={() => draggedId && moveApplication(draggedId, status)}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "move";
+                      }}
+                      onDrop={(event) => handleDrop(event, status)}
                       className={`flex min-h-[500px] min-w-[288px] flex-none flex-col rounded-[8px] border ${style.border} ${style.bg} p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:min-w-[320px] md:min-w-[340px] xl:min-w-[296px]`}
                     >
                       <div className="mb-4 flex min-w-0 items-start justify-between gap-3 rounded-[8px] bg-white/70 px-3 py-2 shadow-sm shadow-slate-900/[0.03]">
