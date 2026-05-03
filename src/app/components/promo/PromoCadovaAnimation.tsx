@@ -1,4 +1,13 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { AnimatePresence, motion, type Transition } from "motion/react";
 import { CadovaMarkC, markPurpleCenterFrac, MARK_VIEWBOX_W } from "./CadovaMark";
 
@@ -34,9 +43,9 @@ function usePhaseTimeline(replayToken: number, reducedMotion: boolean) {
 
     setPhase("intro");
     const t: { phase: Phase; at: number }[] = [
-      { phase: "main", at: 1.05 * 1000 },
-      { phase: "expand", at: 8.75 * 1000 },
-      { phase: "outro", at: 10.45 * 1000 },
+      { phase: "main", at: 1.45 * 1000 },
+      { phase: "expand", at: 8.05 * 1000 },
+      { phase: "outro", at: 9.55 * 1000 },
     ];
 
     timers.current.push(
@@ -55,119 +64,6 @@ const easingSoft: Transition = {
   ease: [0.22, 1, 0.36, 1],
 };
 
-function OrbitDots({
-  orbitPx,
-  active,
-  reducedMotion,
-}: {
-  orbitPx: number;
-  active: boolean;
-  reducedMotion: boolean;
-}) {
-  const rotationDuration = reducedMotion ? 0 : 14;
-  const points = useMemo(() => [0, 120, 240], []);
-
-  return (
-    <motion.div
-      className="pointer-events-none absolute"
-      style={{
-        left: "var(--cadova-mark-cx)",
-        top: "var(--cadova-mark-cy)",
-        width: orbitPx * 2,
-        height: orbitPx * 2,
-        marginLeft: -orbitPx,
-        marginTop: -orbitPx,
-      }}
-      initial={false}
-      animate={{ opacity: active ? 1 : 0 }}
-      transition={{ duration: 0.7, ease: "easeOut" }}
-    >
-      <motion.div
-        className="absolute inset-0"
-        animate={
-          reducedMotion ? { rotate: 0 } : active ? { rotate: 360 } : { rotate: 0 }
-        }
-        transition={
-          reducedMotion || !active
-            ? { duration: 0 }
-            : {
-                rotate: {
-                  duration: rotationDuration,
-                  repeat: Infinity,
-                  ease: "linear",
-                },
-              }
-        }
-      >
-        {points.map((deg) => (
-          <span
-            key={deg}
-            className="absolute left-1/2 top-1/2 rounded-full bg-white/95"
-            style={{
-              width: 6,
-              height: 6,
-              marginLeft: -3,
-              marginTop: -3,
-              boxShadow:
-                `0 0 10px 2px color-mix(in srgb, ${VIOLET} 72%, transparent), ` +
-                `0 0 22px 4px color-mix(in srgb, ${VIOLET} 38%, transparent)`,
-              transform: `rotate(${deg}deg) translateY(-${orbitPx}px)`,
-              opacity: reducedMotion ? 0.72 : 0.96,
-            }}
-          />
-        ))}
-      </motion.div>
-    </motion.div>
-  );
-}
-
-/** Anneaux fins autour du rond violet. */
-function OrbitalRings({
-  purplePx,
-  show,
-}: {
-  purplePx: number;
-  show: boolean;
-}) {
-  const scales = [1.52, 1.98, 2.42];
-  return (
-    <div
-      className="pointer-events-none absolute rounded-full border border-white/[0.12]"
-      style={{
-        left: "var(--cadova-mark-cx)",
-        top: "var(--cadova-mark-cy)",
-        width: purplePx,
-        height: purplePx,
-        marginLeft: -purplePx / 2,
-        marginTop: -purplePx / 2,
-      }}
-      aria-hidden
-    >
-      {scales.map((s, i) => (
-        <motion.div
-          key={s}
-          className="absolute left-1/2 top-1/2 rounded-full border border-white/[0.16]"
-          style={{
-            width: purplePx * s,
-            height: purplePx * s,
-            translateX: "-50%",
-            translateY: "-50%",
-            borderColor:
-              i === 1 ? "color-mix(in srgb, #7B7DFF 35%, transparent)" : "rgba(255,255,255,0.11)",
-          }}
-          initial={{ opacity: 0, scale: 0.94 }}
-          animate={
-            show
-              ? { opacity: i === 0 ? 1 : i === 1 ? 0.65 : 0.45, scale: 1 }
-              : { opacity: 0, scale: 0.94 }
-          }
-          transition={{ duration: 0.95, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-        />
-      ))}
-    </div>
-  );
-}
-
 export function PromoCadovaAnimation({ replayToken, reducedMotion }: Props) {
   const phase = usePhaseTimeline(replayToken, reducedMotion);
   const { fx, fy } = markPurpleCenterFrac();
@@ -180,7 +76,6 @@ export function PromoCadovaAnimation({ replayToken, reducedMotion }: Props) {
   const purpleFracOfMark = (2 * 41.5612 * 0.88) / MARK_VIEWBOX_W;
 
   const showLogoLayer = phase === "intro" || phase === "main" || phase === "expand";
-  const showRingsOrb = phase === "main";
   const showExpander = phase === "expand" || phase === "outro";
 
   useLayoutEffect(() => {
@@ -261,10 +156,8 @@ export function PromoCadovaAnimation({ replayToken, reducedMotion }: Props) {
             <div className="relative aspect-square w-full">
               {/* Centre du sceau mesuré en px pour cercles orbitaux */}
               <MarkMeasure purpleFrac={purpleFracOfMark} fx={fx} fy={fy}>
-                {({ purplePx }) => (
+                {() => (
                   <>
-                    <OrbitalRings purplePx={purplePx} show={showRingsOrb && !reducedMotion} />
-
                     {/* Rond violet (CSS), toujours rond */}
                     {/* Conteneur de taille stable pour l’alignement du volet violet (évite les sauts lors du pulse) */}
                     <div
@@ -307,13 +200,43 @@ export function PromoCadovaAnimation({ replayToken, reducedMotion }: Props) {
                       />
                     </div>
 
-                    <CadovaMarkC className="relative z-[1] h-full w-full" cFill={C_FILL} />
-
-                    <OrbitDots
-                      orbitPx={purplePx * 1.18}
-                      active={showRingsOrb}
-                      reducedMotion={reducedMotion}
-                    />
+                    <motion.div
+                      className="absolute inset-0 z-[1]"
+                      style={{
+                        transformOrigin: `${fx * 100}% ${fy * 100}%`,
+                        backfaceVisibility: "hidden",
+                        willChange: reducedMotion ? undefined : "transform",
+                      }}
+                      initial={
+                        reducedMotion
+                          ? { opacity: 1, rotate: 0, scale: 1 }
+                          : { opacity: 0, rotate: -96, scale: 0.9 }
+                      }
+                      animate={
+                        reducedMotion
+                          ? { opacity: 1, rotate: 0, scale: 1 }
+                          : phase === "main"
+                            ? { opacity: 1, rotate: 1960, scale: 1 }
+                            : phase === "expand"
+                              ? { opacity: 0.16, rotate: 2440, scale: 0.94 }
+                              : { opacity: 1, rotate: 0, scale: 1 }
+                      }
+                      transition={
+                        reducedMotion
+                          ? { duration: 0 }
+                          : phase === "main"
+                            ? {
+                                rotate: { duration: 6.6, ease: [0.58, 0, 1, 1] },
+                                opacity: { duration: 0.55, ease: "easeOut" },
+                                scale: { duration: 0.55, ease: "easeOut" },
+                              }
+                            : phase === "expand"
+                              ? { duration: 1.15, ease: "linear" }
+                              : { duration: 1.15, ease: [0.22, 1, 0.36, 1] }
+                      }
+                    >
+                      <CadovaMarkC className="h-full w-full" cFill={C_FILL} />
+                    </motion.div>
                   </>
                 )}
               </MarkMeasure>
@@ -364,6 +287,8 @@ export function PromoCadovaAnimation({ replayToken, reducedMotion }: Props) {
             style={{
               fontFamily:
                 '"Sora", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+              background:
+                "radial-gradient(circle at 50% 42%, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.03) 34%, transparent 68%)",
             }}
           >
             <p
@@ -398,6 +323,84 @@ export function PromoCadovaAnimation({ replayToken, reducedMotion }: Props) {
                 draggable={false}
               />
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {phase === "outro" && (
+          <motion.div
+            key="outro-ad"
+            role="presentation"
+            className="pointer-events-none absolute inset-0 z-[7] flex flex-col items-center justify-center px-[7%] text-center"
+            initial={false}
+            animate={{ opacity: 1 }}
+            transition={{ duration: reducedMotion ? 0 : 0.45, delay: reducedMotion ? 0 : 0.08 }}
+            style={{
+              background:
+                "radial-gradient(circle at 50% 38%, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.04) 36%, transparent 67%), linear-gradient(155deg, #5A5CFF 0%, #5457F5 52%, #475DFF 100%)",
+              fontFamily:
+                '"Sora", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+            }}
+          >
+            <motion.h1
+              className="mb-8 text-[clamp(3rem,15vw,5.6rem)] font-extrabold leading-none text-white"
+              initial={reducedMotion ? { opacity: 1 } : { opacity: 0.86, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reducedMotion ? 0 : 0.5, delay: reducedMotion ? 0 : 0.1 }}
+              style={{ textShadow: "0 0 34px rgba(255,255,255,0.28)" }}
+            >
+              Cadova
+            </motion.h1>
+
+            {[
+              {
+                text: "Besoin d'un stage ?",
+                className:
+                  "max-w-[15ch] text-[clamp(1.55rem,7vw,2.55rem)] font-extrabold leading-[1.05] text-white",
+              },
+              {
+                text: "CV. Lettre. Candidatures.",
+                className:
+                  "mt-4 max-w-[19ch] text-[clamp(1.02rem,4.4vw,1.48rem)] font-semibold leading-snug text-white/92",
+              },
+              {
+                text: "Tout est prêt avec Cadova.",
+                className:
+                  "mt-3 max-w-[20ch] text-[clamp(0.92rem,3.65vw,1.22rem)] font-medium leading-snug text-white/82",
+              },
+            ].map((line, index) => (
+              <motion.p
+                key={line.text}
+                className={`mx-auto ${line.className}`}
+                initial={reducedMotion ? { opacity: 1 } : { opacity: 0.88, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: reducedMotion ? 0 : 0.55,
+                  delay: reducedMotion ? 0 : 0.24 + index * 0.14,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+              >
+                {line.text}
+              </motion.p>
+            ))}
+
+            <motion.p
+              className="relative mt-7 rounded-full px-4 py-2 text-[clamp(1rem,4vw,1.24rem)] font-bold text-white"
+              initial={reducedMotion ? { opacity: 1 } : { opacity: 0.9, y: 5, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                duration: reducedMotion ? 0 : 0.55,
+                delay: reducedMotion ? 0 : 0.76,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              style={{
+                textShadow: "0 0 20px rgba(255,255,255,0.48)",
+                boxShadow: "0 0 34px rgba(255,255,255,0.16)",
+              }}
+            >
+              cadova.fr
+            </motion.p>
           </motion.div>
         )}
       </AnimatePresence>

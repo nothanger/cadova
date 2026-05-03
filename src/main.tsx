@@ -1,7 +1,7 @@
-
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./styles/index.css";
+import { isPromoStandaloneRoute } from "./lib/isPromoStandaloneRoute";
 
 function renderConfigError(message: string) {
   ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -33,6 +33,16 @@ function renderConfigError(message: string) {
 }
 
 async function bootstrap() {
+  if (typeof window !== "undefined" && isPromoStandaloneRoute(window.location.pathname)) {
+    const { default: PromoStandaloneApp } = await import("./app/PromoStandaloneApp.tsx");
+    ReactDOM.createRoot(document.getElementById("root")!).render(
+      <React.StrictMode>
+        <PromoStandaloneApp />
+      </React.StrictMode>,
+    );
+    return;
+  }
+
   const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
   const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim();
 
