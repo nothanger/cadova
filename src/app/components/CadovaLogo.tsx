@@ -8,7 +8,7 @@ interface CadovaLogoProps {
 const LOGO_LIGHT_SRC = "/logo-full.svg";
 const LOGO_DARK_SRC = "/logo-dark.svg";
 const LOGO_DIMENSIONS = {
-  light: { width: 963, height: 261 },
+  light: { width: 568, height: 156 },
   dark: { width: 578, height: 156 },
 };
 const SIZE_WIDTHS = {
