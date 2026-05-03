@@ -733,9 +733,11 @@
   }
 
   .marketing-logo-link img {
-    height: 58px !important;
-    max-height: 58px !important;
+    height: auto !important;
+    max-height: 34px !important;
     width: auto !important;
+    max-width: 132px !important;
+    object-fit: contain;
   }
 
   .marketing-menu-toggle {
@@ -842,8 +844,9 @@
   }
 
   .marketing-logo-link img {
-    height: 50px !important;
-    max-height: 50px !important;
+    height: auto !important;
+    max-height: 30px !important;
+    max-width: 116px !important;
   }
 
   .marketing-section {

@@ -1,43 +1,45 @@
 {
   "name": "Cadova - IA pour l'emploi",
   "short_name": "Cadova",
-  "description": "Écosystème IA pour l'emploi destiné aux jeunes : CV, lettres, simulation entretien, suivi candidatures, optimisation LinkedIn",
+  "description": "Ecosysteme IA pour l'emploi destine aux jeunes : CV, lettres, simulation entretien, suivi candidatures, optimisation LinkedIn",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#2B1430",
-  "theme_color": "#B84DCE",
+  "background_color": "#0B1020",
+  "theme_color": "#0B1020",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/cadova-android-chrome-192x192.png?v=20260414",
+      "src": "/logo-app.svg",
+      "sizes": "400x400",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/android-chrome-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/cadova-android-chrome-512x512.png?v=20260414",
+      "src": "/android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/cadova-android-chrome-512x512.png?v=20260414",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
   "categories": ["productivity", "business", "education"],
   "shortcuts": [
     {
-      "name": "Générateur CV",
+      "name": "Generateur CV",
       "short_name": "CV",
-      "description": "Créer un CV avec IA",
+      "description": "Creer un CV avec IA",
       "url": "/app/reussia/cv-generator",
       "icons": [
         {
-          "src": "/cadova-android-chrome-192x192.png?v=20260414",
-          "sizes": "192x192"
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
@@ -48,8 +50,9 @@
       "url": "/app/oralia",
       "icons": [
         {
-          "src": "/cadova-android-chrome-192x192.png?v=20260414",
-          "sizes": "192x192"
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
@@ -60,8 +63,9 @@
       "url": "/app/trackia",
       "icons": [
         {
-          "src": "/cadova-android-chrome-192x192.png?v=20260414",
-          "sizes": "192x192"
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     }

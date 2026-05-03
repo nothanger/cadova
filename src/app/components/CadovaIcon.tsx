@@ -1,124 +1,20 @@
-
 export function CadovaIcon({ size = 512 }: { size?: number }) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 512 512"
+      viewBox="0 0 400 400"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Cadova"
     >
-      
-      <rect width="512" height="512" rx="115" fill="url(#bgGradient)" />
-
-     
-      <g transform="translate(100, 80)">
-        
-        <path
-          d="M 160 230 C 100 230 50 180 50 120 C 50 60 100 10 160 10 C 180 10 200 20 215 35"
-          fill="url(#brainGradient1)"
-          opacity="0.95"
-        />
-
-        
-        <path
-          d="M 160 230 C 220 230 270 180 270 120 C 270 60 220 10 160 10 C 140 10 120 20 105 35"
-          fill="url(#brainGradient2)"
-          opacity="0.95"
-        />
-
-        
-        <path
-          d="M 110 80 Q 120 70 130 80 Q 140 90 150 80"
-          stroke="rgba(255,255,255,0.3)"
-          strokeWidth="4"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <path
-          d="M 170 80 Q 180 70 190 80 Q 200 90 210 80"
-          stroke="rgba(255,255,255,0.3)"
-          strokeWidth="4"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <path
-          d="M 100 130 Q 110 120 120 130 Q 130 140 140 130"
-          stroke="rgba(255,255,255,0.3)"
-          strokeWidth="4"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <path
-          d="M 180 130 Q 190 120 200 130 Q 210 140 220 130"
-          stroke="rgba(255,255,255,0.3)"
-          strokeWidth="4"
-          strokeLinecap="round"
-          fill="none"
-        />
-
-        
-        <ellipse
-          cx="160"
-          cy="100"
-          rx="40"
-          ry="45"
-          fill="url(#highlightGradient)"
-          opacity="0.4"
-        />
-      </g>
-
-      
-      <text
-        x="256"
-        y="440"
-        fontFamily="Syne, sans-serif"
-        fontSize="140"
-        fontWeight="700"
-        fill="url(#textGradient)"
-        textAnchor="middle"
-      >
-        C
-      </text>
-
-      <defs>
-        
-        <linearGradient id="bgGradient" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#2B1430" />
-          <stop offset="50%" stopColor="#4E1D58" />
-          <stop offset="100%" stopColor="#34163A" />
-        </linearGradient>
-
-        
-        <linearGradient id="brainGradient1" x1="50" y1="10" x2="160" y2="230" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#B84DCE" />
-          <stop offset="30%" stopColor="#AD49C2" />
-          <stop offset="60%" stopColor="#9540A7" />
-          <stop offset="100%" stopColor="#843E92" />
-        </linearGradient>
-
-        
-        <linearGradient id="brainGradient2" x1="270" y1="10" x2="160" y2="230" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#B84DCE" />
-          <stop offset="30%" stopColor="#A044B3" />
-          <stop offset="60%" stopColor="#8C3C9D" />
-          <stop offset="100%" stopColor="#672374" />
-        </linearGradient>
-
-        
-        <radialGradient id="highlightGradient" cx="0.5" cy="0.3">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.6" />
-          <stop offset="70%" stopColor="#FFFFFF" stopOpacity="0.2" />
-          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-        </radialGradient>
-
-        
-        <linearGradient id="textGradient" x1="0" y1="380" x2="512" y2="440" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#B74DCD" />
-          <stop offset="50%" stopColor="#9540A7" />
-          <stop offset="100%" stopColor="#B84DCE" />
-        </linearGradient>
-      </defs>
+      <rect width="400" height="400" rx="76" fill="#0B1020" />
+      <path
+        d="M204.062 27.5986C182.614 30.0615 163.937 35.5004 144.542 45.1467C127.712 53.4589 115.09 62.6948 99.7995 77.8826C85.2275 92.4547 75.5811 106.001 66.5505 124.472C37.4064 184.197 45.0003 254.595 86.0484 307.239C93.5397 316.783 109.856 332.791 119.4 339.975C139.001 354.65 165.374 366.246 189.182 370.864C201.804 373.224 221.61 374.353 234.951 373.327C274.254 370.453 308.837 355.163 337.263 328.379C355.427 311.139 356.966 287.125 340.957 270.706C326.693 256.031 302.475 255.826 286.774 270.193C284.927 271.938 280.001 278.403 275.896 284.663C262.042 305.7 245.213 318.425 223.457 324.274C211.758 327.455 192.158 327.558 179.433 324.377C160.346 319.656 139.616 306.623 127.815 291.949C94.258 250.49 98.3629 192.407 137.564 154.848C148.031 144.688 154.599 140.173 167.837 133.811C198.315 119.136 234.13 119.854 266.045 135.863C282.053 143.867 295.291 144.381 309.761 137.505C332.85 126.627 341.778 98.304 329.566 74.3935C322.794 61.1555 297.549 44.1205 271.894 35.2951C253.114 28.9327 223.047 25.5462 204.062 27.5986Z"
+        fill="#F0F0F0"
+      />
+      <ellipse cx="212.528" cy="216.163" rx="41.5612" ry="41.5612" fill="#5A5CFF" />
     </svg>
   );
 }

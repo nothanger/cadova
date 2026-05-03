@@ -5,7 +5,7 @@ import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Alert, AlertDescription } from "@/app/components/ui/alert";
 import { supabase, apiCall, API_URL } from "@/lib/supabase";
-import { projectId, publicAnonKey } from "/utils/supabase/info";
+import { projectId } from "/utils/supabase/info";
 
 interface TestResult {
   name: string;
@@ -47,11 +47,11 @@ export function HealthCheck() {
     try {
       const start = Date.now();
       
-      if (!projectId || !publicAnonKey) {
+      if (!projectId) {
         updateTest(0, {
           status: "error",
           message: "Variables d'environnement manquantes",
-          details: { projectId: !!projectId, publicAnonKey: !!publicAnonKey },
+          details: { projectId: !!projectId },
           duration: Date.now() - start,
         });
       } else {
@@ -439,11 +439,7 @@ export function HealthCheck() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  console.log("=== SUPABASE DEBUG INFO ===");
-                  console.log("Project ID:", projectId);
-                  console.log("API URL:", API_URL);
-                  console.log("Supabase Client:", supabase);
-                  alert("Informations affichées dans la console (F12)");
+                  alert("Le mode debug console est désactivé en production pour des raisons de sécurité.");
                 }}
               >
                 Afficher dans la console

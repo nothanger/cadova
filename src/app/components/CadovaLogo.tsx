@@ -5,12 +5,16 @@ interface CadovaLogoProps {
   white?: boolean;
 }
 
-const LOGO_SRC = "/cadova-logo.svg?v=20260414";
-const LOGO_DIMENSIONS = { width: 392, height: 416 };
+const LOGO_LIGHT_SRC = "/logo-full.svg";
+const LOGO_DARK_SRC = "/logo-dark.svg";
+const LOGO_DIMENSIONS = {
+  light: { width: 963, height: 261 },
+  dark: { width: 713, height: 241 },
+};
 const SIZE_WIDTHS = {
-  sm: 52,
-  md: 76,
-  lg: 112,
+  sm: 96,
+  md: 132,
+  lg: 180,
 } as const;
 
 function resolveWidth(width?: number, size?: CadovaLogoProps["size"]) {
@@ -22,8 +26,9 @@ function resolveWidth(width?: number, size?: CadovaLogoProps["size"]) {
 
 export function CadovaLogo({ width, maxHeight, size, white = false }: CadovaLogoProps) {
   const resolvedWidth = resolveWidth(width, size);
+  const dimensions = white ? LOGO_DIMENSIONS.dark : LOGO_DIMENSIONS.light;
   const resolvedHeight = Math.round(
-    (resolvedWidth * LOGO_DIMENSIONS.height) / LOGO_DIMENSIONS.width,
+    (resolvedWidth * dimensions.height) / dimensions.width,
   );
   const constrainedHeight = maxHeight
     ? Math.min(resolvedHeight, maxHeight)
@@ -31,19 +36,19 @@ export function CadovaLogo({ width, maxHeight, size, white = false }: CadovaLogo
 
   return (
     <img
-      src={LOGO_SRC}
+      src={white ? LOGO_DARK_SRC : LOGO_LIGHT_SRC}
       alt="Cadova"
       width={resolvedWidth}
       height={constrainedHeight}
       draggable={false}
       style={{
         display: "block",
-        width: "auto",
-        height: constrainedHeight,
-        maxWidth: resolvedWidth,
+        width: resolvedWidth,
+        height: "auto",
+        maxWidth: "100%",
         maxHeight: constrainedHeight,
+        objectFit: "contain",
         flexShrink: 0,
-        filter: white ? "brightness(0) invert(1)" : undefined,
       }}
     />
   );

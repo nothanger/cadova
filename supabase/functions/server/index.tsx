@@ -5,6 +5,90 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import * as kv from "./kv_store.tsx";
 
 const app = new Hono();
+const API_BASE_PATH = "/make-server-0a5eb56b";
+const MAX_JSON_BYTES = 100_000;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_STORE = new Map<string, { count: number; resetAt: number }>();
+
+const frontendOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "https://cadova.fr,http://localhost:5173,http://localhost:4173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const SAFE_ERROR_MESSAGE = "Une erreur interne est survenue. Réessayez dans quelques instants.";
+
+function getClientIp(c: any): string {
+  return c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || "unknown";
+}
+
+function getRateLimitKey(c: any) {
+  const ip = getClientIp(c);
+  const path = c.req.path || "";
+  return `${ip}:${path}`;
+}
+
+function getRouteLimit(path: string): number {
+  if (path.includes("/auth/signup")) return 8;
+  if (path.includes("/reussia/ai/") || path.includes("/oralia/")) return 20;
+  return 120;
+}
+
+function sanitizeText(value: unknown, max = 500): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.replace(/[<>]/g, "").slice(0, max);
+}
+
+const allowedApplicationTypes = new Set(["stage", "alternance", "job", "emploi"]);
+const allowedBillingIntervals = new Set(["monthly", "yearly"]);
+
+function sanitizeApplicationPayload(input: Record<string, unknown>, partial = false) {
+  const company = sanitizeText(input.company, 160);
+  const position = sanitizeText(input.position, 160);
+  const typeRaw = sanitizeText(input.type, 20)?.toLowerCase();
+  const status = sanitizeText(input.status, 40);
+  const email = sanitizeText(input.email, 320);
+  const link = sanitizeText(input.link, 1024);
+  const notes = sanitizeText(input.notes, 3000);
+
+  if (!partial) {
+    if (!company || !position) return { error: "company and position are required", value: null };
+  }
+
+  if (email && !isValidEmail(email)) {
+    return { error: "invalid email", value: null };
+  }
+
+  const type = typeRaw && allowedApplicationTypes.has(typeRaw) ? (typeRaw === "emploi" ? "job" : typeRaw) : "stage";
+
+  return {
+    error: null,
+    value: {
+      ...(company ? { company } : {}),
+      ...(position ? { position } : {}),
+      ...(status ? { status } : {}),
+      ...(email ? { email } : { email: "" }),
+      ...(link ? { link } : { link: "" }),
+      ...(notes ? { notes } : {}),
+      type,
+      appliedAt: sanitizeText(input.appliedAt ?? input.applied_at, 40) || new Date().toISOString().slice(0, 10),
+      followUpDate: sanitizeText(input.followUpDate ?? input.follow_up_date, 40) || "",
+    },
+  };
+}
+
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function getBearerToken(c: any): string | null {
+  const authorization = c.req.header("Authorization");
+  if (!authorization) return null;
+  const [scheme, token] = authorization.split(" ");
+  if (!scheme || scheme.toLowerCase() !== "bearer" || !token) return null;
+  return token.trim() || null;
+}
 
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
@@ -46,11 +130,6 @@ const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
 
-const supabaseClient = createClient(
-  Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-);
-
 type CadovaProfile = {
   id: string;
   email?: string;
@@ -70,14 +149,14 @@ type CadovaProfile = {
 };
 
 async function getAuthenticatedUser(c: any) {
-  const accessToken = c.req.header("Authorization")?.split(" ")[1];
+  const accessToken = getBearerToken(c);
   if (!accessToken) {
-    return { user: null, errorResponse: c.json({ error: "Unauthorized - No token provided" }, 401) };
+    return { user: null, errorResponse: c.json({ error: "Unauthorized" }, 401) };
   }
 
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
   if (error || !user) {
-    return { user: null, errorResponse: c.json({ error: "Unauthorized - Invalid token" }, 401) };
+    return { user: null, errorResponse: c.json({ error: "Unauthorized" }, 401) };
   }
 
   return { user, errorResponse: null };
@@ -188,17 +267,66 @@ app.use("*", logger(console.log));
 app.use(
   "/*",
   cors({
-    origin: "*",
+    origin: (origin) => {
+      if (!origin) return frontendOrigins[0] || "";
+      return frontendOrigins.includes(origin) ? origin : "";
+    },
     allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    exposeHeaders: ["Content-Length"],
+    exposeHeaders: ["Content-Length", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
     maxAge: 600,
   })
 );
 
 app.use("*", async (c, next) => {
+  c.header("X-Content-Type-Options", "nosniff");
+  c.header("X-Frame-Options", "DENY");
+  c.header("Referrer-Policy", "strict-origin-when-cross-origin");
+  c.header("Cache-Control", "no-store");
+
+  const method = c.req.method;
+  if (method === "POST" || method === "PUT" || method === "PATCH") {
+    const contentLength = Number(c.req.header("content-length") || 0);
+    if (Number.isFinite(contentLength) && contentLength > MAX_JSON_BYTES) {
+      return c.json({ error: "Payload too large" }, 413);
+    }
+  }
+
+  const routeLimit = getRouteLimit(c.req.path || "");
+  const key = getRateLimitKey(c);
+  const now = Date.now();
+  const state = RATE_LIMIT_STORE.get(key);
+  if (!state || now > state.resetAt) {
+    RATE_LIMIT_STORE.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    c.header("X-RateLimit-Limit", String(routeLimit));
+    c.header("X-RateLimit-Remaining", String(routeLimit - 1));
+  } else {
+    if (state.count >= routeLimit) {
+      return c.json({ error: "Too many requests. Please retry later." }, 429);
+    }
+    state.count += 1;
+    RATE_LIMIT_STORE.set(key, state);
+    c.header("X-RateLimit-Limit", String(routeLimit));
+    c.header("X-RateLimit-Remaining", String(Math.max(routeLimit - state.count, 0)));
+  }
+
+  if (method !== "OPTIONS") {
+    const path = c.req.path || "";
+    const isProtectedApiPath = path.startsWith(`${API_BASE_PATH}/`) &&
+      !path.endsWith("/health") &&
+      !path.endsWith("/auth/signup");
+    if (isProtectedApiPath && !getBearerToken(c)) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+  }
+
   await next();
   c.header("Content-Type", "application/json; charset=UTF-8");
+});
+
+app.onError((error, c) => {
+  console.error("Unhandled API error:", error);
+  return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
 });
 
 app.get("/make-server-0a5eb56b/health", (c) => {
@@ -213,13 +341,22 @@ app.get("/make-server-0a5eb56b/health", (c) => {
 
 app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
   try {
-    const { email, password, name } = await c.req.json();
+    const payload = await c.req.json().catch(() => null);
+    const email = sanitizeText(payload?.email, 320)?.toLowerCase();
+    const password = typeof payload?.password === "string" ? payload.password : "";
+    const name = sanitizeText(payload?.name, 120);
 
     if (!email || !password || !name) {
       return c.json({ error: "Email, password, and name are required" }, 400);
     }
+    if (!isValidEmail(email)) {
+      return c.json({ error: "Invalid email format" }, 400);
+    }
+    if (password.length < 8 || password.length > 128) {
+      return c.json({ error: "Password must contain 8 to 128 characters" }, 400);
+    }
 
-    console.log(`Creating new user account: ${email}`);
+    console.log(`Creating new user account for domain: ${email.split("@")[1] || "unknown"}`);
 
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -235,7 +372,7 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
       if (error.code === "email_exists" || error.message?.toLowerCase().includes("already been registered") || error.message?.toLowerCase().includes("already registered")) {
         return c.json({ error: "Un compte existe déjà avec cette adresse email. Connecte-toi plutôt.", code: "email_exists" }, 422);
       }
-      return c.json({ error: error.message }, 400);
+      return c.json({ error: "Signup failed" }, 400);
     }
 
     console.log(`User created successfully: ${data.user?.id}`);
@@ -266,7 +403,7 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
     });
   } catch (error: any) {
     console.error("Error during signup:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -284,7 +421,7 @@ app.get("/make-server-0a5eb56b/user/profile", async (c) => {
     return c.json({ profile });
   } catch (error: any) {
     console.error("Error fetching user profile:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -294,14 +431,15 @@ app.put("/make-server-0a5eb56b/user/profile", async (c) => {
     const { user, errorResponse } = await getAuthenticatedUser(c);
     if (errorResponse) return errorResponse;
 
-    const updates = await c.req.json();
+    const updates = await c.req.json().catch(() => ({}));
     console.log(`Updating profile for user: ${user.id}`);
 
     const currentProfile = await getProfileForUser(user);
+    const sanitizedName = sanitizeText(updates?.name, 120);
 
     const updatedProfile = {
       ...currentProfile,
-      ...(typeof updates.name === "string" ? { name: updates.name.trim() || currentProfile.name } : {}),
+      ...(sanitizedName ? { name: sanitizedName } : {}),
       updatedAt: new Date().toISOString(),
     };
 
@@ -310,7 +448,7 @@ app.put("/make-server-0a5eb56b/user/profile", async (c) => {
     return c.json({ success: true, profile: updatedProfile });
   } catch (error: any) {
     console.error("Error updating user profile:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -361,7 +499,7 @@ app.delete("/make-server-0a5eb56b/user/delete", async (c) => {
     return c.json({ success: true });
   } catch (error: any) {
     console.error("Error deleting user account:", error);
-    return c.json({ error: error.message || "Suppression impossible pour le moment." }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -387,7 +525,7 @@ app.get("/make-server-0a5eb56b/reussia/cvs", async (c) => {
     return c.json({ cvs: cvs || [] });
   } catch (error: any) {
     console.error("Error fetching CVs:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -423,7 +561,7 @@ app.post("/make-server-0a5eb56b/reussia/cvs", async (c) => {
     return c.json({ success: true, cv });
   } catch (error: any) {
     console.error("Error saving CV:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -450,7 +588,7 @@ app.get("/make-server-0a5eb56b/reussia/cover-letters", async (c) => {
     return c.json({ letters: letters || [] });
   } catch (error: any) {
     console.error("Error fetching cover letters:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -487,7 +625,7 @@ app.post("/make-server-0a5eb56b/reussia/cover-letters", async (c) => {
     return c.json({ success: true, letter });
   } catch (error: any) {
     console.error("Error saving cover letter:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -549,7 +687,7 @@ app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
     return c.json({ success: true, analysis, profile });
   } catch (error: any) {
     console.error("Error running ATS analysis:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -613,7 +751,7 @@ app.post("/make-server-0a5eb56b/oralia/questions", async (c) => {
     return c.json({ success: true, questions });
   } catch (error: any) {
     console.error("Error generating interview questions:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -657,7 +795,7 @@ app.post("/make-server-0a5eb56b/oralia/analyze-answer", async (c) => {
     return c.json({ success: true, feedback });
   } catch (error: any) {
     console.error("Error analyzing interview answer:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -665,17 +803,8 @@ app.post("/make-server-0a5eb56b/oralia/analyze-answer", async (c) => {
 
 app.get("/make-server-0a5eb56b/trackia/applications", async (c) => {
   try {
-    const accessToken = c.req.header("Authorization")?.split(" ")[1];
-
-    if (!accessToken) {
-      return c.json({ error: "Unauthorized - No token provided" }, 401);
-    }
-
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
-
-    if (error || !user) {
-      return c.json({ error: "Unauthorized - Invalid token" }, 401);
-    }
+    const { user, errorResponse } = await getAuthenticatedUser(c);
+    if (errorResponse) return errorResponse;
 
     console.log(`Fetching applications for user: ${user.id}`);
 
@@ -684,25 +813,19 @@ app.get("/make-server-0a5eb56b/trackia/applications", async (c) => {
     return c.json({ applications: applications || [] });
   } catch (error: any) {
     console.error("Error fetching applications:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
 app.post("/make-server-0a5eb56b/trackia/applications", async (c) => {
   try {
-    const accessToken = c.req.header("Authorization")?.split(" ")[1];
-
-    if (!accessToken) {
-      return c.json({ error: "Unauthorized - No token provided" }, 401);
+    const { user, errorResponse } = await getAuthenticatedUser(c);
+    if (errorResponse) return errorResponse;
+    const applicationData = await c.req.json().catch(() => ({}));
+    const sanitized = sanitizeApplicationPayload(applicationData, false);
+    if (sanitized.error || !sanitized.value) {
+      return c.json({ error: "Invalid application payload" }, 400);
     }
-
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
-
-    if (error || !user) {
-      return c.json({ error: "Unauthorized - Invalid token" }, 401);
-    }
-
-    const applicationData = await c.req.json();
     const applicationId = crypto.randomUUID();
 
     console.log(`Creating new application for user: ${user.id}, applicationId: ${applicationId}`);
@@ -710,13 +833,8 @@ app.post("/make-server-0a5eb56b/trackia/applications", async (c) => {
     const application = {
       id: applicationId,
       userId: user.id,
-      ...applicationData,
-      type: applicationData.type || "stage",
-      status: applicationData.status || "À envoyer",
-      appliedAt: applicationData.appliedAt || applicationData.applied_at || new Date().toISOString().slice(0, 10),
-      followUpDate: applicationData.followUpDate || applicationData.follow_up_date || "",
-      email: applicationData.email || "",
-      link: applicationData.link || "",
+      ...sanitized.value,
+      status: sanitized.value.status || "À envoyer",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -726,26 +844,21 @@ app.post("/make-server-0a5eb56b/trackia/applications", async (c) => {
     return c.json({ success: true, application });
   } catch (error: any) {
     console.error("Error creating application:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
 app.put("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
   try {
-    const accessToken = c.req.header("Authorization")?.split(" ")[1];
-
-    if (!accessToken) {
-      return c.json({ error: "Unauthorized - No token provided" }, 401);
-    }
-
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
-
-    if (error || !user) {
-      return c.json({ error: "Unauthorized - Invalid token" }, 401);
-    }
+    const { user, errorResponse } = await getAuthenticatedUser(c);
+    if (errorResponse) return errorResponse;
 
     const applicationId = c.req.param("id");
-    const updates = await c.req.json();
+    const updates = await c.req.json().catch(() => ({}));
+    const sanitized = sanitizeApplicationPayload(updates, true);
+    if (sanitized.error || !sanitized.value) {
+      return c.json({ error: "Invalid update payload" }, 400);
+    }
 
     console.log(`Updating application: ${applicationId} for user: ${user.id}`);
 
@@ -757,7 +870,7 @@ app.put("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
 
     const updatedApplication = {
       ...currentApplication,
-      ...updates,
+      ...sanitized.value,
       updatedAt: new Date().toISOString(),
     };
 
@@ -766,24 +879,15 @@ app.put("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
     return c.json({ success: true, application: updatedApplication });
   } catch (error: any) {
     console.error("Error updating application:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
 
 app.delete("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
   try {
-    const accessToken = c.req.header("Authorization")?.split(" ")[1];
-
-    if (!accessToken) {
-      return c.json({ error: "Unauthorized - No token provided" }, 401);
-    }
-
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
-
-    if (error || !user) {
-      return c.json({ error: "Unauthorized - Invalid token" }, 401);
-    }
+    const { user, errorResponse } = await getAuthenticatedUser(c);
+    if (errorResponse) return errorResponse;
 
     const applicationId = c.req.param("id");
 
@@ -794,7 +898,7 @@ app.delete("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
     return c.json({ success: true });
   } catch (error: any) {
     console.error("Error deleting application:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -813,7 +917,7 @@ app.get("/make-server-0a5eb56b/entitlements/status", async (c) => {
     });
   } catch (error: any) {
     console.error("Error fetching entitlements:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -834,7 +938,7 @@ app.post("/make-server-0a5eb56b/entitlements/consume-generation", async (c) => {
     });
   } catch (error: any) {
     console.error("Error consuming free generation:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -844,6 +948,9 @@ app.post("/make-server-0a5eb56b/billing/activate-pro", async (c) => {
     if (errorResponse) return errorResponse;
 
     const { billingInterval = "monthly" } = await c.req.json().catch(() => ({}));
+    if (!allowedBillingIntervals.has(String(billingInterval))) {
+      return c.json({ error: "Invalid billing interval" }, 400);
+    }
     const profile = await getProfileForUser(user);
     const updatedProfile: CadovaProfile = {
       ...profile,
@@ -871,28 +978,26 @@ app.post("/make-server-0a5eb56b/billing/activate-pro", async (c) => {
     return c.json({ success: true, profile: updatedProfile });
   } catch (error: any) {
     console.error("Error activating Pro plan:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
 app.post("/make-server-0a5eb56b/trackia/emails/send", async (c) => {
   try {
-    const accessToken = c.req.header("Authorization")?.split(" ")[1];
+    const { user, errorResponse } = await getAuthenticatedUser(c);
+    if (errorResponse) return errorResponse;
 
-    if (!accessToken) {
-      return c.json({ error: "Unauthorized - No token provided" }, 401);
-    }
-
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
-
-    if (error || !user) {
-      return c.json({ error: "Unauthorized - Invalid token" }, 401);
-    }
-
-    const { candidatureId, recipient, subject, content } = await c.req.json();
+    const payload = await c.req.json().catch(() => ({}));
+    const candidatureId = sanitizeText(payload.candidatureId, 120);
+    const recipient = sanitizeText(payload.recipient, 320)?.toLowerCase();
+    const subject = sanitizeText(payload.subject, 200);
+    const content = sanitizeText(payload.content, 10_000);
 
     if (!candidatureId || !recipient || !subject || !content) {
       return c.json({ error: "Missing email fields" }, 400);
+    }
+    if (!isValidEmail(recipient)) {
+      return c.json({ error: "Invalid recipient email" }, 400);
     }
 
     let status = "queued";
@@ -939,23 +1044,14 @@ app.post("/make-server-0a5eb56b/trackia/emails/send", async (c) => {
     return c.json({ success: true, email });
   } catch (error: any) {
     console.error("Error sending email:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
 app.get("/make-server-0a5eb56b/trackia/emails/:candidatureId", async (c) => {
   try {
-    const accessToken = c.req.header("Authorization")?.split(" ")[1];
-
-    if (!accessToken) {
-      return c.json({ error: "Unauthorized - No token provided" }, 401);
-    }
-
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
-
-    if (error || !user) {
-      return c.json({ error: "Unauthorized - Invalid token" }, 401);
-    }
+    const { user, errorResponse } = await getAuthenticatedUser(c);
+    if (errorResponse) return errorResponse;
 
     const candidatureId = c.req.param("candidatureId");
     const emails = await kv.getByPrefix(`email_sent:${user.id}:${candidatureId}:`);
@@ -963,7 +1059,7 @@ app.get("/make-server-0a5eb56b/trackia/emails/:candidatureId", async (c) => {
     return c.json({ emails: emails || [] });
   } catch (error: any) {
     console.error("Error fetching emails:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -1032,7 +1128,7 @@ app.post("/make-server-0a5eb56b/skillia/analyze-linkedin", async (c) => {
     return c.json({ success: true, analysis, profile });
   } catch (error: any) {
     console.error("Error analyzing LinkedIn profile:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -1082,7 +1178,7 @@ app.post("/make-server-0a5eb56b/skillia/skill-suggestions", async (c) => {
     return c.json({ success: true, suggestions, profile });
   } catch (error: any) {
     console.error("Error generating skill suggestions:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -1165,7 +1261,7 @@ Génère un CV optimisé et professionnel. Si certaines sections sont vides, pro
     return c.json({ success: true, cvData, profile });
   } catch (error: any) {
     console.error("Error in AI CV generation:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -1229,7 +1325,7 @@ Rédige une lettre de motivation complète, personnalisée et percutante.`;
     return c.json({ success: true, letterContent, profile });
   } catch (error: any) {
     console.error("Error in AI cover letter generation:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 
@@ -1319,7 +1415,7 @@ Analyse ce CV par rapport à cette offre et donne un score ATS détaillé.`;
     return c.json({ success: true, analysis: analysisData, profile });
   } catch (error: any) {
     console.error("Error in AI ATS analysis:", error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: SAFE_ERROR_MESSAGE }, 500);
   }
 });
 

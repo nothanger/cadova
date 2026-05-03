@@ -1,12 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
 import { projectId, publicAnonKey } from "/utils/supabase/info";
 
-const supabaseUrl = `https://${projectId}.supabase.co`;
+const envSupabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const envSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+
+const supabaseUrl = envSupabaseUrl || `https://${projectId}.supabase.co`;
+const supabaseAnonKey = envSupabaseAnonKey || publicAnonKey;
+const envApiUrl = import.meta.env.VITE_API_URL as string | undefined;
 
 
-export const supabase = createClient(supabaseUrl, publicAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export const API_URL = `${supabaseUrl}/functions/v1/make-server-0a5eb56b`;
+export const API_URL = envApiUrl || `${supabaseUrl}/functions/v1/make-server-0a5eb56b`;
 
 export async function apiCall(
   endpoint: string,
@@ -21,7 +26,9 @@ export async function apiCall(
     ...((options.headers as Record<string, string>) || {}),
   };
 
-  headers.Authorization = `Bearer ${accessToken || publicAnonKey}`;
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,

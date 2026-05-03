@@ -42,11 +42,6 @@ export const router = createBrowserRouter([
       { path: "signup", Component: Signup },
       { path: "forgot-password", Component: ForgotPassword },
       { path: "reset-password", Component: ResetPassword },
-      { path: "health", Component: HealthCheck },
-      { path: "system-info", Component: SystemInfo },
-      { path: "generate-icons", Component: GenerateIcons },
-
-     
       {
         Component: AuthGuard,
         children: [
@@ -61,6 +56,9 @@ export const router = createBrowserRouter([
           { path: "company-finder", Component: CompanyFinder },
           { path: "linkedin", Component: LinkedIn },
           { path: "skills", Component: Skills },
+          { path: "health", Component: HealthCheck },
+          { path: "system-info", Component: SystemInfo },
+          { path: "generate-icons", Component: GenerateIcons },
         ],
       },
       { path: "*", Component: RouteErrorFallback },
