@@ -77,7 +77,7 @@ export function Login() {
         />
 
         <div className="relative z-10">
-          <CadovaLogo width={80} white />
+          <CadovaLogo width={184} white />
         </div>
 
         <div className="relative z-10">
@@ -130,7 +130,7 @@ export function Login() {
         <div className="w-full max-w-md">
           
           <div className="lg:hidden flex justify-center mb-10">
-            <CadovaLogo width={80} />
+            <CadovaLogo width={168} />
           </div>
 
           <div className="mb-10">

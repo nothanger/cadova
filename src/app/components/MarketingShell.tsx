@@ -29,7 +29,7 @@ export function MarketingShell({
       <header className="marketing-header">
         <div className="marketing-header-inner">
           <Link to="/" aria-label="Cadova - accueil" className="marketing-logo-link">
-            <CadovaLogo width={82} />
+            <CadovaLogo width={166} />
           </Link>
           <button
             type="button"

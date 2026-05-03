@@ -32,7 +32,7 @@ export function AuthShell({
         />
 
         <Link to="/" className="relative z-10 inline-flex">
-          <CadovaLogo width={84} white />
+          <CadovaLogo width={184} white />
         </Link>
 
         <div className="relative z-10 max-w-[560px]">
@@ -79,7 +79,7 @@ export function AuthShell({
       <main className="flex min-h-[100svh] items-center justify-center px-5 py-8 sm:px-8 lg:px-12">
         <div className="w-full max-w-[460px]">
           <div className="mb-10 flex justify-center lg:hidden">
-            <CadovaLogo width={84} />
+            <CadovaLogo width={168} />
           </div>
           {children}
         </div>

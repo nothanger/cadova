@@ -9,12 +9,12 @@ const LOGO_LIGHT_SRC = "/logo-full.svg";
 const LOGO_DARK_SRC = "/logo-dark.svg";
 const LOGO_DIMENSIONS = {
   light: { width: 963, height: 261 },
-  dark: { width: 713, height: 241 },
+  dark: { width: 578, height: 156 },
 };
 const SIZE_WIDTHS = {
-  sm: 96,
-  md: 132,
-  lg: 180,
+  sm: 140,
+  md: 178,
+  lg: 220,
 } as const;
 
 function resolveWidth(width?: number, size?: CadovaLogoProps["size"]) {

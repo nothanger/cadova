@@ -84,7 +84,7 @@ export function Signup() {
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)", backgroundSize: "50px 50px" }} />
 
         <div className="relative z-10">
-          <CadovaLogo width={80} white />
+          <CadovaLogo width={184} white />
         </div>
 
         <div className="relative z-10">
@@ -130,7 +130,7 @@ export function Signup() {
 
           {/* Logo mobile */}
           <div className="lg:hidden flex justify-center mb-10">
-            <CadovaLogo width={80} />
+            <CadovaLogo width={168} />
           </div>
 
           <div className="mb-10">

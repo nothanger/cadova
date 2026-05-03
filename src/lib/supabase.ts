@@ -3,6 +3,11 @@ import { projectId, publicAnonKey } from "/utils/supabase/info";
 
 const envSupabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const envSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const isProdBuild = import.meta.env.PROD;
+
+if (isProdBuild && (!envSupabaseUrl || !envSupabaseAnonKey)) {
+  throw new Error("Missing required VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY for production build.");
+}
 
 const supabaseUrl = envSupabaseUrl || `https://${projectId}.supabase.co`;
 const supabaseAnonKey = envSupabaseAnonKey || publicAnonKey;

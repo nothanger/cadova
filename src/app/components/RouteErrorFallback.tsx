@@ -10,7 +10,7 @@ export function RouteErrorFallback() {
   return (
     <main className="cadova-route-fallback">
       <div className="cadova-route-fallback-card">
-        <CadovaLogo width={82} />
+        <CadovaLogo width={168} />
         <div>
           <p className="cadova-kicker">Cadova</p>
           <h1>La page n’a pas pu se charger correctement.</h1>

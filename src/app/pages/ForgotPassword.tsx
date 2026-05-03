@@ -73,7 +73,7 @@ export function ForgotPassword() {
       <div className="w-full max-w-md">
         
         <div className="flex justify-center mb-10">
-          <CadovaLogo width={72} />
+          <CadovaLogo width={160} />
         </div>
 
         {sent ? (

@@ -26,6 +26,14 @@ import GenerateIcons from "./icon-generator";
 import { AuthGuard } from "./components/AuthGuard";
 import { RouteErrorFallback } from "./components/RouteErrorFallback";
 
+const diagnosticRoutes = import.meta.env.DEV
+  ? [
+      { path: "health", Component: HealthCheck },
+      { path: "system-info", Component: SystemInfo },
+      { path: "generate-icons", Component: GenerateIcons },
+    ]
+  : [];
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -56,9 +64,7 @@ export const router = createBrowserRouter([
           { path: "company-finder", Component: CompanyFinder },
           { path: "linkedin", Component: LinkedIn },
           { path: "skills", Component: Skills },
-          { path: "health", Component: HealthCheck },
-          { path: "system-info", Component: SystemInfo },
-          { path: "generate-icons", Component: GenerateIcons },
+          ...diagnosticRoutes,
         ],
       },
       { path: "*", Component: RouteErrorFallback },

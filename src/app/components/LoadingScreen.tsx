@@ -87,7 +87,7 @@ export function LoadingScreen({
             animate={{ scale: [1, 1.04, 1] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           >
-            <CadovaLogo size="md" />
+            <CadovaLogo size="md" white />
           </motion.div>
           <p
             className="text-[11px] uppercase tracking-[0.2em]"

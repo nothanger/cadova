@@ -8,12 +8,24 @@ const app = new Hono();
 const API_BASE_PATH = "/make-server-0a5eb56b";
 const MAX_JSON_BYTES = 100_000;
 const RATE_LIMIT_WINDOW_MS = 60_000;
+// Temporary protection only: in-memory rate limiting is per-instance and not shared.
 const RATE_LIMIT_STORE = new Map<string, { count: number; resetAt: number }>();
+const appEnv = (Deno.env.get("APP_ENV") ?? Deno.env.get("ENVIRONMENT") ?? "development").toLowerCase();
+const isProduction = appEnv === "production";
+const configuredOrigins = Deno.env.get("ALLOWED_ORIGINS");
 
-const frontendOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "https://cadova.fr,http://localhost:5173,http://localhost:4173")
+if (isProduction && !configuredOrigins) {
+  throw new Error("ALLOWED_ORIGINS must be explicitly configured in production.");
+}
+
+const frontendOrigins = (configuredOrigins ?? "http://localhost:5173,http://localhost:4173")
   .split(",")
   .map((origin) => origin.trim())
-  .filter(Boolean);
+  .filter((origin) => Boolean(origin) && origin !== "*");
+
+if (isProduction && frontendOrigins.length === 0) {
+  throw new Error("ALLOWED_ORIGINS is invalid in production. Provide at least one explicit HTTPS origin.");
+}
 
 const SAFE_ERROR_MESSAGE = "Une erreur interne est survenue. Réessayez dans quelques instants.";
 
@@ -300,6 +312,7 @@ app.use("*", async (c, next) => {
     RATE_LIMIT_STORE.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
     c.header("X-RateLimit-Limit", String(routeLimit));
     c.header("X-RateLimit-Remaining", String(routeLimit - 1));
+    c.header("X-RateLimit-Policy", "in-memory-temporary");
   } else {
     if (state.count >= routeLimit) {
       return c.json({ error: "Too many requests. Please retry later." }, 429);
@@ -308,6 +321,7 @@ app.use("*", async (c, next) => {
     RATE_LIMIT_STORE.set(key, state);
     c.header("X-RateLimit-Limit", String(routeLimit));
     c.header("X-RateLimit-Remaining", String(Math.max(routeLimit - state.count, 0)));
+    c.header("X-RateLimit-Policy", "in-memory-temporary");
   }
 
   if (method !== "OPTIONS") {
@@ -356,7 +370,7 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
       return c.json({ error: "Password must contain 8 to 128 characters" }, 400);
     }
 
-    console.log(`Creating new user account for domain: ${email.split("@")[1] || "unknown"}`);
+    console.log("Creating new user account");
 
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -367,7 +381,7 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
     });
 
     if (error) {
-      console.error(`Signup error for ${email}:`, error);
+      console.error("Signup error:", error?.code || "unknown_error");
    
       if (error.code === "email_exists" || error.message?.toLowerCase().includes("already been registered") || error.message?.toLowerCase().includes("already registered")) {
         return c.json({ error: "Un compte existe déjà avec cette adresse email. Connecte-toi plutôt.", code: "email_exists" }, 422);
@@ -375,7 +389,7 @@ app.post("/make-server-0a5eb56b/auth/signup", async (c) => {
       return c.json({ error: "Signup failed" }, 400);
     }
 
-    console.log(`User created successfully: ${data.user?.id}`);
+    console.log("User created successfully");
 
     await kv.set(`user:${data.user?.id}`, {
       id: data.user?.id,
@@ -414,7 +428,7 @@ app.get("/make-server-0a5eb56b/user/profile", async (c) => {
     const { user, errorResponse } = await getAuthenticatedUser(c);
     if (errorResponse) return errorResponse;
 
-    console.log(`Fetching profile for user: ${user.id} (${user.email})`);
+    console.log("Fetching profile for authenticated user");
 
     const profile = await getProfileForUser(user);
 
@@ -432,7 +446,7 @@ app.put("/make-server-0a5eb56b/user/profile", async (c) => {
     if (errorResponse) return errorResponse;
 
     const updates = await c.req.json().catch(() => ({}));
-    console.log(`Updating profile for user: ${user.id}`);
+    console.log("Updating profile for authenticated user");
 
     const currentProfile = await getProfileForUser(user);
     const sanitizedName = sanitizeText(updates?.name, 120);
@@ -518,7 +532,7 @@ app.get("/make-server-0a5eb56b/reussia/cvs", async (c) => {
       return c.json({ error: "Unauthorized - Invalid token" }, 401);
     }
 
-    console.log(`Fetching CVs for user: ${user.id}`);
+    console.log("Fetching CVs");
 
     const cvs = await kv.getByPrefix(`cv:${user.id}:`);
 
@@ -546,7 +560,7 @@ app.post("/make-server-0a5eb56b/reussia/cvs", async (c) => {
     const cvData = await c.req.json();
     const cvId = crypto.randomUUID();
 
-    console.log(`Saving new CV for user: ${user.id}, cvId: ${cvId}`);
+    console.log("Saving new CV");
 
     const cv = {
       id: cvId,
@@ -581,7 +595,7 @@ app.get("/make-server-0a5eb56b/reussia/cover-letters", async (c) => {
       return c.json({ error: "Unauthorized - Invalid token" }, 401);
     }
 
-    console.log(`Fetching cover letters for user: ${user.id}`);
+    console.log("Fetching cover letters");
 
     const letters = await kv.getByPrefix(`cover_letter:${user.id}:`);
 
@@ -610,7 +624,7 @@ app.post("/make-server-0a5eb56b/reussia/cover-letters", async (c) => {
     const letterData = await c.req.json();
     const letterId = crypto.randomUUID();
 
-    console.log(`Saving new cover letter for user: ${user.id}, letterId: ${letterId}`);
+    console.log("Saving new cover letter");
 
     const letter = {
       id: letterId,
@@ -650,7 +664,7 @@ app.post("/make-server-0a5eb56b/reussia/ats-analyze", async (c) => {
 
     const { cvText, jobDescription } = await c.req.json();
 
-    console.log(`Running ATS analysis for user: ${user.id}`);
+    console.log("Running ATS analysis");
 
     const analysis = {
       score: Math.floor(Math.random() * 30) + 70,
@@ -713,7 +727,7 @@ app.post("/make-server-0a5eb56b/oralia/questions", async (c) => {
 
     const { jobTitle, difficulty } = await c.req.json();
 
-    console.log(`Generating interview questions for user: ${user.id}, job: ${jobTitle}`);
+    console.log("Generating interview questions");
 
     const questions = [
       {
@@ -775,7 +789,7 @@ app.post("/make-server-0a5eb56b/oralia/analyze-answer", async (c) => {
 
     const { question, answer } = await c.req.json();
 
-    console.log(`Analyzing interview answer for user: ${user.id}`);
+    console.log("Analyzing interview answer");
 
   
     const feedback = {
@@ -806,7 +820,7 @@ app.get("/make-server-0a5eb56b/trackia/applications", async (c) => {
     const { user, errorResponse } = await getAuthenticatedUser(c);
     if (errorResponse) return errorResponse;
 
-    console.log(`Fetching applications for user: ${user.id}`);
+    console.log("Fetching applications");
 
     const applications = await kv.getByPrefix(`application:${user.id}:`);
 
@@ -828,7 +842,7 @@ app.post("/make-server-0a5eb56b/trackia/applications", async (c) => {
     }
     const applicationId = crypto.randomUUID();
 
-    console.log(`Creating new application for user: ${user.id}, applicationId: ${applicationId}`);
+    console.log("Creating new application");
 
     const application = {
       id: applicationId,
@@ -860,7 +874,7 @@ app.put("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
       return c.json({ error: "Invalid update payload" }, 400);
     }
 
-    console.log(`Updating application: ${applicationId} for user: ${user.id}`);
+    console.log("Updating application");
 
     const currentApplication = await kv.get(`application:${user.id}:${applicationId}`);
 
@@ -891,7 +905,7 @@ app.delete("/make-server-0a5eb56b/trackia/applications/:id", async (c) => {
 
     const applicationId = c.req.param("id");
 
-    console.log(`Deleting application: ${applicationId} for user: ${user.id}`);
+    console.log("Deleting application");
 
     await kv.del(`application:${user.id}:${applicationId}`);
 
@@ -1085,7 +1099,7 @@ app.post("/make-server-0a5eb56b/skillia/analyze-linkedin", async (c) => {
 
     const { profileText } = await c.req.json();
 
-    console.log(`Analyzing LinkedIn profile for user: ${user.id}`);
+    console.log("Analyzing LinkedIn profile");
 
   
     const analysis = {
@@ -1151,7 +1165,7 @@ app.post("/make-server-0a5eb56b/skillia/skill-suggestions", async (c) => {
 
     const { jobTitle } = await c.req.json();
 
-    console.log(`Generating skill suggestions for user: ${user.id}, job: ${jobTitle}`);
+    console.log("Generating skill suggestions");
 
     const suggestions = {
       essentialSkills: [
@@ -1195,7 +1209,7 @@ app.post("/make-server-0a5eb56b/reussia/ai/generate-cv", async (c) => {
 
     const { fullName, email, phone, city, title, summary, experiences, education, skills, languages, targetJob } = await c.req.json();
 
-    console.log(`🤖 AI CV generation for user: ${user.id}, target: ${targetJob}`);
+    console.log("AI CV generation requested");
 
     const systemPrompt = `Tu es un expert en recrutement et rédaction de CV en France. Tu aides les jeunes (étudiants, jeunes diplômés) à créer des CV percutants et optimisés pour les ATS (Applicant Tracking Systems).
 
@@ -1253,7 +1267,6 @@ Génère un CV optimisé et professionnel. Si certaines sections sont vides, pro
       cvData = JSON.parse(jsonStr);
     } catch (parseError) {
       console.error("Failed to parse AI response as JSON:", parseError);
-      console.log("Raw AI response:", aiResponse);
       return c.json({ error: "L'IA a renvoyé un format invalide. Réessayez." }, 500);
     }
 
@@ -1279,7 +1292,7 @@ app.post("/make-server-0a5eb56b/reussia/ai/generate-cover-letter", async (c) => 
 
     const { companyName, jobTitle, jobDescription, tone, type, strengths, motivation } = await c.req.json();
 
-    console.log(`🤖 AI cover letter generation for user: ${user.id}, company: ${companyName}`);
+    console.log("AI cover letter generation requested");
 
     const toneInstructions: Record<string, string> = {
       professionnel: "Ton professionnel et sérieux, adapté au monde de l'entreprise",
@@ -1342,7 +1355,7 @@ app.post("/make-server-0a5eb56b/reussia/ai/ats-analyze", async (c) => {
 
     const { cvText, jobDescription } = await c.req.json();
 
-    console.log(`🤖 AI ATS analysis for user: ${user.id}`);
+    console.log("AI ATS analysis requested");
 
     const systemPrompt = `Tu es un expert en recrutement et systèmes ATS (Applicant Tracking Systems). Tu analyses des CV par rapport à des offres d'emploi pour évaluer leur compatibilité.
 
@@ -1399,7 +1412,6 @@ Analyse ce CV par rapport à cette offre et donne un score ATS détaillé.`;
       analysisData = JSON.parse(jsonStr);
     } catch (parseError) {
       console.error("Failed to parse AI ATS response:", parseError);
-      console.log("Raw AI response:", aiResponse);
       return c.json({ error: "L'IA a renvoyé un format invalide. Réessayez." }, 500);
     }
 

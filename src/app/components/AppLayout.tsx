@@ -79,7 +79,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       />
       <div className="relative z-10 flex items-center justify-between px-5 pb-4 pt-5">
         <Link to="/dashboard" onClick={onClose} className="inline-flex">
-          <CadovaLogo width={78} white />
+          <CadovaLogo width={178} white />
         </Link>
         {onClose && (
           <button
@@ -207,7 +207,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           >
             <Menu className="size-5" />
           </button>
-          <CadovaLogo width={58} />
+          <CadovaLogo width={162} />
           <div className="size-10" />
         </header>
 
