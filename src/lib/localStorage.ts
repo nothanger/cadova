@@ -12,7 +12,6 @@ const STORAGE_KEYS = {
   LINKEDIN_ANALYSES: "cadova_linkedin_analyses",
 };
 
-
 export interface User {
   id: string;
   email: string;

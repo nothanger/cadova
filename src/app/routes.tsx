@@ -25,6 +25,7 @@ import { SystemInfo } from "./pages/SystemInfo";
 import GenerateIcons from "./icon-generator";
 import { AuthGuard } from "./components/AuthGuard";
 import { RouteErrorFallback } from "./components/RouteErrorFallback";
+import { PromoCadova } from "./pages/PromoCadova";
 
 const diagnosticRoutes = import.meta.env.DEV
   ? [
@@ -50,6 +51,8 @@ export const router = createBrowserRouter([
       { path: "signup", Component: Signup },
       { path: "forgot-password", Component: ForgotPassword },
       { path: "reset-password", Component: ResetPassword },
+      { path: "promo", Component: PromoCadova },
+      { path: "logo-animation", Component: PromoCadova },
       {
         Component: AuthGuard,
         children: [
