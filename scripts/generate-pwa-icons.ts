@@ -17,8 +17,8 @@ const sizes = [
     size: 180,
     filenames: ['apple-touch-icon.png'],
     desc: 'Apple Touch Icon (iOS)',
-    iconScale: 0.8,
-    background: { r: 255, g: 255, b: 255, alpha: 1 },
+    iconScale: 1,
+    background: { r: 11, g: 16, b: 32, alpha: 1 },
   },
   {
     size: 192,
