@@ -7,6 +7,11 @@ export function PromoCadova() {
   const reducedMotionPreferred = usePrefersReducedMotion();
   /** Mode capture : Replay plus discret (réduit opacité + petit contrôle système préféré). */
   const [replayKey, bumpReplay] = useState(0);
+  const hideControls = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("capture") === "1" || params.get("controls") === "0";
+  }, []);
 
   useEffect(() => {
     document.title = "Cadova — Clip promo";
@@ -65,7 +70,7 @@ export function PromoCadova() {
           }}
         >
           <PromoCadovaAnimation replayToken={replayKey} reducedMotion={reducedMotionPreferred} />
-          {replayButton}
+          {!hideControls && replayButton}
         </div>
       </div>
     </main>
