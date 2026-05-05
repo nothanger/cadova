@@ -13,7 +13,7 @@ import { CadovaMarkC, markPurpleCenterFrac, MARK_VIEWBOX_W } from "./CadovaMark"
 const BG = "#0B1020";
 const VIOLET = "#5A5CFF";
 const C_FILL = "#F2F3FF";
-const TOTAL_S = 24;
+const TOTAL_S = 28;
 
 const PROMO_ASSETS = {
   fullLogo: "/logo-dark.svg",
@@ -60,13 +60,13 @@ const features: Feature[] = [
 ];
 
 const chaosFragments = [
-  { x: "-34%", y: "-39%", w: 86, r: -9, d: 0, text: "relance ?" },
-  { x: "27%", y: "-43%", w: 74, r: 8, d: 0.16, text: "CV v3" },
-  { x: "-39%", y: "-16%", w: 64, r: 13, d: 0.32, text: "deadline" },
-  { x: "34%", y: "-14%", w: 94, r: -12, d: 0.48, text: "lettre" },
-  { x: "-28%", y: "18%", w: 72, r: -17, d: 0.64, text: "mail" },
-  { x: "23%", y: "23%", w: 84, r: 11, d: 0.8, text: "stage" },
-  { x: "-6%", y: "42%", w: 100, r: 4, d: 0.96, text: "a suivre" },
+  { left: "12%", top: "32%", driftX: -18, driftY: 26, w: 82, r: -8, d: 1.65, text: "relance ?" },
+  { left: "61%", top: "25%", driftX: 20, driftY: 18, w: 70, r: 7, d: 2.1, text: "CV v3" },
+  { left: "16%", top: "49%", driftX: -24, driftY: 14, w: 74, r: 10, d: 2.55, text: "deadline" },
+  { left: "66%", top: "45%", driftX: 22, driftY: 20, w: 88, r: -10, d: 3, text: "lettre" },
+  { left: "10%", top: "66%", driftX: -16, driftY: 18, w: 68, r: -14, d: 3.45, text: "mail" },
+  { left: "63%", top: "64%", driftX: 18, driftY: 22, w: 82, r: 9, d: 3.9, text: "stage" },
+  { left: "35%", top: "78%", driftX: 0, driftY: 26, w: 96, r: 3, d: 4.35, text: "a suivre" },
 ];
 
 const easeOut: Transition["ease"] = [0.22, 1, 0.36, 1];
@@ -136,8 +136,8 @@ function PremiumBackground() {
           maskImage: "radial-gradient(circle at 50% 46%, black 0%, transparent 72%)",
         }}
         initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 0.34, 0.22, 0] }}
-        transition={{ duration: 18, times: [0, 0.22, 0.72, 1], ease: "linear" }}
+        animate={{ opacity: [0, 0.12, 0.34, 0.22, 0] }}
+        transition={{ duration: 22, times: [0, 0.1, 0.33, 0.76, 1], ease: "linear" }}
       />
       <motion.div
         className="pointer-events-none absolute inset-0"
@@ -145,9 +145,9 @@ function PremiumBackground() {
           background:
             "radial-gradient(circle at 50% 42%, rgba(90,92,255,0.24), transparent 29%), radial-gradient(circle at 10% 83%, rgba(255,255,255,0.07), transparent 28%), radial-gradient(circle at 90% 7%, rgba(190,194,255,0.08), transparent 24%)",
         }}
-        initial={{ opacity: 0.55, scale: 1.04 }}
-        animate={{ opacity: [0.55, 0.8, 0.55], scale: [1.04, 1, 1.08] }}
-        transition={{ duration: 16, ease: "easeInOut" }}
+        initial={{ opacity: 0.28, scale: 1.08 }}
+        animate={{ opacity: [0.28, 0.58, 0.8, 0.55], scale: [1.08, 1.045, 1, 1.08] }}
+        transition={{ duration: 20, times: [0, 0.16, 0.42, 1], ease: "easeInOut" }}
       />
     </>
   );
@@ -159,13 +159,17 @@ function ChaosIntro() {
       className="absolute inset-0 z-[1] flex items-center justify-center"
       initial={{ opacity: 1 }}
       animate={{ opacity: [1, 1, 0] }}
-      transition={{ duration: 6.3, times: [0, 0.55, 1], ease: "easeOut" }}
+      transition={{ duration: 9.2, times: [0, 0.76, 1], ease: "easeOut" }}
     >
       <motion.div
         className="absolute top-[13%] w-full px-[9%] text-left"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: [0, 0.72, 0], y: [10, 0, -8] }}
-        transition={{ duration: 4.1, times: [0, 0.3, 1], delay: 0.25, ease: easeOut }}
+        initial={{ opacity: 0, y: 18, filter: "blur(10px)" }}
+        animate={{
+          opacity: [0, 0.16, 0.74, 0.72, 0],
+          y: [18, 12, 0, 0, -10],
+          filter: ["blur(10px)", "blur(7px)", "blur(0px)", "blur(0px)", "blur(8px)"],
+        }}
+        transition={{ duration: 7.2, times: [0, 0.2, 0.48, 0.82, 1], delay: 1.15, ease: easeOut }}
       >
         <p className="text-[clamp(0.76rem,3.4vw,1rem)] font-semibold uppercase tracking-[0.24em] text-white/44">
           Recherche de stage
@@ -178,24 +182,36 @@ function ChaosIntro() {
       {chaosFragments.map((fragment) => (
         <motion.div
           key={fragment.text}
-          className="promo-chaos-card absolute left-1/2 top-1/2"
+          className="promo-chaos-card absolute"
           style={{
+            left: fragment.left,
+            top: fragment.top,
             width: fragment.w,
-            x: fragment.x,
-            y: fragment.y,
             rotate: fragment.r,
           }}
-          initial={{ opacity: 0, scale: 0.88, filter: "blur(8px)" }}
+          initial={{ opacity: 0, scale: 0.82, filter: "blur(12px)" }}
           animate={{
-            opacity: [0, 0.78, 0.54, 0],
-            scale: [0.88, 1, 0.98, 0.72],
-            filter: ["blur(8px)", "blur(0px)", "blur(0px)", "blur(10px)"],
-            x: [fragment.x, `calc(${fragment.x} + ${fragment.r * -0.8}px)`, "0%"],
-            y: [fragment.y, `calc(${fragment.y} + ${fragment.r * 0.5}px)`, "0%"],
+            opacity: [0, 0.14, 0.66, 0.58, 0],
+            scale: [0.82, 0.9, 1, 0.985, 0.88],
+            filter: ["blur(12px)", "blur(7px)", "blur(0px)", "blur(0px)", "blur(10px)"],
+            x: [
+              fragment.driftX,
+              fragment.driftX * 0.45,
+              0,
+              fragment.r * -1.2,
+              fragment.r * -2.2,
+            ],
+            y: [
+              fragment.driftY,
+              fragment.driftY * 0.5,
+              0,
+              -10,
+              -22,
+            ],
           }}
           transition={{
-            duration: 5.4,
-            times: [0, 0.23, 0.62, 1],
+            duration: 7.1,
+            times: [0, 0.2, 0.48, 0.78, 1],
             delay: fragment.d,
             ease: easeInOut,
           }}
@@ -219,9 +235,9 @@ function CentralUser({ fx, fy, purpleFrac }: { fx: number; fy: number; purpleFra
         y: [22, 0, -8, -130, -210],
       }}
       transition={{
-        duration: 17.2,
-        times: [0, 0.21, 0.55, 0.82, 1],
-        delay: 2.55,
+        duration: 18.4,
+        times: [0, 0.24, 0.58, 0.84, 1],
+        delay: 5.05,
         ease: easeOut,
       }}
     >
@@ -230,7 +246,7 @@ function CentralUser({ fx, fy, purpleFrac }: { fx: number; fy: number; purpleFra
         style={{ transformOrigin: `${fx * 100}% ${fy * 100}%` }}
         initial={{ opacity: 0, rotate: -42 }}
         animate={{ opacity: [0, 0, 1, 1, 0.42], rotate: [-42, -42, 0, 9, 19] }}
-        transition={{ duration: 9.4, times: [0, 0.34, 0.52, 0.8, 1], delay: 2.2, ease: easeOut }}
+        transition={{ duration: 10.6, times: [0, 0.38, 0.58, 0.82, 1], delay: 4.45, ease: easeOut }}
       >
         {PROMO_ASSETS.cMark ? (
           <img src={PROMO_ASSETS.cMark} alt="" className="h-full w-full object-contain" />
@@ -254,7 +270,7 @@ function CentralUser({ fx, fy, purpleFrac }: { fx: number; fy: number; purpleFra
           opacity: [0, 1, 1, 1, 0.94],
           scale: [0.38, 1, 1.06, 1.02, 1.18],
         }}
-        transition={{ duration: 13.6, times: [0, 0.16, 0.36, 0.74, 1], delay: 2.95, ease: easeOut }}
+        transition={{ duration: 14.6, times: [0, 0.18, 0.4, 0.76, 1], delay: 5.1, ease: easeOut }}
       >
         {PROMO_ASSETS.userDot ? (
           <img src={PROMO_ASSETS.userDot} alt="" className="h-full w-full object-contain" />
@@ -275,7 +291,7 @@ function CentralUser({ fx, fy, purpleFrac }: { fx: number; fy: number; purpleFra
         }}
         initial={{ opacity: 0, scale: 0.5 }}
         animate={{ opacity: [0, 0.55, 0.2, 0], scale: [0.5, 1.08, 1.34, 1.7] }}
-        transition={{ duration: 4.2, delay: 3.25, ease: easeOut }}
+        transition={{ duration: 5.3, delay: 5.55, ease: easeOut }}
       />
     </motion.div>
   );
@@ -287,19 +303,19 @@ function Ecosystem() {
       className="absolute left-1/2 top-[43%] z-[4] aspect-square w-[78%] max-w-[400px] -translate-x-1/2 -translate-y-1/2"
       initial={{ opacity: 0, scale: 0.88 }}
       animate={{ opacity: [0, 1, 1, 0], scale: [0.88, 1, 1.02, 0.9] }}
-      transition={{ duration: 8.4, times: [0, 0.16, 0.72, 1], delay: 6.1, ease: easeOut }}
+      transition={{ duration: 8.9, times: [0, 0.22, 0.75, 1], delay: 9.2, ease: easeOut }}
     >
       <motion.div
         className="promo-orbit absolute left-1/2 top-1/2 h-[86%] w-[86%] -translate-x-1/2 -translate-y-1/2 rounded-full"
         initial={{ opacity: 0, rotate: -14 }}
         animate={{ opacity: [0, 0.8, 0.7], rotate: [-14, 0, 22] }}
-        transition={{ duration: 7.5, delay: 0.1, ease: "easeInOut" }}
+        transition={{ duration: 8.2, delay: 0.25, ease: "easeInOut" }}
       />
       <motion.div
         className="promo-orbit promo-orbit-soft absolute left-1/2 top-1/2 h-[66%] w-[66%] -translate-x-1/2 -translate-y-1/2 rounded-full"
         initial={{ opacity: 0, rotate: 18 }}
         animate={{ opacity: [0, 0.65, 0.5], rotate: [18, 0, -30] }}
-        transition={{ duration: 7.2, delay: 0.55, ease: "easeInOut" }}
+        transition={{ duration: 8, delay: 0.9, ease: "easeInOut" }}
       />
 
       {features.map((feature, index) => (
@@ -310,7 +326,7 @@ function Ecosystem() {
         className="absolute bottom-[3%] left-1/2 w-[72%] -translate-x-1/2 text-center text-[clamp(0.78rem,3.4vw,1rem)] font-semibold leading-tight text-white/58"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: [0, 1, 1, 0], y: [8, 0, 0, -8] }}
-        transition={{ duration: 5.4, times: [0, 0.22, 0.78, 1], delay: 1.2, ease: easeOut }}
+        transition={{ duration: 6.2, times: [0, 0.26, 0.8, 1], delay: 1.55, ease: easeOut }}
       >
         Cadova organise tout autour de toi.
       </motion.p>
@@ -327,14 +343,14 @@ function OrbitFeature({ feature, index }: { feature: Feature; index: number }) {
       style={{ rotate: feature.angle, transformOrigin: "0 0" }}
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1, 1, 0] }}
-      transition={{ duration: 5.9, times: [0, 0.18, 0.78, 1], delay: 0.5 + index * 0.34 }}
+      transition={{ duration: 6.7, times: [0, 0.22, 0.8, 1], delay: 0.8 + index * 0.48 }}
     >
       <motion.div
         className="promo-orbit-badge"
         style={{ rotate: -feature.angle, x: "-50%", y: "-145px" }}
         initial={{ scale: 0.7, y: "-112px", filter: "blur(6px)" }}
         animate={{ scale: [0.7, 1, 1], y: ["-112px", "-145px", "-145px"], filter: "blur(0px)" }}
-        transition={{ duration: 1.4, delay: 0.5 + index * 0.34, ease: easeOut }}
+        transition={{ duration: 1.85, delay: 0.8 + index * 0.48, ease: easeOut }}
       >
         <span className="promo-feature-icon" style={{ color: feature.tone }}>
           <Icon size={17} strokeWidth={2.2} />
@@ -354,13 +370,13 @@ function ProductReveal() {
       className="absolute inset-0 z-[5] flex flex-col justify-end px-[7%] pb-[13%] pt-[12%]"
       initial={{ opacity: 0, y: 26 }}
       animate={{ opacity: [0, 1, 1, 0], y: [26, 0, 0, -16] }}
-      transition={{ duration: 7.4, times: [0, 0.18, 0.76, 1], delay: 10.8, ease: easeOut }}
+      transition={{ duration: 8.2, times: [0, 0.2, 0.78, 1], delay: 14.4, ease: easeOut }}
     >
       <motion.div
         className="mb-auto mt-[5%]"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: [0, 1, 1], y: [16, 0, 0] }}
-        transition={{ duration: 2, delay: 0.55, ease: easeOut }}
+        transition={{ duration: 2.4, delay: 0.7, ease: easeOut }}
       >
         <p className="text-[clamp(0.72rem,3vw,0.92rem)] font-bold uppercase tracking-[0.23em] text-[#BFC1FF]">
           Tableau de bord
@@ -372,21 +388,21 @@ function ProductReveal() {
 
       <div className="grid gap-3">
         <ProductCard
-          delay={0.55}
+          delay={0.72}
           icon={<FileText size={20} />}
           title="CV premium"
           meta="Pret a envoyer"
           progress={84}
         />
         <ProductCard
-          delay={0.82}
+          delay={1.08}
           icon={<Mail size={20} />}
           title="Lettre de motivation"
           meta="Personnalisee"
           progress={72}
         />
         <ProductCard
-          delay={1.09}
+          delay={1.44}
           icon={<LayoutDashboard size={20} />}
           title="Suivi des candidatures"
           meta="Relances et statuts"
@@ -398,7 +414,7 @@ function ProductReveal() {
         className="promo-dashboard mt-4"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: [0, 1, 1], y: [12, 0, 0] }}
-        transition={{ duration: 1.4, delay: 1.38, ease: easeOut }}
+        transition={{ duration: 1.7, delay: 1.75, ease: easeOut }}
       >
         <div>
           <span>Stage marketing</span>
@@ -431,7 +447,7 @@ function ProductCard({
       className="promo-product-card"
       initial={{ opacity: 0, y: 24, scale: 0.96 }}
       animate={{ opacity: [0, 1, 1], y: [24, 0, 0], scale: [0.96, 1, 1] }}
-      transition={{ duration: 1.2, delay, ease: easeOut }}
+      transition={{ duration: 1.45, delay, ease: easeOut }}
     >
       <div className="promo-product-icon">{icon}</div>
       <div className="min-w-0 flex-1">
@@ -445,7 +461,7 @@ function ProductCard({
             className="block h-full rounded-full bg-[#BFC1FF]"
             initial={{ width: "0%" }}
             animate={{ width: `${progress}%` }}
-            transition={{ duration: 1.3, delay: delay + 0.3, ease: easeOut }}
+            transition={{ duration: 1.55, delay: delay + 0.38, ease: easeOut }}
           />
         </div>
       </div>
@@ -463,9 +479,9 @@ function CinematicTransition() {
         scale: [0.05, 0.05, 1, 13.8],
       }}
       transition={{
-        duration: 3.7,
+        duration: 4.1,
         times: [0, 0.34, 0.54, 1],
-        delay: 15.65,
+        delay: 19.65,
         ease: [0.32, 0.92, 0.27, 1],
       }}
       style={{
@@ -487,7 +503,7 @@ function FinalOutro() {
       className="absolute inset-0 z-[9] flex flex-col items-center justify-center px-[7%] text-center"
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 0, 1] }}
-      transition={{ duration: 1, times: [0, 0.2, 1], delay: 18.6, ease: "easeOut" }}
+      transition={{ duration: 1.15, times: [0, 0.2, 1], delay: 22.6, ease: "easeOut" }}
       style={{
         background:
           "radial-gradient(circle at 50% 56%, rgba(255,255,255,0.2), transparent 30%), linear-gradient(160deg, #5A5CFF 0%, #5658F7 48%, #4258E9 100%)",
@@ -497,17 +513,12 @@ function FinalOutro() {
         className="mb-[9%]"
         initial={{ opacity: 0, y: 12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.7, delay: 19.05, ease: easeOut }}
+        transition={{ duration: 0.8, delay: 23.05, ease: easeOut }}
       >
         {PROMO_ASSETS.wordmark ? (
           <img src={PROMO_ASSETS.wordmark} alt="Cadova" className="h-[44px] w-auto object-contain" />
         ) : (
-          <img
-            src={PROMO_ASSETS.fullLogo}
-            alt="Cadova"
-            className="h-[clamp(36px,9.4vw,52px)] w-auto max-w-[min(72vw,290px)] object-contain"
-            draggable={false}
-          />
+          <OutroCadovaLogo />
         )}
       </motion.div>
 
@@ -518,7 +529,7 @@ function FinalOutro() {
             className={`mx-auto max-w-[18ch] text-white ${line.className}`}
             initial={{ opacity: 0, y: 18, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.72, delay: 19.45 + index * 0.28, ease: easeOut }}
+            transition={{ duration: 0.82, delay: 23.5 + index * 0.34, ease: easeOut }}
           >
             {line.text}
           </motion.p>
@@ -529,7 +540,7 @@ function FinalOutro() {
         className="promo-url-glow relative mt-[9%] rounded-full px-5 py-2.5 text-[clamp(1.1rem,4.7vw,1.42rem)] font-extrabold text-white"
         initial={{ opacity: 0, y: 12, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.75, delay: 20.42, ease: easeOut }}
+        transition={{ duration: 0.82, delay: 24.72, ease: easeOut }}
       >
         cadova.fr
       </motion.p>
@@ -538,12 +549,36 @@ function FinalOutro() {
         className="absolute bottom-[8%] flex items-center gap-2 text-[clamp(0.7rem,2.8vw,0.88rem)] font-semibold uppercase tracking-[0.18em] text-white/58"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, delay: 21.1, ease: easeOut }}
+        transition={{ duration: 0.8, delay: 25.55, ease: easeOut }}
       >
         <Send size={14} />
         <span>Postule plus sereinement</span>
       </motion.div>
     </motion.div>
+  );
+}
+
+function OutroCadovaLogo() {
+  return (
+    <div className="promo-outro-logo" aria-label="Cadova">
+      <span className="relative block h-[clamp(50px,12vw,72px)] w-[clamp(50px,12vw,72px)]">
+        <CadovaMarkC className="h-full w-full" cFill="#FFFFFF" />
+        <span
+          className="absolute rounded-full"
+          style={{
+            left: "52.2%",
+            top: "53.3%",
+            width: "18.3%",
+            height: "18.3%",
+            translateX: "-50%",
+            translateY: "-50%",
+            background: "radial-gradient(circle at 35% 30%, #FFFFFF 0%, #D7D8FF 34%, #AEB1FF 100%)",
+            boxShadow: "0 0 18px rgba(255,255,255,0.62), 0 0 40px rgba(255,255,255,0.34)",
+          }}
+        />
+      </span>
+      <span className="promo-outro-wordmark">cadova</span>
+    </div>
   );
 }
 
@@ -767,6 +802,23 @@ function PromoStyle() {
         box-shadow: 0 0 38px rgba(255,255,255,0.18), 0 0 90px rgba(255,255,255,0.12);
         text-shadow: 0 0 26px rgba(255,255,255,0.5);
         backdrop-filter: blur(12px);
+      }
+
+      .promo-outro-logo {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(12px,3vw,18px);
+        color: #ffffff;
+        filter: drop-shadow(0 0 24px rgba(255,255,255,0.18));
+      }
+
+      .promo-outro-wordmark {
+        color: #ffffff;
+        font-size: clamp(3rem,12vw,4.9rem);
+        font-weight: 500;
+        line-height: 1;
+        letter-spacing: 0;
       }
     `}</style>
   );

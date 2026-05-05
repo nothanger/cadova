@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Volume2, VolumeX } from "lucide-react";
 import { PromoCadovaAnimation } from "@/app/components/promo/PromoCadovaAnimation";
+import { usePromoAudio } from "@/app/components/promo/usePromoAudio";
 
 const BG = "#0B1020";
 
@@ -7,10 +9,22 @@ export function PromoCadova() {
   const reducedMotionPreferred = usePrefersReducedMotion();
   /** Mode capture : Replay plus discret (réduit opacité + petit contrôle système préféré). */
   const [replayKey, bumpReplay] = useState(0);
-  const hideControls = useMemo(() => {
-    if (typeof window === "undefined") return false;
+  const { audioEnabled, audioUnlocked, toggleAudio } = usePromoAudio(
+    replayKey,
+    reducedMotionPreferred,
+  );
+  const { hideReplayControl, hideAudioControl, captureMode } = useMemo(() => {
+    if (typeof window === "undefined") {
+      return { hideReplayControl: false, hideAudioControl: false, captureMode: false };
+    }
     const params = new URLSearchParams(window.location.search);
-    return params.get("capture") === "1" || params.get("controls") === "0";
+    const controlsOff = params.get("controls") === "0";
+    const capture = params.get("capture") === "1";
+    return {
+      hideReplayControl: capture || controlsOff,
+      hideAudioControl: controlsOff,
+      captureMode: capture,
+    };
   }, []);
 
   useEffect(() => {
@@ -51,6 +65,34 @@ export function PromoCadova() {
     );
   }, [onReplay]);
 
+  const audioButton = useMemo(() => {
+    const Icon = audioEnabled ? Volume2 : VolumeX;
+    const label = audioEnabled
+      ? "Couper le son"
+      : audioUnlocked
+        ? "Activer le son"
+        : "Activer le son";
+    const base =
+      "absolute right-[max(env(safe-area-inset-right),12px)] top-[max(env(safe-area-inset-top),12px)] z-[20] " +
+      "inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] " +
+      "text-white/62 backdrop-blur-sm transition-colors duration-150 " +
+      "hover:border-white/20 hover:bg-white/[0.04] hover:text-white/82 motion-reduce:opacity-95";
+
+    return (
+      <button
+        type="button"
+        className={`${base} ${captureMode ? "opacity-55" : "opacity-90"}`}
+        onClick={toggleAudio}
+        aria-pressed={audioEnabled}
+        aria-label={label}
+        title={label}
+      >
+        <Icon size={14} strokeWidth={2.2} aria-hidden />
+        <span>{audioEnabled ? "Son on" : "Son off"}</span>
+      </button>
+    );
+  }, [audioEnabled, audioUnlocked, captureMode, toggleAudio]);
+
   return (
     <main
       className="promo-root fixed inset-0 flex items-center justify-center overflow-hidden overscroll-none"
@@ -70,7 +112,8 @@ export function PromoCadova() {
           }}
         >
           <PromoCadovaAnimation replayToken={replayKey} reducedMotion={reducedMotionPreferred} />
-          {!hideControls && replayButton}
+          {!hideAudioControl && audioButton}
+          {!hideReplayControl && replayButton}
         </div>
       </div>
     </main>
