@@ -559,6 +559,9 @@ function FinalOutro() {
 }
 
 function OutroCadovaLogo() {
+  const { fx, fy } = markPurpleCenterFrac();
+  const purpleDiameterFrac = (2 * 41.5612 * 0.88) / MARK_VIEWBOX_W;
+
   return (
     <div className="promo-outro-logo" aria-label="Cadova">
       <span className="relative block h-[clamp(50px,12vw,72px)] w-[clamp(50px,12vw,72px)]">
@@ -566,10 +569,10 @@ function OutroCadovaLogo() {
         <span
           className="absolute rounded-full"
           style={{
-            left: "52.2%",
-            top: "53.3%",
-            width: "18.3%",
-            height: "18.3%",
+            left: `${fx * 100}%`,
+            top: `${fy * 100}%`,
+            width: `${purpleDiameterFrac * 100}%`,
+            height: `${purpleDiameterFrac * 100}%`,
             translateX: "-50%",
             translateY: "-50%",
             background: "radial-gradient(circle at 35% 30%, #FFFFFF 0%, #D7D8FF 34%, #AEB1FF 100%)",
