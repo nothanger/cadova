@@ -129,6 +129,7 @@ type Project = {
   technologies: string[];
   objective: string;
   result: string;
+  url?: string;
 };
 
 const PROJECTS: Project[] = [
@@ -146,7 +147,21 @@ const PROJECTS: Project[] = [
     result:
       "Site professionnel, rapide et optimisé pour la recherche locale. Image modernisée et présentation claire des services.",
   },
-  { real: false, title: "", category: "", description: "", image: "", technologies: [], objective: "", result: "" },
+  {
+    real: true,
+    title: "Ethan OS",
+    category: "Application web",
+    description:
+      "Une expérience web interactive pensée comme un système d’exploitation personnel, avec une interface moderne, immersive et adaptée à tous les écrans.",
+    image:
+      "https://image.thum.io/get/width/800/crop/600/noanimate/https://ethan-os-orpin.vercel.app",
+    technologies: ["React", "TypeScript", "Vite", "Vercel"],
+    objective:
+      "Créer une vitrine personnelle originale qui se démarque d’un portfolio classique grâce à une navigation inspirée d’un système d’exploitation.",
+    result:
+      "Une expérience interactive accessible en ligne, avec une identité visuelle forte et une navigation fluide.",
+    url: "https://ethan-os-orpin.vercel.app",
+  },
   { real: false, title: "", category: "", description: "", image: "", technologies: [], objective: "", result: "" },
 ];
 
@@ -561,6 +576,17 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
               ))}
             </div>
           </div>
+          {project.url && (
+            <a
+              href={project.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ backgroundColor: BLUE, color: "#fff" }}
+              className="mt-8 inline-flex items-center gap-2 px-5 py-3 rounded-md text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              Voir le site <ExternalLink size={14} />
+            </a>
+          )}
         </div>
       </div>
     </div>
