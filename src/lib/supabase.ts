@@ -10,8 +10,8 @@ if (!isSupabaseConfigured) {
 }
 
 export const supabase = createClient(
-  url ?? "http://localhost",
-  anonKey ?? "public-anon-key",
+  url || "http://localhost",
+  anonKey || "public-anon-key",
   {
     auth: {
       persistSession: true,
