@@ -96,6 +96,12 @@ export function DashboardPage() {
               amount={formatCents(data.accepted.amountCents)}
             />
           </div>
+          <div className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MiniStat label="Taux d’acceptation" value={`${data.acceptanceRate} %`} />
+            <MiniStat label="Gagné ce mois-ci" value={formatCents(data.wonThisMonthCents)} />
+            <MiniStat label="Délai moyen d’acceptation" value={data.averageAcceptanceDays === null ? "—" : `${data.averageAcceptanceDays} jours`} />
+            <MiniStat label="Sans activité depuis 14 j" value={String(data.staleCount)} warning={data.staleCount > 0} />
+          </div>
 
           {/* Priority follow-up list */}
           <section className="mt-8">
@@ -211,6 +217,10 @@ export function DashboardPage() {
       )}
     </>
   )
+}
+
+function MiniStat({ label, value, warning = false }: { label: string; value: string; warning?: boolean }) {
+  return <Card className="p-4"><p className="text-xs font-medium text-muted">{label}</p><p className={`mt-2 text-xl font-semibold ${warning ? "text-warning" : "text-ink"}`}>{value}</p></Card>
 }
 
 function Stat({

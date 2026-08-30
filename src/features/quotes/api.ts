@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase"
-import type { Quote, QuoteStatus, QuoteWithClient } from "@/types"
+import type { Quote, QuoteEvent, QuoteEventType, QuoteStatus, QuoteWithClient } from "@/types"
 
 export interface QuoteInput {
   client_id: string
@@ -84,6 +84,55 @@ export async function setQuoteStatus(
     .single()
   if (error) throw error
   return data
+}
+
+export async function duplicateQuote(quote: Quote): Promise<Quote> {
+  return createQuote(quote.company_id, {
+    client_id: quote.client_id,
+    reference: `${quote.reference}-COPIE`,
+    amount_cents: quote.amount_cents,
+    status: "draft",
+    sent_at: null,
+    notes: quote.notes,
+  })
+}
+
+export async function listQuoteEvents(quoteId: string): Promise<QuoteEvent[]> {
+  const { data, error } = await supabase
+    .from("quote_events")
+    .select("*")
+    .eq("quote_id", quoteId)
+    .order("occurred_at", { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function addQuoteEvent(
+  quote: Quote,
+  eventType: QuoteEventType,
+  content?: string,
+): Promise<QuoteEvent> {
+  const { data, error } = await supabase
+    .from("quote_events")
+    .insert({
+      company_id: quote.company_id,
+      quote_id: quote.id,
+      event_type: eventType,
+      content: content?.trim() || null,
+      created_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+    })
+    .select("*")
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function scheduleFollowUp(id: string, date: string | null) {
+  const { error } = await supabase
+    .from("quotes")
+    .update({ next_followup_at: date })
+    .eq("id", id)
+  if (error) throw error
 }
 
 function normalize(input: QuoteInput) {

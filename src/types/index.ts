@@ -38,8 +38,28 @@ export interface Quote {
   sent_at: string | null // ISO date (yyyy-mm-dd), no time
   status: QuoteStatus
   notes: string | null
+  next_followup_at?: string | null
+  expires_at?: string | null
   created_at: string
   updated_at: string
+}
+
+export type QuoteEventType =
+  | "sent"
+  | "followup"
+  | "response"
+  | "note"
+  | "status_change"
+  | "followup_scheduled"
+
+export interface QuoteEvent {
+  id: string
+  company_id: string
+  quote_id: string
+  event_type: QuoteEventType
+  content: string | null
+  occurred_at: string
+  created_by: string | null
 }
 
 /** A quote joined with its client name — the common read shape in lists. */

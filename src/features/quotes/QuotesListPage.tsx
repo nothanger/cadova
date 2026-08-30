@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { Plus } from "lucide-react"
+import { LayoutGrid, List, Plus, Search } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
 import {
   Card,
@@ -36,6 +36,9 @@ export function QuotesListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [filter, setFilter] = useState<Filter>("all")
+  const [query, setQuery] = useState("")
+  const [view, setView] = useState<"list" | "pipeline">("list")
+  const [sort, setSort] = useState<"recent" | "amount" | "waiting">("recent")
 
   async function load() {
     if (!company) return
@@ -56,10 +59,11 @@ export function QuotesListPage() {
   }, [company?.id])
 
   const filtered = useMemo(() => {
-    if (filter === "all") return quotes
-    if (filter === "followup") return quotes.filter(isQuoteDueForFollowUp)
-    return quotes.filter((q) => q.status === filter)
-  }, [quotes, filter])
+    let result = filter === "all" ? quotes : filter === "followup" ? quotes.filter(isQuoteDueForFollowUp) : quotes.filter((q) => q.status === filter)
+    const needle = query.trim().toLocaleLowerCase("fr")
+    if (needle) result = result.filter((q) => q.reference.toLocaleLowerCase("fr").includes(needle) || q.client?.name.toLocaleLowerCase("fr").includes(needle))
+    return [...result].sort((a, b) => sort === "amount" ? b.amount_cents - a.amount_cents : sort === "waiting" ? daysWaiting(b) - daysWaiting(a) : b.created_at.localeCompare(a.created_at))
+  }, [quotes, filter, query, sort])
 
   return (
     <>
@@ -89,6 +93,10 @@ export function QuotesListPage() {
         />
       ) : (
         <>
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="relative flex-1 lg:max-w-sm"><Search size={16} className="absolute left-3 top-3 text-muted"/><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Client ou référence…" className="h-10 w-full rounded-[10px] border border-line-strong bg-surface pl-9 pr-3 text-sm outline-none focus:border-primary"/></div>
+            <div className="flex flex-wrap gap-2"><select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} className="h-10 rounded-[10px] border border-line-strong bg-surface px-3 text-sm"><option value="recent">Plus récents</option><option value="amount">Montant décroissant</option><option value="waiting">Sans réponse depuis longtemps</option></select><button onClick={() => setView("list")} className={cx("flex h-10 items-center gap-2 rounded-[10px] border px-3 text-sm", view === "list" ? "border-primary bg-primary-soft text-primary" : "border-line-strong")}><List size={16}/> Liste</button><button onClick={() => setView("pipeline")} className={cx("flex h-10 items-center gap-2 rounded-[10px] border px-3 text-sm", view === "pipeline" ? "border-primary bg-primary-soft text-primary" : "border-line-strong")}><LayoutGrid size={16}/> Pipeline</button></div>
+          </div>
           <div className="mb-4 flex flex-wrap gap-2">
             {filters.map((f) => (
               <button
@@ -108,6 +116,8 @@ export function QuotesListPage() {
 
           {filtered.length === 0 ? (
             <EmptyState title="Aucun devis dans cette catégorie" />
+          ) : view === "pipeline" ? (
+            <Pipeline quotes={filtered} />
           ) : (
             <Card className="overflow-hidden">
               <div className="overflow-x-auto">
@@ -163,4 +173,13 @@ export function QuotesListPage() {
       )}
     </>
   )
+}
+
+function Pipeline({ quotes }: { quotes: QuoteWithClient[] }) {
+  const columns: { title: string; status: QuoteWithClient["status"]; followup?: boolean }[] = [
+    { title: "Brouillon", status: "draft" }, { title: "Envoyé", status: "sent" },
+    { title: "À relancer", status: "sent", followup: true }, { title: "Accepté", status: "accepted" },
+    { title: "Refusé", status: "refused" },
+  ]
+  return <div className="grid gap-4 overflow-x-auto pb-2 md:grid-cols-2 xl:grid-cols-5">{columns.map((column) => { const items = quotes.filter((q) => q.status === column.status && (column.followup ? isQuoteDueForFollowUp(q) : q.status !== "sent" || !isQuoteDueForFollowUp(q))); return <section key={column.title} className="min-w-[220px] rounded-[var(--radius-cadova)] bg-background p-3"><div className="mb-3 flex items-center justify-between"><h3 className="text-xs font-semibold uppercase tracking-wider text-ink-soft">{column.title}</h3><span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted">{items.length}</span></div><div className="space-y-2">{items.map((q) => <Link key={q.id} to={`/app/quotes/${q.id}`} className="block rounded-xl border border-line bg-surface p-3 transition hover:border-primary/40 hover:shadow-sm"><p className="font-mono text-xs font-semibold text-ink">{q.reference}</p><p className="mt-2 truncate text-sm text-ink-soft">{q.client?.name ?? "—"}</p><p className="mt-3 font-mono text-sm font-semibold text-ink">{formatCents(q.amount_cents)}</p>{column.followup && <p className="mt-2 text-xs font-medium text-warning">Sans réponse · {daysWaiting(q)} j</p>}</Link>)}{items.length === 0 && <p className="py-8 text-center text-xs text-muted">Aucun devis</p>}</div></section> })}</div>
 }

@@ -10,6 +10,10 @@ export interface DashboardData {
   priority: QuoteWithClient[]
   /** Most recently created quotes. */
   latest: QuoteWithClient[]
+  acceptanceRate: number
+  wonThisMonthCents: number
+  averageAcceptanceDays: number | null
+  staleCount: number
 }
 
 /**
@@ -34,6 +38,10 @@ export async function getDashboardData(
   const pending = { count: 0, amountCents: 0 }
   const accepted = { count: 0, amountCents: 0 }
   const priority: QuoteWithClient[] = []
+  const decided = quotes.filter((q) => q.status === "accepted" || q.status === "refused")
+  const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0)
+  const wonThisMonthCents = quotes.filter((q) => q.status === "accepted" && new Date(q.updated_at) >= monthStart).reduce((sum, q) => sum + q.amount_cents, 0)
+  const acceptanceDurations = quotes.filter((q) => q.status === "accepted" && q.sent_at).map((q) => Math.max(0, Math.round((new Date(q.updated_at).getTime() - new Date(q.sent_at!).getTime()) / 86400000)))
 
   for (const q of quotes) {
     if (q.status === "sent") {
@@ -59,5 +67,11 @@ export async function getDashboardData(
     accepted,
     priority,
     latest: quotes.slice(0, 5),
+    acceptanceRate: decided.length ? Math.round((accepted.count / decided.length) * 100) : 0,
+    wonThisMonthCents,
+    averageAcceptanceDays: acceptanceDurations.length ? Math.round(acceptanceDurations.reduce((a, b) => a + b, 0) / acceptanceDurations.length) : null,
+    staleCount: quotes.filter((q) => q.status === "sent" && daysBetween(q.updated_at) >= 14).length,
   }
 }
+
+function daysBetween(date: string) { return Math.floor((Date.now() - new Date(date).getTime()) / 86400000) }
