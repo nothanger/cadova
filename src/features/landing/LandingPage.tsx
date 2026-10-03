@@ -273,7 +273,7 @@ export function LandingPage() {
           className="scroll-mt-[76px] flex min-h-[calc(100vh-76px)] items-center bg-ink py-[70px] text-white lg:py-[112px]"
         >
           <div
-            className={`${container} grid w-full max-w-[960px] gap-14 lg:grid-cols-2 lg:gap-20`}
+            className="mx-auto grid w-full max-w-[960px] gap-14 px-6 md:px-8 lg:grid-cols-2 lg:gap-20"
           >
             <div className="text-center lg:text-left">
               <p className="text-xs font-bold tracking-[.03em] text-[#b9bbff]">
@@ -662,13 +662,13 @@ function Trust({
   text: string
 }) {
   return (
-    <div className="grid grid-cols-[36px_1fr] gap-4 py-5 first:pt-0 last:pb-0">
-      <span className="font-mono text-sm font-semibold text-[#b9bbff]">
+    <div className="grid grid-cols-[36px_minmax(0,1fr)] items-start gap-4 py-6 first:pt-0 last:pb-0 sm:gap-5">
+      <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#b9bbff]/20 bg-[#b9bbff]/10 font-mono text-sm font-semibold tabular-nums text-[#b9bbff]">
         {number}
       </span>
-      <div>
+      <div className="min-w-0 pt-1">
         <h3 className="font-semibold">{title}</h3>
-        <p className="mt-1 text-sm leading-relaxed text-[#b9c0d0]">{text}</p>
+        <p className="mt-2 text-sm leading-relaxed text-[#b9c0d0]">{text}</p>
       </div>
     </div>
   )
