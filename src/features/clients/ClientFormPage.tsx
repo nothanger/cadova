@@ -81,8 +81,8 @@ export function ClientFormPage({ mode }: { mode: "new" | "edit" }) {
           label: mode === "edit" ? "Retour à la fiche" : "Retour aux clients",
         }}
       />
-      <Card className="p-6 md:p-8">
-        <form onSubmit={onSubmit} className="flex max-w-lg flex-col gap-5">
+      <Card className="max-w-3xl p-5 sm:p-8">
+        <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-6">
           {error && (
             <p
               role="alert"
@@ -115,6 +115,8 @@ export function ClientFormPage({ mode }: { mode: "new" | "edit" }) {
           <Field label="Téléphone" htmlFor="phone">
             <Input
               id="phone"
+              type="tel"
+              autoComplete="tel"
               value={form.phone ?? ""}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
             />
@@ -126,15 +128,11 @@ export function ClientFormPage({ mode }: { mode: "new" | "edit" }) {
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />
           </Field>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3 border-t border-line pt-5">
             <Button type="submit" loading={submitting}>
               {mode === "edit" ? "Enregistrer" : "Créer le client"}
             </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => navigate(backTo)}
-            >
+            <Button type="button" variant="secondary" onClick={() => navigate(backTo)}>
               Annuler
             </Button>
           </div>

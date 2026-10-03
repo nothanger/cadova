@@ -1,337 +1,134 @@
+import { usePageTitle } from "@/lib/usePageTitle"
 import type { ReactNode } from "react"
 import { Link } from "react-router-dom"
-import { ArrowLeft, ExternalLink, ShieldCheck } from "lucide-react"
+import { ArrowLeft, ExternalLink } from "lucide-react"
 import { CadovaLogo } from "@/components/CadovaLogo"
 
 type LegalPageKind = "privacy" | "terms" | "legal-notice" | "cookies"
-
-type Section = {
-  title: string
-  content: ReactNode
-}
-
-const legalPages: Record<LegalPageKind, {
-  eyebrow: string
-  title: string
-  intro: string
-  sections: Section[]
-}> = {
+type Section = { title: string; content: ReactNode }
+const legalPages: Record<
+  LegalPageKind,
+  { title: string; intro: string; sections: Section[] }
+> = {
   privacy: {
-    eyebrow: "Vie privée & RGPD",
     title: "Politique de confidentialité",
-    intro:
-      "Cette politique explique comment Cadova FollowUp traite les données personnelles nécessaires au fonctionnement du service.",
+    intro: "Les données utilisées par Cadova pour le suivi des clients et des devis.",
     sections: [
       {
-        title: "1. Responsable du traitement",
-        content: (
-          <>
-            Le responsable du traitement est la société CADOVA, [forme
-            juridique] en cours de constitution. Pour toute question concernant
-            vos données personnelles, vous pouvez nous contacter à l’adresse{" "}
-            <a href="mailto:privacy@cadova.fr">privacy@cadova.fr</a>.
-          </>
-        ),
+        title: "Responsable du traitement",
+        content:
+          "L’éditeur indiqué est Ethan Noto. Son statut, ses coordonnées professionnelles et le contact pour les demandes relatives aux données personnelles restent à renseigner.",
       },
       {
-        title: "2. Données traitées",
-        content: (
-          <>
-            Nous traitons les données de compte (adresse email), les données
-            d’entreprise et les données que vous saisissez dans Cadova,
-            notamment les coordonnées de vos clients, les devis, leurs montants,
-            statuts et dates de relance. Les données de connexion et journaux
-            techniques peuvent également être traités pour assurer la sécurité
-            du service.
-          </>
-        ),
+        title: "Données enregistrées",
+        content:
+          "Le service utilise votre adresse email pour votre compte, le nom de votre entreprise, les coordonnées et notes de vos clients, ainsi que les références, montants, statuts, dates et historiques de vos devis.",
       },
       {
-        title: "3. Finalités et bases légales",
-        content: (
-          <>
-            Ces données sont utilisées pour créer et administrer votre compte,
-            fournir le suivi des devis et les rappels demandés, assurer la
-            sécurité et répondre à nos obligations légales. Les traitements
-            nécessaires au service reposent sur l’exécution du contrat ; ceux
-            relatifs à la sécurité et à l’amélioration du service reposent sur
-            notre intérêt légitime. Vous pouvez retirer votre consentement aux
-            communications facultatives à tout moment.
-          </>
-        ),
+        title: "Utilisation des données",
+        content:
+          "Ces informations servent à gérer l’accès à votre espace, afficher vos dossiers et organiser vos relances. Les bases légales des traitements et les obligations de chaque partie doivent être précisées par l’éditeur avant publication.",
       },
       {
-        title: "4. Rôles et confidentialité des données client",
-        content: (
-          <>
-            Pour les données de vos prospects et clients saisies dans Cadova,
-            votre entreprise agit en principe comme responsable du traitement et
-            Cadova comme sous-traitant. Chaque espace entreprise est isolé : les
-            données ne sont accessibles qu’aux utilisateurs autorisés de votre
-            organisation et aux personnes habilitées à maintenir le service.
-          </>
-        ),
+        title: "Accès et prestataires",
+        content:
+          "Les données métier sont rattachées à une entreprise. Le code prévoit des contrôles d’accès Supabase et des rappels email via Resend. La liste des prestataires effectivement activés, les lieux d’hébergement et les garanties de transfert restent à confirmer.",
       },
       {
-        title: "5. Sous-traitants et transferts",
-        content: (
-          <>
-            Cadova utilise Supabase pour l’hébergement des données et Resend
-            pour l’envoi des emails de rappel. Ces prestataires n’accèdent aux
-            données que pour fournir leurs services. Tout transfert hors de
-            l’Espace économique européen est encadré par les garanties requises
-            par la réglementation applicable.
-          </>
-        ),
+        title: "Conservation et suppression",
+        content:
+          "Les durées de conservation, le sort des sauvegardes et la procédure de suppression d’un compte doivent être précisés. Aucune durée ni suppression automatique ne peut être garantie par ce document à ce stade.",
       },
       {
-        title: "6. Durées de conservation",
+        title: "Vos droits",
         content: (
           <>
-            Les données de compte et de votre espace sont conservées pendant la
-            durée de votre utilisation du service, puis supprimées ou
-            anonymisées dans un délai raisonnable, sauf obligation légale de
-            conservation. Les données de sécurité sont conservées pour une durée
-            limitée et proportionnée.
-          </>
-        ),
-      },
-      {
-        title: "7. Vos droits",
-        content: (
-          <>
-            Vous pouvez demander l’accès, la rectification, l’effacement, la
-            limitation ou la portabilité de vos données, ou vous opposer à
-            certains traitements. Contactez-nous à{" "}
-            <a href="mailto:privacy@cadova.fr">privacy@cadova.fr</a>. Vous
-            pouvez aussi introduire une réclamation auprès de la CNIL (
+            Vous pouvez, selon les conditions prévues par la réglementation, demander
+            l’accès, la rectification, l’effacement, la limitation ou la portabilité de
+            vos données, ou vous opposer à certains traitements. Le contact pour exercer
+            ces droits reste à fournir. Vous pouvez consulter la{" "}
             <a href="https://www.cnil.fr" target="_blank" rel="noreferrer">
-              cnil.fr <ExternalLink size={13} className="inline" />
+              CNIL <ExternalLink size={13} aria-hidden="true" className="inline" />
             </a>
-            ).
-          </>
-        ),
-      },
-      {
-        title: "8. Sécurité",
-        content: (
-          <>
-            Nous appliquons des mesures techniques et organisationnelles
-            raisonnables pour protéger les données, notamment une
-            authentification, des contrôles d’accès et une séparation des
-            espaces entreprise. Aucun système n’étant infaillible, nous vous
-            invitons aussi à conserver un mot de passe robuste et confidentiel.
+            .
           </>
         ),
       },
     ],
   },
   terms: {
-    eyebrow: "Conditions d’utilisation",
-    title: "Conditions générales d’utilisation",
+    title: "Conditions d’utilisation",
     intro:
-      "Les présentes conditions encadrent l’accès et l’utilisation de Cadova FollowUp.",
+      "Le fonctionnement du service et les responsabilités à préciser avant son ouverture commerciale.",
     sections: [
       {
-        title: "1. Le service",
-        content: (
-          <>
-            Cadova FollowUp est un service SaaS (Software as a Service) édité
-            par la société Cadova. Il permet aux professionnels de centraliser
-            le suivi de leurs devis, d’organiser leurs relances commerciales et
-            d’automatiser l’envoi de rappels et notifications selon les
-            paramètres définis par l’utilisateur.
-          </>
-        ),
+        title: "Le service",
+        content:
+          "Cadova permet de conserver les coordonnées des clients, suivre les devis et préparer des relances. La préparation d’un message ne l’envoie pas automatiquement au client : vous utilisez votre propre messagerie.",
       },
       {
-        title: "2. Création de compte",
-        content: (
-          <>
-            Vous devez fournir des informations exactes, conserver vos
-            identifiants confidentiels et être habilité à engager l’entreprise
-            pour laquelle vous créez un espace. Vous êtes responsable des
-            actions réalisées depuis votre compte et devez nous signaler sans
-            délai tout accès non autorisé.
-          </>
-        ),
+        title: "Votre compte",
+        content:
+          "Vous devez être autorisé à utiliser les données de l’entreprise et des clients que vous enregistrez. Gardez vos identifiants confidentiels et vérifiez les informations saisies.",
       },
       {
-        title: "3. Utilisation acceptable",
-        content: (
-          <>
-            Vous vous engagez à utiliser Cadova conformément aux lois
-            applicables, aux droits des tiers et aux présentes conditions. Il
-            est notamment interdit de tenter de contourner les mesures de
-            sécurité, d’accéder à l’espace d’un tiers ou d’utiliser le service
-            pour envoyer des communications non sollicitées ou illicites.
-          </>
-        ),
+        title: "Utilisation",
+        content:
+          "Le service doit être utilisé dans le respect des lois et des droits des tiers. Les tentatives de contournement des contrôles d’accès ou d’accès aux données d’une autre entreprise sont interdites.",
       },
       {
-        title: "4. Vos données",
-        content: (
-          <>
-            Vous conservez vos droits sur les données que vous saisissez. Vous
-            nous accordez uniquement les droits nécessaires pour héberger,
-            traiter et afficher ces données afin de fournir le service. Vous
-            garantissez disposer des droits et, le cas échéant, des bases
-            légales nécessaires pour importer les données de vos clients.
-          </>
-        ),
-      },
-      {
-        title: "5. Disponibilité et évolution",
-        content: (
-          <>
-            Nous faisons notre possible pour maintenir le service accessible et
-            sécurisé, sans garantir une disponibilité ininterrompue. Des
-            opérations de maintenance, mises à jour ou incidents externes
-            peuvent occasionner des indisponibilités temporaires. Nous pouvons
-            faire évoluer le service en préservant raisonnablement ses fonctions
-            essentielles.
-          </>
-        ),
-      },
-      {
-        title: "6. Responsabilité",
-        content: (
-          <>
-            Cadova aide à organiser le suivi commercial ; il ne remplace ni
-            votre jugement, ni vos obligations professionnelles et légales. Vous
-            restez responsable du contenu de vos devis, de vos relances et de
-            votre relation client. Dans les limites autorisées par la loi, notre
-            responsabilité est limitée aux dommages directs prouvés résultant
-            d’un manquement imputable au service.
-          </>
-        ),
-      },
-      {
-        title: "7. Suspension et résiliation",
-        content: (
-          <>
-            Nous pouvons suspendre l’accès en cas d’usage manifestement
-            illicite, frauduleux ou dangereux pour le service. Vous pouvez
-            cesser d’utiliser Cadova à tout moment. Les modalités commerciales
-            applicables, le cas échéant, sont communiquées lors de la
-            souscription.
-          </>
-        ),
-      },
-      {
-        title: "8. Droit applicable",
-        content: (
-          <>
-            Les présentes conditions sont régies par le droit français. En cas
-            de différend, nous vous invitons à nous contacter d’abord à{" "}
-            <a href="mailto:legal@cadova.fr">legal@cadova.fr</a> afin de
-            rechercher une solution amiable.
-          </>
-        ),
+        title: "Conditions à confirmer",
+        content:
+          "L’identité juridique de l’éditeur, les éventuels tarifs, les conditions de souscription, la disponibilité du service, la responsabilité, la résiliation et le droit applicable doivent être définis et validés avant publication. Si une offre payante est proposée, les conditions de vente correspondantes devront également être fournies.",
       },
     ],
   },
   "legal-notice": {
-    eyebrow: "Informations éditeur",
     title: "Mentions légales",
-    intro:
-      "Les informations ci-dessous identifient l’éditeur du site et les principaux intervenants techniques.",
+    intro: "Identification de l’éditeur et informations d’hébergement.",
     sections: [
       {
-        title: "Éditeur du site",
+        title: "Éditeur",
         content: (
           <>
-            <PublisherPlaceholder />
-            <br />
-            Forme juridique, capital social, siège social, RCS/RNE, numéro de
-            TVA intracommunautaire et directeur de la publication :{" "}
-            <span className="font-medium text-ink">
-              à compléter avant mise en ligne publique.
-            </span>
+            Ethan Noto.
+            <br />À fournir : statut ou raison sociale, adresse professionnelle,
+            coordonnées de contact, informations d’immatriculation et, selon le statut,
+            capital et numéro de TVA. Le directeur de publication doit également être
+            confirmé.
           </>
         ),
       },
       {
-        title: "Contact",
-        content: (
-          <>
-            Pour nous joindre :{" "}
-            <a href="mailto:contact@cadova.fr">contact@cadova.fr</a>. Pour une
-            demande relative aux données personnelles :{" "}
-            <a href="mailto:privacy@cadova.fr">privacy@cadova.fr</a>.
-          </>
-        ),
+        title: "Hébergement du site",
+        content:
+          "Le nom et les coordonnées de l’hébergeur du site restent à fournir. Supabase héberge la base de données ; cela ne suffit pas à identifier l’hébergeur du frontend.",
       },
       {
-        title: "Hébergement",
-        content: (
-          <>
-            Le service est hébergé au moyen de l’infrastructure Supabase. Les
-            modalités précises d’hébergement et les coordonnées de l’hébergeur
-            doivent être renseignées dans cette page avant publication.
-          </>
-        ),
-      },
-      {
-        title: "Propriété intellectuelle",
-        content: (
-          <>
-            Le site, la marque Cadova, son identité visuelle et ses contenus
-            sont protégés par le droit de la propriété intellectuelle. Toute
-            reproduction ou exploitation non autorisée est interdite, sauf
-            exception légale.
-          </>
-        ),
+        title: "Données et contacts",
+        content:
+          "La base de données utilise Supabase. La région du projet, les coordonnées du prestataire et les contacts de l’éditeur pour les demandes générales et les données personnelles doivent être confirmés.",
       },
     ],
   },
   cookies: {
-    eyebrow: "Traceurs",
-    title: "Politique relative aux cookies",
-    intro:
-      "Cadova privilégie un fonctionnement sans publicité ni traçage superflu.",
+    title: "Cookies et stockage local",
+    intro: "Les mécanismes utilisés pour conserver votre connexion.",
     sections: [
       {
-        title: "1. Qu’est-ce qu’un cookie ?",
-        content: (
-          <>
-            Un cookie est un petit fichier déposé ou lu sur votre terminal lors
-            de la consultation d’un site ou de l’utilisation d’un service en
-            ligne.
-          </>
-        ),
+        title: "Session de connexion",
+        content:
+          "Le client Supabase est configuré pour conserver la session dans le stockage local du navigateur. Ce mécanisme permet de maintenir votre connexion entre les visites.",
       },
       {
-        title: "2. Cookies strictement nécessaires",
-        content: (
-          <>
-            Cadova peut utiliser des traceurs nécessaires à la connexion, à la
-            sécurité, à la conservation de votre session et au bon
-            fonctionnement du service. Ils ne nécessitent pas de consentement
-            lorsqu’ils sont strictement nécessaires.
-          </>
-        ),
+        title: "Publicité et mesure d’audience",
+        content:
+          "Aucun outil publicitaire ni de mesure d’audience n’est intégré dans le code de l’application examiné. Les éventuels mécanismes ajoutés par l’hébergeur ou par la configuration de production devront être vérifiés avant publication.",
       },
       {
-        title: "3. Mesure d’audience et cookies facultatifs",
-        content: (
-          <>
-            Aucun cookie publicitaire n’est utilisé. Si un outil de mesure
-            d’audience ou tout autre traceur non essentiel est activé
-            ultérieurement, votre consentement sera demandé avant son dépôt et
-            vous pourrez le retirer aussi facilement qu’il a été donné.
-          </>
-        ),
-      },
-      {
-        title: "4. Gérer vos choix",
-        content: (
-          <>
-            Vous pouvez configurer votre navigateur pour supprimer ou bloquer
-            les cookies. Le blocage des cookies nécessaires peut toutefois
-            empêcher la connexion ou dégrader certaines fonctions de Cadova.
-          </>
-        ),
+        title: "Effacer le stockage",
+        content:
+          "Vous pouvez supprimer les données du site dans les paramètres de votre navigateur. Cela peut vous déconnecter. Si des traceurs facultatifs sont ajoutés, leur usage et les choix de consentement devront être documentés.",
       },
     ],
   },
@@ -339,92 +136,72 @@ const legalPages: Record<LegalPageKind, {
 
 export function LegalPage({ kind }: { kind: LegalPageKind }) {
   const page = legalPages[kind]
+  usePageTitle(page.title)
   return (
-    <div className="min-h-screen bg-white text-ink">
-      <header className="border-b border-line bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex h-[76px] w-[min(calc(100%-32px),960px)] items-center justify-between md:w-[min(calc(100%-48px),960px)]">
-          <Link to="/" aria-label="Retour à l'accueil">
-            <CadovaLogo variant="full" className="h-7" />
+    <div className="min-h-screen bg-surface">
+      <a href="#legal-content" className="skip-link">
+        Aller au contenu
+      </a>
+      <header className="border-b border-line">
+        <div className="page-container flex h-[72px] items-center justify-between gap-4">
+          <Link to="/" aria-label="Cadova, accueil">
+            <CadovaLogo className="h-7" />
           </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-background hover:text-ink"
-          >
-            <ArrowLeft size={16} />
+          <Link to="/" className="ui-button text-ink-soft hover:bg-background">
+            <ArrowLeft size={16} aria-hidden="true" />
             Accueil
           </Link>
         </div>
       </header>
-      <main className="mx-auto w-[min(calc(100%-32px),760px)] py-16 md:w-[min(calc(100%-48px),760px)] md:py-24">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[.1em] text-primary">
-          {page.eyebrow}
+      <main
+        id="legal-content"
+        tabIndex={-1}
+        className="mx-auto max-w-3xl px-6 py-12 sm:px-8 sm:py-16"
+      >
+        <p className="section-kicker">Informations légales</p>
+        <h1 className="section-title mt-4">{page.title}</h1>
+        <p className="mt-5 text-base leading-7 text-ink-soft">{page.intro}</p>
+        <p className="mt-7 rounded-lg border border-warning/20 bg-warning-soft p-4 text-sm leading-6 text-warning">
+          Ce document doit être complété et validé par l’éditeur avant la mise en
+          production. Les informations manquantes sont indiquées ci-dessous.
         </p>
-        <h1 className="mt-5 text-4xl font-semibold tracking-[-.04em] text-ink md:text-5xl">
-          {page.title}
-        </h1>
-        <p className="mt-6 max-w-2xl text-[1.05rem] leading-8 text-ink-soft">
-          {page.intro}
-        </p>
-        <p className="mt-5 font-mono text-xs text-muted">
-          Dernière mise à jour : 30 août 2026
-        </p>
-        <div className="mt-12 border-t border-line">
+        <div className="mt-8 divide-y divide-line border-y border-line">
           {page.sections.map((section) => (
-            <section key={section.title} className="border-b border-line py-8">
-              <h2 className="text-lg font-semibold tracking-tight text-ink">
-                {section.title}
-              </h2>
-              <div className="mt-3 text-[15px] leading-7 text-ink-soft [&_a]:font-medium [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary-hover">
+            <section key={section.title} className="py-7">
+              <h2 className="text-lg font-semibold">{section.title}</h2>
+              <div className="mt-3 text-sm leading-7 text-ink-soft [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4">
                 {section.content}
               </div>
             </section>
           ))}
         </div>
-        <div className="mt-10 flex gap-3 rounded-[14px] border border-primary/15 bg-primary-soft p-5">
-          <ShieldCheck className="mt-0.5 shrink-0 text-primary" size={20} />
-          <p className="text-sm leading-6 text-ink-soft">
-            Pour exercer vos droits ou signaler une question concernant ces
-            documents, contactez{" "}
-            <a
-              className="font-semibold text-primary underline underline-offset-4"
-              href="mailto:privacy@cadova.fr"
-            >
-              privacy@cadova.fr
-            </a>
-            .
-          </p>
-        </div>
       </main>
       <footer className="border-t border-line bg-background">
-        <div className="mx-auto flex w-[min(calc(100%-32px),960px)] flex-col gap-4 py-8 text-sm text-muted md:w-[min(calc(100%-48px),960px)] md:flex-row md:items-center md:justify-between">
-          <p>© {new Date().getFullYear()} Cadova. Tous droits réservés.</p>
-          <nav
-            aria-label="Liens légaux"
-            className="flex flex-wrap gap-x-5 gap-y-2"
-          >
-            <Link to="/privacy" className="hover:text-ink">
-              Confidentialité
+        <nav
+          aria-label="Pages légales"
+          className="page-container flex flex-wrap gap-x-6 gap-y-3 py-7 text-sm text-muted"
+        >
+          {(
+            [
+              ["privacy", "Confidentialité"],
+              ["terms", "Conditions d’utilisation"],
+              ["legal-notice", "Mentions légales"],
+              ["cookies", "Cookies"],
+            ] as const
+          ).map(([slug, label]) => (
+            <Link
+              key={slug}
+              to={`/${slug}`}
+              aria-current={kind === slug ? "page" : undefined}
+              className={
+                kind === slug ? "font-semibold text-primary" : "hover:text-primary"
+              }
+            >
+              {label}
             </Link>
-            <Link to="/terms" className="hover:text-ink">
-              CGU
-            </Link>
-            <Link to="/legal-notice" className="hover:text-ink">
-              Mentions légales
-            </Link>
-            <Link to="/cookies" className="hover:text-ink">
-              Cookies
-            </Link>
-          </nav>
-        </div>
+          ))}
+        </nav>
       </footer>
     </div>
-  )
-}
-
-function PublisherPlaceholder() {
-  return (
-    <span className="font-medium text-ink">
-      [Raison sociale de l’éditeur à compléter]
-    </span>
   )
 }

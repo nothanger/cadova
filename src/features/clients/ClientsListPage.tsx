@@ -8,6 +8,7 @@ import {
   ErrorState,
   LinkButton,
   Spinner,
+  TableScroll,
 } from "@/components/ui"
 import { useCompany } from "@/features/company/CompanyContext"
 import { listClientsWithCounts } from "./api"
@@ -36,7 +37,6 @@ export function ClientsListPage() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [company?.id])
 
   return (
@@ -67,15 +67,25 @@ export function ClientsListPage() {
         />
       ) : (
         <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <TableScroll>
+            <table className="min-w-[580px] w-full text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-muted">
-                  <th className="px-5 py-3 font-medium">Nom</th>
-                  <th className="px-5 py-3 font-medium">Email</th>
-                  <th className="px-5 py-3 font-medium">Téléphone</th>
-                  <th className="px-5 py-3 font-medium">Devis</th>
-                  <th className="px-5 py-3 font-medium">Créé le</th>
+                  <th scope="col" className="px-5 py-3 font-medium">
+                    Nom
+                  </th>
+                  <th scope="col" className="px-5 py-3 font-medium">
+                    Email
+                  </th>
+                  <th scope="col" className="px-5 py-3 font-medium">
+                    Téléphone
+                  </th>
+                  <th scope="col" className="px-5 py-3 font-medium">
+                    Devis
+                  </th>
+                  <th scope="col" className="px-5 py-3 font-medium">
+                    Créé le
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -92,12 +102,8 @@ export function ClientsListPage() {
                         {c.name}
                       </Link>
                     </td>
-                    <td className="px-5 py-3 text-ink-soft">
-                      {c.email ?? "—"}
-                    </td>
-                    <td className="px-5 py-3 text-ink-soft">
-                      {c.phone ?? "—"}
-                    </td>
+                    <td className="px-5 py-3 text-ink-soft">{c.email ?? "—"}</td>
+                    <td className="px-5 py-3 text-ink-soft">{c.phone ?? "—"}</td>
                     <td className="px-5 py-3 text-ink-soft">{c.quote_count}</td>
                     <td className="px-5 py-3 text-muted">
                       {formatDate(c.created_at.slice(0, 10))}
@@ -106,7 +112,7 @@ export function ClientsListPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
         </Card>
       )}
     </>

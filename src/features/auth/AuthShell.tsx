@@ -1,3 +1,4 @@
+import { usePageTitle } from "@/lib/usePageTitle"
 import type { ReactNode } from "react"
 import { Link } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
@@ -15,9 +16,13 @@ export function AuthShell({
   children: ReactNode
   footer: ReactNode
 }) {
+  usePageTitle(title)
   return (
-    <div className="flex min-h-full items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
+    <main
+      tabIndex={-1}
+      className="flex min-h-screen items-center justify-center bg-background px-5 py-10 sm:py-16"
+    >
+      <div className="w-full max-w-[440px]">
         <div className="mb-6">
           <Link
             to="/"
@@ -32,15 +37,13 @@ export function AuthShell({
             <CadovaLogo variant="full" className="h-8" />
           </Link>
         </div>
-        <div className="rounded-[var(--radius-cadova)] border border-line bg-surface p-8">
-          <h1 className="text-xl font-semibold tracking-tight text-ink">
-            {title}
-          </h1>
-          <p className="mt-1 text-sm text-muted">{subtitle}</p>
-          <div className="mt-6">{children}</div>
+        <div className="rounded-[var(--radius-cadova)] border border-line bg-surface p-6 sm:p-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>
+          <p className="mt-3 text-sm leading-6 text-muted">{subtitle}</p>
+          <div className="mt-7">{children}</div>
         </div>
         <div className="mt-6 text-center text-sm text-muted">{footer}</div>
       </div>
-    </div>
+    </main>
   )
 }

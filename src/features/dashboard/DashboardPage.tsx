@@ -10,6 +10,7 @@ import {
   LinkButton,
   Spinner,
   StatusBadge,
+  TableScroll,
 } from "@/components/ui"
 import { useAuth } from "@/features/auth/AuthContext"
 import { useCompany } from "@/features/company/CompanyContext"
@@ -46,7 +47,6 @@ export function DashboardPage() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [company?.id, user?.id])
 
   if (loading) return <Spinner />
@@ -57,12 +57,8 @@ export function DashboardPage() {
   return (
     <>
       <PageHeader
-        title="Dashboard"
-        subtitle={
-          company
-            ? `Bonjour ${company.name} — voici ce qui mérite votre attention.`
-            : ""
-        }
+        title="Tableau de bord"
+        subtitle={company ? `Le suivi des devis de ${company.name}.` : ""}
       />
 
       {noQuotes ? (
@@ -84,7 +80,7 @@ export function DashboardPage() {
             <Stat
               tone="primary"
               icon={<Clock size={18} />}
-              label="Argent en attente"
+              label="Montants en attente"
               count={data.pending.count}
               amount={formatCents(data.pending.amountCents)}
             />
@@ -96,11 +92,25 @@ export function DashboardPage() {
               amount={formatCents(data.accepted.amountCents)}
             />
           </div>
-          <div className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-4">
             <MiniStat label="Taux d’acceptation" value={`${data.acceptanceRate} %`} />
-            <MiniStat label="Gagné ce mois-ci" value={formatCents(data.wonThisMonthCents)} />
-            <MiniStat label="Délai moyen d’acceptation" value={data.averageAcceptanceDays === null ? "—" : `${data.averageAcceptanceDays} jours`} />
-            <MiniStat label="Sans activité depuis 14 j" value={String(data.staleCount)} warning={data.staleCount > 0} />
+            <MiniStat
+              label="Accepté ce mois-ci"
+              value={formatCents(data.wonThisMonthCents)}
+            />
+            <MiniStat
+              label="Délai moyen d’acceptation"
+              value={
+                data.averageAcceptanceDays === null
+                  ? "—"
+                  : `${data.averageAcceptanceDays} jours`
+              }
+            />
+            <MiniStat
+              label="Sans activité depuis 14 j"
+              value={String(data.staleCount)}
+              warning={data.staleCount > 0}
+            />
           </div>
 
           {/* Priority follow-up list */}
@@ -118,20 +128,30 @@ export function DashboardPage() {
             </div>
             {data.priority.length === 0 ? (
               <Card className="p-6 text-sm text-muted">
-                Aucun devis à relancer pour le moment. Beau travail 👌
+                Aucun devis à relancer pour le moment.
               </Card>
             ) : (
               <Card className="overflow-hidden">
-                <div className="overflow-x-auto">
+                <TableScroll>
                   <table className="min-w-[680px] w-full text-sm">
                     <thead>
                       <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-muted">
-                        <th className="px-5 py-3 font-medium">Client</th>
-                        <th className="px-5 py-3 font-medium">Référence</th>
-                        <th className="px-5 py-3 font-medium">Montant</th>
-                        <th className="px-5 py-3 font-medium">Envoyé le</th>
-                        <th className="px-5 py-3 font-medium">Retard</th>
-                        <th className="px-5 py-3" />
+                        <th scope="col" className="px-5 py-3 font-medium">
+                          Client
+                        </th>
+                        <th scope="col" className="px-5 py-3 font-medium">
+                          Référence
+                        </th>
+                        <th scope="col" className="px-5 py-3 text-right font-medium">
+                          Montant
+                        </th>
+                        <th scope="col" className="px-5 py-3 font-medium">
+                          Envoyé le
+                        </th>
+                        <th scope="col" className="px-5 py-3 font-medium">
+                          Attente
+                        </th>
+                        <th scope="col" className="px-5 py-3" />
                       </tr>
                     </thead>
                     <tbody>
@@ -146,7 +166,7 @@ export function DashboardPage() {
                           <td className="px-5 py-3 font-mono text-xs text-ink-soft">
                             {q.reference}
                           </td>
-                          <td className="px-5 py-3 font-mono text-ink">
+                          <td className="px-5 py-3 text-right font-semibold tabular-nums text-ink">
                             {formatCents(q.amount_cents)}
                           </td>
                           <td className="px-5 py-3 text-muted">
@@ -167,19 +187,26 @@ export function DashboardPage() {
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </TableScroll>
               </Card>
             )}
           </section>
 
           {/* Latest quotes */}
           <section className="mt-8">
-            <h2 className="mb-3 text-sm font-semibold text-ink">
-              Derniers devis
-            </h2>
+            <h2 className="mb-3 text-sm font-semibold text-ink">Derniers devis</h2>
             <Card className="overflow-hidden">
-              <div className="overflow-x-auto">
+              <TableScroll>
                 <table className="min-w-[540px] w-full text-sm">
+                  <thead className="sr-only">
+                    <tr>
+                      <th scope="col">Référence</th>
+                      <th scope="col">Client</th>
+                      <th scope="col">Montant</th>
+                      <th scope="col">Statut</th>
+                      <th scope="col">Envoyé le</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {data.latest.map((q) => (
                       <tr
@@ -194,10 +221,8 @@ export function DashboardPage() {
                             {q.reference}
                           </Link>
                         </td>
-                        <td className="px-5 py-3 text-ink">
-                          {q.client?.name ?? "—"}
-                        </td>
-                        <td className="px-5 py-3 font-mono text-ink">
+                        <td className="px-5 py-3 text-ink">{q.client?.name ?? "—"}</td>
+                        <td className="px-5 py-3 text-right font-semibold tabular-nums text-ink">
                           {formatCents(q.amount_cents)}
                         </td>
                         <td className="px-5 py-3">
@@ -210,7 +235,7 @@ export function DashboardPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableScroll>
             </Card>
           </section>
         </>
@@ -219,8 +244,25 @@ export function DashboardPage() {
   )
 }
 
-function MiniStat({ label, value, warning = false }: { label: string; value: string; warning?: boolean }) {
-  return <Card className="p-4"><p className="text-xs font-medium text-muted">{label}</p><p className={`mt-2 text-xl font-semibold ${warning ? "text-warning" : "text-ink"}`}>{value}</p></Card>
+function MiniStat({
+  label,
+  value,
+  warning = false,
+}: {
+  label: string
+  value: string
+  warning?: boolean
+}) {
+  return (
+    <Card className="p-4">
+      <p className="text-xs font-medium text-muted">{label}</p>
+      <p
+        className={`mt-2 break-words text-xl font-semibold tabular-nums ${warning ? "text-warning" : "text-ink"}`}
+      >
+        {value}
+      </p>
+    </Card>
+  )
 }
 
 function Stat({
@@ -251,10 +293,10 @@ function Stat({
         </span>
         <span className="text-sm font-medium text-ink-soft">{label}</span>
       </div>
-      <p className="mt-4 text-3xl font-semibold tracking-tight text-ink">
+      <p className="mt-4 tabular-nums text-3xl font-semibold tracking-tight text-ink">
         {count}
       </p>
-      <p className="mt-1 font-mono text-sm text-muted">{amount}</p>
+      <p className="mt-2 tabular-nums text-sm text-muted">{amount}</p>
     </Card>
   )
 }

@@ -44,9 +44,7 @@ export function ResetPasswordPage() {
       setDone(true)
       setTimeout(() => navigate("/login", { replace: true }), 2500)
     } catch (err) {
-      setError(
-        humanizeError(err, "Impossible de mettre à jour le mot de passe."),
-      )
+      setError(humanizeError(err, "Impossible de mettre à jour le mot de passe."))
     } finally {
       setSubmitting(false)
     }

@@ -1,268 +1,191 @@
-import { useEffect, useState, type MouseEvent, type ReactNode } from "react"
+import { useEffect, useState, type MouseEvent } from "react"
 import { Link } from "react-router-dom"
-import {
-  ArrowRight,
-  Check,
-  FileText,
-  Menu,
-  Plus,
-  ShieldCheck,
-  Users,
-  WalletCards,
-  X,
-} from "lucide-react"
+import { ArrowRight, FileText, Menu, ShieldCheck, Users, X } from "lucide-react"
 import { CadovaLogo } from "@/components/CadovaLogo"
+import { LinkButton } from "@/components/ui"
+import { usePageTitle } from "@/lib/usePageTitle"
 import { useAuth } from "@/features/auth/AuthContext"
 
-const container =
-  "mx-auto w-[min(calc(100%-32px),1180px)] md:w-[min(calc(100%-48px),1180px)]"
-const eyebrow = "text-xs font-bold tracking-[0.03em] text-primary"
-const heading = "font-semibold leading-[1.12] tracking-[-0.035em] text-ink"
 const navItems = [
-  { label: "Produit", id: "produit" },
-  { label: "Fonctionnement", id: "fonctionnement" },
-  { label: "Sécurité", id: "securite" },
+  { label: "Le produit", id: "produit" },
+  { label: "Au quotidien", id: "fonctionnement" },
+  { label: "Votre espace", id: "securite" },
 ]
 
 export function LandingPage() {
+  usePageTitle("Clients, devis et relances")
   const { session, loading } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const destination = !loading && session ? "/app" : "/signup"
+  const action = session ? "Ouvrir mon espace" : "Créer mon espace"
 
   useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) =>
-      event.key === "Escape" && setMenuOpen(false)
-    window.addEventListener("keydown", closeOnEscape)
-    return () => window.removeEventListener("keydown", closeOnEscape)
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false)
+        document.getElementById("landing-menu-button")?.focus()
+      }
+    }
+    window.addEventListener("keydown", close)
+    return () => window.removeEventListener("keydown", close)
   }, [])
 
-  const closeMenu = () => setMenuOpen(false)
-
-  const scrollToSection =
-    (id: string) => (event: MouseEvent<HTMLAnchorElement>) => {
-      event.preventDefault()
-      closeMenu()
-      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
-    }
+  function scrollToSection(id: string, event: MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault()
+    setMenuOpen(false)
+    const section = document.getElementById(id)
+    section?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    })
+    section?.focus({ preventScroll: true })
+  }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white text-ink">
-      <a
-        href="#contenu"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-white"
-      >
+    <div className="min-h-screen bg-background text-ink">
+      <a href="#contenu" className="skip-link">
         Aller au contenu
       </a>
-      <header className="sticky top-0 z-50 border-b border-line bg-white/95 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-line bg-surface">
         <nav
           aria-label="Navigation principale"
-          className={`${container} flex h-[76px] items-center justify-between`}
+          className="page-container flex h-[72px] items-center justify-between gap-4"
         >
-          <Link to="/" aria-label="Retour à l'accueil">
-            <CadovaLogo variant="full" className="h-7" />
+          <Link to="/" aria-label="Cadova, accueil">
+            <CadovaLogo className="h-7" />
           </Link>
-          <div className="hidden items-center gap-8 lg:flex">
-            {navItems.map(({ label, id }) => (
+          <div className="hidden items-center gap-7 lg:flex">
+            {navItems.map(({ id, label }) => (
               <a
                 key={id}
                 href={`#${id}`}
-                onClick={scrollToSection(id)}
-                className="border-b border-transparent py-1 text-sm font-medium text-ink-soft transition-colors hover:border-primary hover:text-ink"
+                onClick={(e) => scrollToSection(id, e)}
+                className="py-3 text-sm text-ink-soft transition-colors hover:text-primary"
               >
                 {label}
               </a>
             ))}
           </div>
-          <div className="hidden items-center gap-2 lg:flex">
-            {!loading && session ? (
-              <NavAppLink />
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="px-3 py-2 text-sm font-medium text-ink-soft hover:text-ink"
-                >
-                  Se connecter
-                </Link>
-                <PrimaryLink to="/signup" compact>
-                  Commencer gratuitement
-                </PrimaryLink>
-              </>
+          <div className="hidden items-center gap-3 lg:flex">
+            {!session && (
+              <LinkButton to="/login" variant="ghost">
+                Se connecter
+              </LinkButton>
             )}
+            <LinkButton to={destination}>{action}</LinkButton>
           </div>
           <button
+            id="landing-menu-button"
             aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
             aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((value) => !value)}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-ink hover:bg-background lg:hidden"
+            aria-controls="landing-menu"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-background lg:hidden"
           >
-            {menuOpen ? <X size={20} /> : <Menu size={22} />}
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </nav>
         {menuOpen && (
-          <div className="border-t border-line bg-white lg:hidden">
-            <div className={`${container} flex flex-col gap-1 py-4`}>
-              {navItems.map(({ label, id }) => (
-                <a
-                  key={id}
-                  href={`#${id}`}
-                  onClick={scrollToSection(id)}
-                  className="rounded-lg px-3 py-3 text-sm font-medium text-ink hover:bg-background"
+          <nav
+            id="landing-menu"
+            aria-label="Navigation mobile"
+            className="page-container border-t border-line py-4 lg:hidden"
+          >
+            {navItems.map(({ id, label }) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                onClick={(e) => scrollToSection(id, e)}
+                className="block rounded-lg px-3 py-3 text-sm hover:bg-background"
+              >
+                {label}
+              </a>
+            ))}
+            <div className="mt-3 grid gap-2 border-t border-line pt-4">
+              {!session && (
+                <LinkButton
+                  to="/login"
+                  variant="secondary"
+                  onClick={() => setMenuOpen(false)}
                 >
-                  {label}
-                </a>
-              ))}
-              <div className="mt-2 grid gap-2 border-t border-line pt-4">
-                {!loading && session ? (
-                  <NavAppLink onClick={closeMenu} />
-                ) : (
-                  <>
-                    <Link
-                      to="/login"
-                      onClick={closeMenu}
-                      className="flex min-h-11 items-center justify-center rounded-[10px] border border-line text-sm font-semibold text-ink"
-                    >
-                      Se connecter
-                    </Link>
-                    <PrimaryLink to="/signup" onClick={closeMenu}>
-                      Commencer gratuitement
-                    </PrimaryLink>
-                  </>
-                )}
-              </div>
+                  Se connecter
+                </LinkButton>
+              )}
+              <LinkButton to={destination} onClick={() => setMenuOpen(false)}>
+                {action}
+              </LinkButton>
             </div>
-          </div>
+          </nav>
         )}
       </header>
 
-      <main id="contenu">
+      <main id="contenu" tabIndex={-1}>
         <section
           id="produit"
-          className={`${container} grid items-center gap-[54px] py-[70px] lg:grid-cols-[.8fr_1.2fr] lg:gap-[72px] lg:py-[92px]`}
+          tabIndex={-1}
+          className="page-container grid items-center gap-12 py-14 lg:grid-cols-[.9fr_1.1fr] lg:gap-16 lg:py-24"
         >
-          <div className="mx-auto max-w-[510px] text-center lg:mx-0 lg:text-left">
-            <p className={eyebrow}>Le suivi des devis, sans l’oubli</p>
-            <h1 className={`${heading} mt-5 text-[clamp(2.9rem,5vw,4.3rem)]`}>
-              Ne laissez plus vos devis{" "}
-              <span className="text-primary">sans réponse.</span>
+          <div className="max-w-xl">
+            <p className="section-kicker">Clients, devis et relances</p>
+            <h1 className="mt-5 text-[clamp(2.35rem,4vw,3rem)] font-semibold leading-[1.08] tracking-[-.045em]">
+              Vos devis envoyés.
+              <br />
+              <span className="text-primary">La suite, au clair.</span>
             </h1>
-            <p className="mt-6 text-[1.06rem] leading-[1.7] text-muted">
-              Cadova FollowUp vous montre quels devis relancer et combien
-              d’argent est encore en attente, sans vous imposer un CRM
-              compliqué.
+            <p className="mt-6 max-w-md text-base leading-7 text-ink-soft">
+              Retrouvez les devis en attente, préparez vos relances et gardez une trace
+              de vos échanges avec chaque client.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
-              <PrimaryLink to="/signup">
-                Commencer gratuitement{" "}
+            <div className="mt-8 flex flex-wrap gap-3">
+              <LinkButton to={destination}>
+                {action}
                 <ArrowRight size={16} aria-hidden="true" />
-              </PrimaryLink>
-              <Link
-                to="/login"
-                className="inline-flex min-h-[52px] items-center justify-center rounded-[10px] border border-line bg-white px-6 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:bg-background"
+              </LinkButton>
+              <a
+                href="#fonctionnement"
+                onClick={(e) => scrollToSection("fonctionnement", e)}
+                className="ui-button border border-line-strong bg-surface text-ink hover:bg-primary-soft"
               >
-                Se connecter
-              </Link>
+                Voir le fonctionnement
+              </a>
             </div>
-            <p className="mt-5 text-sm text-ink-soft">
-              <Check
-                size={15}
-                className="mr-1 inline text-success"
-                aria-hidden="true"
-              />
-              Simple à prendre en main · Pensé pour les petites entreprises
+            <p className="mt-5 text-sm text-muted">
+              Pour les artisans, indépendants et petites entreprises.
             </p>
           </div>
           <ProductPreview />
         </section>
 
-        <section className="bg-background py-[70px] lg:py-[112px]">
-          <div className={`${container} text-center`}>
-            <p className={eyebrow}>Le quotidien, simplifié</p>
-            <h2
-              className={`${heading} mx-auto mt-5 max-w-[760px] text-[clamp(2.25rem,4vw,3.6rem)]`}
-            >
-              Un devis envoyé n’est pas encore une vente.
-            </h2>
-            <p className="mx-auto mt-5 max-w-[760px] leading-[1.7] text-muted">
-              Entre les chantiers, les clients et l’administratif, une relance
-              peut facilement être oubliée. Cadova rassemble les informations
-              utiles et fait remonter les devis qui demandent votre attention.
-            </p>
-            <div className="mx-auto mt-12 grid max-w-[980px] gap-[22px] text-left md:grid-cols-2">
-              <WithoutCadova />
-              <WithCadova />
-            </div>
-          </div>
-        </section>
-
         <section
           id="fonctionnement"
-          className={`${container} py-[70px] lg:py-[112px]`}
+          tabIndex={-1}
+          className="border-y border-line bg-surface py-14 lg:py-20"
         >
-          <p className={eyebrow}>Comment ça fonctionne</p>
-          <h2
-            className={`${heading} mt-5 max-w-[700px] text-[clamp(2.25rem,4vw,3.6rem)]`}
-          >
-            Du devis envoyé à la bonne relance, en trois étapes.
-          </h2>
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
-            <Step
-              number="01"
-              title="Ajoutez votre client"
-              description="Centralisez les coordonnées et les informations utiles de votre prospect."
-              visual="client"
-            />
-            <Step
-              number="02"
-              title="Enregistrez le devis"
-              description="Indiquez sa référence, son montant, sa date d’envoi et son statut."
-              visual="quote"
-            />
-            <Step
-              number="03"
-              title="Agissez au bon moment"
-              description="Cadova identifie les devis envoyés qui méritent une relance et les place dans vos priorités."
-              visual="followup"
-            />
-          </div>
-        </section>
-
-        <section className="bg-background py-[70px] lg:py-[112px]">
-          <div className={container}>
-            <div className="grid gap-6 lg:grid-cols-2 lg:items-end">
-              <div>
-                <p className={eyebrow}>L’essentiel, sans complexité</p>
-                <h2
-                  className={`${heading} mt-5 max-w-[590px] text-[clamp(2.25rem,4vw,3.6rem)]`}
-                >
-                  Tout ce qu’il faut pour mieux suivre vos devis.
-                </h2>
-              </div>
-              <p className="max-w-[430px] leading-[1.7] text-muted">
-                Cadova regroupe les informations réellement utiles pour vous
-                aider à suivre les opportunités en attente, sans transformer
-                votre quotidien en gestion de CRM.
-              </p>
+          <div className="page-container">
+            <div className="max-w-2xl">
+              <p className="section-kicker">Au quotidien</p>
+              <h2 className="section-title mt-4">
+                Un dossier client.
+                <br />
+                Un suivi facile à retrouver.
+              </h2>
             </div>
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Feature
-                icon={<Users />}
-                title="Clients centralisés"
-                text="Retrouvez les coordonnées et les devis associés à chaque client."
+            <div className="mt-10 grid gap-8 md:grid-cols-3 md:gap-10">
+              <Step
+                number="01"
+                title="Rassemblez vos clients"
+                text="Coordonnées, notes et devis associés restent dans une même fiche."
               />
-              <Feature
-                icon={<FileText />}
-                title="Devis structurés"
-                text="Suivez les références, montants, dates d’envoi et statuts au même endroit."
+              <Step
+                number="02"
+                title="Suivez vos devis"
+                text="Enregistrez la référence, le montant et la date d’envoi. Mettez à jour le statut quand votre client répond."
               />
-              <Feature
-                icon={<Check />}
-                title="Priorités du jour"
-                text="Identifiez rapidement les devis envoyés qui nécessitent une relance."
-              />
-              <Feature
-                icon={<WalletCards />}
-                title="Montants en attente"
-                text="Visualisez combien d’argent reste lié à vos devis encore ouverts."
+              <Step
+                number="03"
+                title="Préparez la prochaine action"
+                text="Retrouvez les devis à relancer, préparez un message et notez vos échanges."
               />
             </div>
           </div>
@@ -270,78 +193,55 @@ export function LandingPage() {
 
         <section
           id="securite"
-          className="scroll-mt-[76px] flex min-h-[calc(100vh-76px)] items-center bg-ink py-[70px] text-white lg:py-[112px]"
+          tabIndex={-1}
+          className="bg-ink py-14 text-white lg:py-20"
         >
-          <div
-            className="mx-auto grid w-full max-w-[960px] gap-14 px-6 md:px-8 lg:grid-cols-2 lg:gap-20"
-          >
-            <div className="text-center lg:text-left">
-              <p className="text-xs font-bold tracking-[.03em] text-[#b9bbff]">
-                Confiance & sécurité
-              </p>
-              <h2 className="mt-5 text-[clamp(2.25rem,4vw,3.6rem)] font-semibold leading-[1.12] tracking-[-.035em]">
-                Les données de votre entreprise méritent une vraie séparation.
+          <div className="page-container grid gap-10 lg:grid-cols-2 lg:gap-20">
+            <div>
+              <ShieldCheck size={28} className="text-[#b5d3bf]" aria-hidden="true" />
+              <h2 className="section-title mt-5">
+                Un espace pour
+                <br />
+                votre entreprise.
               </h2>
-              <p className="mx-auto mt-6 max-w-[480px] leading-[1.7] text-[#b9c0d0] lg:mx-0">
-                Cadova est conçu pour que chaque entreprise travaille dans son
-                propre espace et que les informations commerciales restent
-                accessibles uniquement aux personnes autorisées.
+              <p className="mt-5 max-w-md leading-7 text-[#c4d0c9]">
+                Vos informations commerciales restent dans votre espace. Vous choisissez
+                les actions et gardez la main sur la relation client.
               </p>
             </div>
-            <div className="mx-auto w-full max-w-[440px] divide-y divide-[#2a3144]">
+            <div className="divide-y divide-white/15">
               <Trust
                 number="01"
                 title="Espace privé"
-                text="Vos clients et vos devis ne sont pas publiquement accessibles."
+                text="Vos clients et vos devis ne sont pas accessibles au public."
               />
               <Trust
                 number="02"
                 title="Entreprises séparées"
-                text="Les informations de chaque entreprise sont isolées."
+                text="Les données sont rattachées à votre entreprise et les accès sont contrôlés."
               />
               <Trust
                 number="03"
-                title="Accès contrôlés"
-                text="Les droits sont vérifiés avant l’accès aux données."
-              />
-              <Trust
-                number="04"
-                title="Décision humaine"
-                text="Cadova vous aide à prioriser. Vous gardez le contrôle de la relation client."
+                title="Relances sous votre contrôle"
+                text="Préparez votre message, puis copiez-le ou ouvrez votre messagerie pour l’envoyer."
               />
             </div>
           </div>
         </section>
 
-        <section className={`${container} py-[70px] lg:py-[112px]`}>
-          <div className="relative overflow-hidden rounded-[20px] bg-primary px-5 py-[74px] text-center text-white md:rounded-[28px] md:px-10">
-            <i
-              aria-hidden="true"
-              className="absolute -left-24 -top-28 h-64 w-64 rounded-full border border-white/20"
-            />
-            <i
-              aria-hidden="true"
-              className="absolute -bottom-36 -right-20 h-72 w-72 rounded-full border border-white/20"
-            />
-            <div className="relative mx-auto max-w-[650px]">
-              <p className="font-mono text-[11px] font-semibold uppercase tracking-[.1em] text-white/75">
-                Commencez simplement
-              </p>
-              <h2 className="mt-5 text-[clamp(2.25rem,4vw,3.6rem)] font-semibold leading-[1.12] tracking-[-.035em]">
-                Les bons devis méritent une relance.
-              </h2>
-              <p className="mt-5 leading-[1.7] text-white/85">
-                Créez votre espace Cadova et retrouvez immédiatement les devis
-                qui demandent votre attention.
-              </p>
-              <Link
-                to="/signup"
-                className="mt-8 inline-flex min-h-[52px] items-center gap-2 rounded-[10px] bg-white px-6 text-sm font-semibold text-ink shadow-sm transition hover:-translate-y-0.5"
-              >
-                Commencer gratuitement <ArrowRight size={16} />
-              </Link>
-            </div>
+        <section className="page-container flex flex-col items-start justify-between gap-6 py-12 sm:flex-row sm:items-center lg:py-16">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Commencez par votre premier client.
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              Créez votre espace, puis ajoutez les devis que vous souhaitez suivre.
+            </p>
           </div>
+          <LinkButton to={destination} className="shrink-0">
+            {action}
+            <ArrowRight size={16} aria-hidden="true" />
+          </LinkButton>
         </section>
       </main>
       <Footer />
@@ -349,306 +249,85 @@ export function LandingPage() {
   )
 }
 
-function PrimaryLink({
-  to,
-  children,
-  compact = false,
-  onClick,
-}: {
-  to: string
-  children: ReactNode
-  compact?: boolean
-  onClick?: () => void
-}) {
-  return (
-    <Link
-      to={to}
-      onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 rounded-[10px] bg-primary px-6 text-sm font-semibold text-white shadow-[0_6px_18px_rgba(90,92,255,.2)] transition duration-200 hover:-translate-y-0.5 hover:bg-primary-hover ${
-        compact ? "h-[42px] px-4" : "min-h-[52px]"
-      }`}
-    >
-      {children}
-    </Link>
-  )
-}
-function NavAppLink({ onClick }: { onClick?: () => void }) {
-  return (
-    <PrimaryLink to="/app" onClick={onClick} compact>
-      Ouvrir Cadova <ArrowRight size={15} />
-    </PrimaryLink>
-  )
-}
-
 function ProductPreview() {
   return (
-    <div className="relative mx-auto w-full max-w-[620px]">
-      <div
-        aria-hidden="true"
-        className="absolute -right-14 -top-12 h-72 w-72 rounded-full bg-primary-soft"
-      />
-      <div className="relative overflow-hidden rounded-[22px] border border-line bg-white shadow-[0_32px_80px_rgba(11,16,32,.14)]">
-        <div className="grid h-[42px] grid-cols-3 items-center border-b border-line px-4 text-[10px] text-muted">
-          <div className="flex gap-1.5">
-            <i className="h-2 w-2 rounded-full bg-line" />
-            <i className="h-2 w-2 rounded-full bg-line" />
-            <i className="h-2 w-2 rounded-full bg-line" />
-          </div>
-          <span className="text-center font-medium text-ink-soft">
-            Espace Cadova
+    <figure className="min-w-0">
+      <div className="overflow-hidden rounded-xl border border-line-strong bg-surface shadow-[0_12px_32px_rgba(24,39,37,.06)]">
+        <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
+          <span className="text-sm font-semibold">Votre espace Cadova</span>
+          <span className="rounded-md bg-background px-2 py-1 text-xs text-muted">
+            Aperçu
           </span>
-          <span className="text-right">Données sécurisées</span>
         </div>
-        <div className="flex min-h-[410px] bg-background sm:min-h-[470px]">
-          <aside className="hidden w-[105px] flex-col border-r border-line bg-white p-3 sm:flex">
-            <CadovaLogo variant="full" className="h-5 w-[76px]" alt="Cadova" />
-            <div className="mt-9 space-y-2">
-              <span className="flex h-8 items-center gap-2 rounded-lg bg-primary-soft px-2 text-primary">
-                <FileText size={14} />
-                <i className="h-1.5 w-8 rounded bg-primary/50" />
-              </span>
-              <span className="flex h-8 items-center gap-2 px-2 text-muted">
-                <Users size={14} />
-                <i className="h-1.5 w-7 rounded bg-line-strong" />
-              </span>
-              <span className="flex h-8 items-center gap-2 px-2 text-muted">
-                <Check size={14} />
-                <i className="h-1.5 w-9 rounded bg-line-strong" />
-              </span>
-            </div>
-          </aside>
-          <div className="min-w-0 flex-1 p-5 sm:p-7">
-            <h3 className="text-lg font-semibold tracking-tight text-ink sm:text-xl">
-              Dashboard
-            </h3>
-            <p className="mt-1 text-[11px] text-muted">
-              Bonjour Cadova — voici ce qui mérite votre attention.
+        <div className="flex">
+          <div className="hidden w-32 shrink-0 space-y-2 border-r border-line bg-[#fafbf7] p-3 sm:block">
+            <p className="rounded-md px-2 py-2 text-xs text-muted">Tableau de bord</p>
+            <p className="flex items-center gap-2 rounded-md px-2 py-2 text-xs text-muted">
+              <Users size={14} />
+              Clients
             </p>
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <MiniStat label="À relancer" value="2" />
-              <MiniStat label="Argent en attente" value="12 420 €" />
-            </div>
-            <div className="mt-5 rounded-xl border border-line bg-white">
-              <div className="flex items-center justify-between border-b border-line px-3 py-2">
-                <p className="text-xs font-semibold text-ink">
-                  À relancer en priorité
-                </p>
-                <span className="text-[10px] font-medium text-primary">
-                  Voir tous
-                </span>
-              </div>
-              <div className="divide-y divide-line">
-                <QuoteRow
-                  name="Atelier Mistral"
-                  reference="DEV-2026-041"
-                  amount="1 250 €"
-                  meta="Envoyé il y a 5 jours"
-                  tone="warning"
-                  label="À relancer"
-                />
-                <QuoteRow
-                  name="Studio Nova"
-                  reference="DEV-2026-044"
-                  amount="890 €"
-                  meta="Envoyé il y a 2 jours"
-                  tone="primary"
-                  label="En attente"
-                />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-warning/20 bg-warning-soft p-3">
-              <div>
-                <p className="text-xs font-semibold text-warning">
-                  Deux devis à relancer
-                </p>
-                <p className="mt-0.5 text-[10px] text-ink-soft">
-                  Ils attendent votre retour depuis 3 jours.
-                </p>
-              </div>
-              <span className="whitespace-nowrap rounded-lg bg-white px-3 py-2 text-[10px] font-semibold text-ink shadow-sm">
-                Voir les devis
+            <p className="flex items-center gap-2 rounded-md bg-primary-soft px-2 py-2 text-xs font-semibold text-primary">
+              <FileText size={14} />
+              Devis
+            </p>
+          </div>
+          <div className="min-w-0 flex-1 p-5 sm:p-6">
+            <h2 className="text-xl font-semibold tracking-tight">Devis</h2>
+            <p className="mt-1 text-xs leading-5 text-muted">
+              Le suivi de vos échanges commerciaux.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2 text-xs">
+              <span className="rounded-md bg-primary-soft px-3 py-2 font-semibold text-primary">
+                Tous
               </span>
+              <span className="px-2 py-2 text-muted">À relancer</span>
+              <span className="px-2 py-2 text-muted">Acceptés</span>
+            </div>
+            <div className="mt-4 border-y border-line">
+              <div className="grid grid-cols-3 gap-3 bg-background px-3 py-3 text-xs font-medium text-muted">
+                <span>Référence</span>
+                <span>Client</span>
+                <span className="text-right">Statut</span>
+              </div>
+              <div className="flex flex-col items-center px-4 py-10 text-center">
+                <FileText size={24} className="text-primary" aria-hidden="true" />
+                <p className="mt-4 text-sm font-medium">Vos devis, au même endroit</p>
+                <p className="mt-2 max-w-56 text-xs leading-5 text-muted">
+                  Référence, client, montant et statut pour retrouver chaque dossier.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex items-start gap-2 text-xs leading-5 text-muted">
+              <ShieldCheck
+                size={16}
+                className="mt-0.5 shrink-0 text-primary"
+                aria-hidden="true"
+              />
+              Chaque entreprise dispose de son propre espace.
             </div>
           </div>
         </div>
       </div>
-    </div>
-  )
-}
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl bg-background p-3">
-      <p className="text-[10px] text-muted">{label}</p>
-      <p className="mt-1 text-lg font-semibold tracking-tight text-ink">
-        {value}
-      </p>
-    </div>
-  )
-}
-function QuoteRow({
-  name,
-  reference,
-  amount,
-  meta,
-  tone,
-  label,
-}: {
-  name: string
-  reference: string
-  amount: string
-  meta: string
-  tone: string
-  label: string
-}) {
-  return (
-    <div className="grid grid-cols-[1fr_auto] gap-3 p-3">
-      <div className="min-w-0">
-        <p className="truncate text-xs font-semibold text-ink">{name}</p>
-        <p className="mt-0.5 text-[10px] text-muted">
-          {reference} · {meta}
-        </p>
-      </div>
-      <div className="text-right">
-        <p className="text-xs font-semibold text-ink">{amount}</p>
-        <span
-          className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[9px] font-semibold ${
-            tone === "warning"
-              ? "bg-warning-soft text-warning"
-              : "bg-primary-soft text-primary"
-          }`}
-        >
-          {label}
-        </span>
-      </div>
-    </div>
-  )
-}
-function WithoutCadova() {
-  const list = [
-    "Retrouver les devis",
-    "Noter les dates d’envoi",
-    "Calculer les montants",
-    "Se souvenir des relances",
-    "Vérifier chaque statut",
-    "Décider quoi faire aujourd’hui",
-  ]
-  return (
-    <div className="rounded-[18px] border border-line bg-white p-6">
-      <p className="font-mono text-[11px] font-semibold tracking-[.1em] text-muted">
-        SANS SUIVI CLAIR
-      </p>
-      <h3 className="mt-4 text-xl font-semibold tracking-tight text-ink">
-        Tout vérifier manuellement
-      </h3>
-      <div className="mt-7 grid gap-3 sm:grid-cols-2">
-        {list.map((item) => (
-          <p key={item} className="flex gap-2 text-sm text-ink-soft">
-            <i className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-line-strong" />
-            {item}
-          </p>
-        ))}
-      </div>
-    </div>
-  )
-}
-function WithCadova() {
-  return (
-    <div className="rounded-[18px] bg-ink p-6 text-white">
-      <p className="font-mono text-[11px] font-semibold tracking-[.1em] text-[#b9bbff]">
-        AVEC CADOVA
-      </p>
-      <h3 className="mt-4 text-xl font-semibold tracking-tight">
-        Les priorités remontent automatiquement
-      </h3>
-      <div className="mt-7 flex items-center gap-4 rounded-xl bg-[#171d31] p-4">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary">
-          <Check size={20} />
-        </span>
-        <div>
-          <p className="text-sm font-semibold">2 devis à relancer</p>
-          <p className="mt-0.5 text-xs text-[#b9c0d0]">3 450 € concernés</p>
-        </div>
-      </div>
-      <p className="mt-6 text-sm leading-relaxed text-[#b9c0d0]">
-        Vous savez quoi regarder. Vous gardez la décision et la relation avec
-        votre client.
-      </p>
-    </div>
+      <figcaption className="mt-3 text-xs leading-5 text-muted">
+        Vue de l’interface, sans données client.
+      </figcaption>
+    </figure>
   )
 }
 function Step({
   number,
   title,
-  description,
-  visual,
-}: {
-  number: string
-  title: string
-  description: string
-  visual: "client" | "quote" | "followup"
-}) {
-  return (
-    <article className="rounded-[18px] border border-line bg-white p-5 sm:p-7">
-      <div className="flex h-[150px] items-center justify-center rounded-xl bg-background">
-        {visual === "client" && (
-          <div className="relative w-32 rounded-lg border border-line bg-white p-3 shadow-sm">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary">
-              AM
-            </span>
-            <i className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">
-              <Plus size={13} />
-            </i>
-            <div className="mt-3 space-y-1.5">
-              <i className="block h-1.5 w-16 rounded bg-line" />
-              <i className="block h-1.5 w-10 rounded bg-line" />
-            </div>
-          </div>
-        )}
-        {visual === "quote" && (
-          <div className="w-28 rounded-lg border border-line bg-white p-3 shadow-sm">
-            <FileText size={17} className="text-primary" />
-            <div className="mt-3 space-y-1.5">
-              <i className="block h-1.5 rounded bg-line" />
-              <i className="block h-1.5 w-3/4 rounded bg-line" />
-              <i className="block h-1.5 w-1/2 rounded bg-primary" />
-            </div>
-          </div>
-        )}
-        {visual === "followup" && (
-          <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white shadow-[0_8px_20px_rgba(90,92,255,.28)]">
-            <Check size={29} />
-            <span className="absolute -right-5 -top-2 rounded-full bg-warning-soft px-2 py-1 text-[10px] font-semibold text-warning">
-              J+3
-            </span>
-          </div>
-        )}
-      </div>
-      <p className="mt-6 font-mono text-xs font-semibold text-primary">
-        {number}
-      </p>
-      <h3 className="mt-2 text-lg font-semibold tracking-tight text-ink">
-        {title}
-      </h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted">{description}</p>
-    </article>
-  )
-}
-function Feature({
-  icon,
-  title,
   text,
 }: {
-  icon: ReactNode
+  number: string
   title: string
   text: string
 }) {
   return (
-    <article className="rounded-[14px] border border-line bg-white p-6">
-      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary">
-        {icon}
-      </span>
-      <h3 className="mt-5 text-base font-semibold text-ink">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted">{text}</p>
+    <article className="border-t border-line pt-6">
+      <span className="font-mono text-sm text-primary">{number}</span>
+      <h3 className="mt-4 text-lg font-semibold tracking-tight">{title}</h3>
+      <p className="mt-3 text-sm leading-6 text-muted">{text}</p>
     </article>
   )
 }
@@ -662,60 +341,42 @@ function Trust({
   text: string
 }) {
   return (
-    <div className="grid grid-cols-[36px_minmax(0,1fr)] items-start gap-4 py-6 first:pt-0 last:pb-0 sm:gap-5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#b9bbff]/20 bg-[#b9bbff]/10 font-mono text-sm font-semibold tabular-nums text-[#b9bbff]">
+    <div className="grid grid-cols-[36px_minmax(0,1fr)] items-start gap-4 py-6 first:pt-0 last:pb-0">
+      <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/5 font-mono text-sm text-[#c3dbc9]">
         {number}
       </span>
-      <div className="min-w-0 pt-1">
+      <div className="pt-1">
         <h3 className="font-semibold">{title}</h3>
-        <p className="mt-2 text-sm leading-relaxed text-[#b9c0d0]">{text}</p>
+        <p className="mt-2 text-sm leading-6 text-[#c4d0c9]">{text}</p>
       </div>
     </div>
   )
 }
 function Footer() {
   return (
-    <footer className="bg-ink text-white">
-      <div className={`${container} py-12`}>
-        <div className="flex flex-col justify-between gap-10 md:flex-row">
-          <div>
-            <CadovaLogo variant="full" className="h-7 brightness-0 invert" />
-            <p className="mt-4 text-sm text-[#b9c0d0]">
-              Le suivi simple de vos devis.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-[#d9deea]">
-            <a href="#produit" className="hover:text-white">
-              Produit
-            </a>
-            <Link to="/login" className="hover:text-white">
-              Se connecter
-            </Link>
-            <Link to="/signup" className="hover:text-white">
-              Commencer
-            </Link>
-          </div>
-        </div>
-        <div className="mt-10 flex flex-col gap-4 border-t border-[#2a3144] pt-5 text-xs text-[#9ea7ba] sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Cadova. Tous droits réservés.</p>
+    <footer className="border-t border-line bg-surface">
+      <div className="page-container py-8">
+        <div className="flex flex-col justify-between gap-6 sm:flex-row">
+          <CadovaLogo className="h-6 self-start" />
           <nav
             aria-label="Informations légales"
-            className="flex flex-wrap gap-x-4 gap-y-2"
+            className="flex flex-wrap gap-x-5 gap-y-3 text-xs text-muted"
           >
-            <Link to="/privacy" className="hover:text-white">
+            <Link to="/privacy" className="hover:text-primary">
               Confidentialité
             </Link>
-            <Link to="/terms" className="hover:text-white">
-              CGU
+            <Link to="/terms" className="hover:text-primary">
+              Conditions d’utilisation
             </Link>
-            <Link to="/legal-notice" className="hover:text-white">
+            <Link to="/legal-notice" className="hover:text-primary">
               Mentions légales
             </Link>
-            <Link to="/cookies" className="hover:text-white">
+            <Link to="/cookies" className="hover:text-primary">
               Cookies
             </Link>
           </nav>
         </div>
+        <p className="mt-6 text-xs text-muted">© {new Date().getFullYear()} Cadova</p>
       </div>
     </footer>
   )

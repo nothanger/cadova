@@ -9,6 +9,7 @@ import {
   FollowUpBadge,
   LinkButton,
   Spinner,
+  TableScroll,
   StatusBadge,
 } from "@/components/ui"
 import { getClient } from "./api"
@@ -46,14 +47,11 @@ export function ClientDetailPage() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId])
 
   if (loading) return <Spinner />
   if (error || !client)
-    return (
-      <ErrorState message={error || "Client introuvable."} onRetry={load} />
-    )
+    return <ErrorState message={error || "Client introuvable."} onRetry={load} />
 
   return (
     <>
@@ -62,10 +60,7 @@ export function ClientDetailPage() {
         back={{ to: "/app/clients", label: "Retour aux clients" }}
         actions={
           <>
-            <LinkButton
-              variant="secondary"
-              to={`/app/clients/${client.id}/edit`}
-            >
+            <LinkButton variant="secondary" to={`/app/clients/${client.id}/edit`}>
               <Pencil size={16} /> Modifier
             </LinkButton>
             <LinkButton to={`/app/quotes/new?client=${client.id}`}>
@@ -81,9 +76,7 @@ export function ClientDetailPage() {
             <Detail label="Email" value={client.email} />
             <Detail label="Téléphone" value={client.phone} />
             <div>
-              <dt className="text-xs uppercase tracking-wider text-muted">
-                Notes
-              </dt>
+              <dt className="text-xs uppercase tracking-wider text-muted">Notes</dt>
               <dd className="mt-1 whitespace-pre-wrap text-ink-soft">
                 {client.notes || "—"}
               </dd>
@@ -91,10 +84,8 @@ export function ClientDetailPage() {
           </dl>
         </Card>
 
-        <div className="md:col-span-2">
-          <h2 className="mb-3 text-sm font-semibold text-ink">
-            Devis associés
-          </h2>
+        <div className="min-w-0 md:col-span-2">
+          <h2 className="mb-3 text-sm font-semibold text-ink">Devis associés</h2>
           {quotes.length === 0 ? (
             <EmptyState
               title="Aucun devis pour ce client"
@@ -106,8 +97,16 @@ export function ClientDetailPage() {
             />
           ) : (
             <Card className="overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <TableScroll>
+                <table className="min-w-[580px] w-full text-sm">
+                  <thead className="sr-only">
+                    <tr>
+                      <th scope="col">Référence</th>
+                      <th scope="col">Montant</th>
+                      <th scope="col">Statut</th>
+                      <th scope="col">Envoyé le</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {quotes.map((q) => (
                       <tr
@@ -122,7 +121,7 @@ export function ClientDetailPage() {
                             {q.reference}
                           </Link>
                         </td>
-                        <td className="px-5 py-3 font-mono text-ink">
+                        <td className="px-5 py-3 text-right font-semibold tabular-nums text-ink">
                           {formatCents(q.amount_cents)}
                         </td>
                         <td className="px-5 py-3">
@@ -140,7 +139,7 @@ export function ClientDetailPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableScroll>
             </Card>
           )}
         </div>
@@ -153,7 +152,7 @@ function Detail({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
       <dt className="text-xs uppercase tracking-wider text-muted">{label}</dt>
-      <dd className="mt-1 text-ink">{value || "—"}</dd>
+      <dd className="mt-1 break-words text-ink">{value || "—"}</dd>
     </div>
   )
 }

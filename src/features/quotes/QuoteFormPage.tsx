@@ -1,15 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { PageHeader } from "@/components/layout/PageHeader"
-import {
-  Button,
-  Card,
-  Field,
-  Input,
-  Select,
-  Spinner,
-  Textarea,
-} from "@/components/ui"
+import { Button, Card, Field, Input, Select, Spinner, Textarea } from "@/components/ui"
 import { useCompany } from "@/features/company/CompanyContext"
 import { listClients } from "@/features/clients/api"
 import { createQuote, getQuote, updateQuote, type QuoteInput } from "./api"
@@ -74,13 +66,9 @@ export function QuoteFormPage({ mode }: { mode: "new" | "edit" }) {
       }
     }
     init()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [company?.id, mode, quoteId])
 
-  const amountCents = useMemo(
-    () => parseAmountToCents(form.amount),
-    [form.amount],
-  )
+  const amountCents = useMemo(() => parseAmountToCents(form.amount), [form.amount])
   const dateRequired = form.status !== "draft"
 
   function validate() {
@@ -125,8 +113,7 @@ export function QuoteFormPage({ mode }: { mode: "new" | "edit" }) {
 
   if (loading) return <Spinner />
 
-  const backTo =
-    mode === "edit" && quoteId ? `/app/quotes/${quoteId}` : "/app/quotes"
+  const backTo = mode === "edit" && quoteId ? `/app/quotes/${quoteId}` : "/app/quotes"
 
   if (mode === "new" && clients.length === 0) {
     return (
@@ -137,8 +124,7 @@ export function QuoteFormPage({ mode }: { mode: "new" | "edit" }) {
         />
         <Card className="p-8 text-center">
           <p className="text-sm text-muted">
-            Vous devez d’abord créer un client avant de pouvoir établir un
-            devis.
+            Vous devez d’abord créer un client avant de pouvoir établir un devis.
           </p>
           <div className="mt-4">
             <Button onClick={() => navigate("/app/clients/new")}>
@@ -159,8 +145,8 @@ export function QuoteFormPage({ mode }: { mode: "new" | "edit" }) {
           label: mode === "edit" ? "Retour au devis" : "Retour aux devis",
         }}
       />
-      <Card className="p-6 md:p-8">
-        <form onSubmit={onSubmit} className="flex max-w-lg flex-col gap-5">
+      <Card className="max-w-3xl p-5 sm:p-8">
+        <form onSubmit={onSubmit} className="flex max-w-xl flex-col gap-6">
           {error && (
             <p
               role="alert"
@@ -230,8 +216,7 @@ export function QuoteFormPage({ mode }: { mode: "new" | "edit" }) {
                   ...f,
                   status,
                   // Helpful default: prefill today's date when leaving draft.
-                  sent_at:
-                    status !== "draft" && !f.sent_at ? todayISO() : f.sent_at,
+                  sent_at: status !== "draft" && !f.sent_at ? todayISO() : f.sent_at,
                 }))
               }}
             >
@@ -266,15 +251,11 @@ export function QuoteFormPage({ mode }: { mode: "new" | "edit" }) {
             />
           </Field>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3 border-t border-line pt-5">
             <Button type="submit" loading={submitting}>
               {mode === "edit" ? "Enregistrer" : "Créer le devis"}
             </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => navigate(backTo)}
-            >
+            <Button type="button" variant="secondary" onClick={() => navigate(backTo)}>
               Annuler
             </Button>
           </div>

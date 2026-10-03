@@ -15,10 +15,9 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<Notification[]>([])
   const [loading, setLoading] = useState(false)
-  const [coords, setCoords] = useState<{ left: number; bottom: number }>({
-    left: 0,
-    bottom: 0,
-  })
+  const [coords, setCoords] = useState<{ left: number; top?: number; bottom?: number }>(
+    { left: 16, top: 72 },
+  )
   const ref = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -45,12 +44,29 @@ export function NotificationBell() {
   useEffect(() => {
     function handler(e: MouseEvent) {
       const target = e.target as Node
-      if (ref.current?.contains(target) || panelRef.current?.contains(target))
-        return
+      if (ref.current?.contains(target) || panelRef.current?.contains(target)) return
       setOpen(false)
     }
     if (open) document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    panelRef.current?.focus()
+    const close = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false)
+        buttonRef.current?.focus()
+      }
+    }
+    const resize = () => setOpen(false)
+    window.addEventListener("keydown", close)
+    window.addEventListener("resize", resize)
+    return () => {
+      window.removeEventListener("keydown", close)
+      window.removeEventListener("resize", resize)
+    }
   }, [open])
 
   async function handleMarkAll() {
@@ -71,7 +87,13 @@ export function NotificationBell() {
   function toggle() {
     if (!open && buttonRef.current) {
       const r = buttonRef.current.getBoundingClientRect()
-      setCoords({ left: r.left, bottom: window.innerHeight - r.top + 8 })
+      const width = Math.min(320, window.innerWidth - 32)
+      const left = Math.max(16, Math.min(r.left, window.innerWidth - width - 16))
+      setCoords(
+        r.top < window.innerHeight / 2
+          ? { left, top: r.bottom + 8 }
+          : { left, bottom: window.innerHeight - r.top + 8 },
+      )
     }
     setOpen((v) => !v)
   }
@@ -81,8 +103,10 @@ export function NotificationBell() {
       <button
         ref={buttonRef}
         onClick={toggle}
+        aria-expanded={open}
+        aria-controls={open ? "notification-panel" : undefined}
         aria-label={`Notifications${count > 0 ? ` (${count} non lues)` : ""}`}
-        className="relative flex h-9 w-9 items-center justify-center rounded-[10px] text-ink-soft transition-colors hover:bg-background hover:text-ink"
+        className="relative flex h-11 w-11 items-center justify-center rounded-[10px] text-ink-soft transition-colors hover:bg-background hover:text-ink"
       >
         <Bell size={18} />
         {count > 0 && (
@@ -95,18 +119,21 @@ export function NotificationBell() {
       {open &&
         createPortal(
           <div
+            id="notification-panel"
+            role="region"
+            aria-label="Notifications"
+            tabIndex={-1}
             ref={panelRef}
-            style={{ left: coords.left, bottom: coords.bottom }}
+            style={coords}
             className="fixed z-50 max-w-[calc(100vw-2rem)] w-80 rounded-[var(--radius-cadova)] border border-line bg-surface shadow-lg"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-line px-4 py-3">
-              <span className="text-sm font-semibold text-ink">
-                Notifications
-              </span>
+              <span className="text-sm font-semibold text-ink">Notifications</span>
               <div className="flex items-center gap-1">
                 {count > 0 && (
                   <button
+                    aria-label="Tout marquer comme lu"
                     onClick={handleMarkAll}
                     title="Tout marquer comme lu"
                     className="flex h-7 items-center gap-1 rounded-lg px-2 text-xs text-muted hover:bg-background hover:text-ink"
@@ -116,8 +143,12 @@ export function NotificationBell() {
                   </button>
                 )}
                 <button
-                  onClick={() => setOpen(false)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted hover:bg-background hover:text-ink"
+                  aria-label="Fermer les notifications"
+                  onClick={() => {
+                    setOpen(false)
+                    buttonRef.current?.focus()
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-background hover:text-ink"
                 >
                   <X size={14} />
                 </button>
@@ -127,9 +158,7 @@ export function NotificationBell() {
             {/* List */}
             <div className="max-h-80 overflow-y-auto">
               {loading && items.length === 0 ? (
-                <p className="px-4 py-6 text-center text-sm text-muted">
-                  Chargement…
-                </p>
+                <p className="px-4 py-6 text-center text-sm text-muted">Chargement…</p>
               ) : items.length === 0 ? (
                 <p className="px-4 py-6 text-center text-sm text-muted">
                   Aucune nouvelle notification.
@@ -154,41 +183,32 @@ function NotifItem({
   item: Notification
   onRead: (id: string) => void
 }) {
-  const content = (
-    <div className="flex items-start gap-3 border-b border-line px-4 py-3 last:border-0 hover:bg-background">
-      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-warning-soft text-warning">
-        <FileText size={14} />
+  return (
+    <div className="flex items-start gap-3 border-b border-line px-4 py-4 last:border-0 hover:bg-background">
+      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-warning-soft text-warning">
+        <FileText size={16} aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-ink leading-tight">
-          {item.title}
-        </p>
-        <p className="mt-0.5 text-xs leading-relaxed text-muted">
-          {item.message}
-        </p>
+        {item.related_quote_id ? (
+          <Link
+            to={`/app/quotes/${item.related_quote_id}`}
+            onClick={() => onRead(item.id)}
+            className="text-sm font-medium text-ink hover:text-primary"
+          >
+            {item.title}
+          </Link>
+        ) : (
+          <p className="text-sm font-medium text-ink">{item.title}</p>
+        )}
+        <p className="mt-1 text-xs leading-5 text-muted">{item.message}</p>
       </div>
       <button
-        onClick={(e) => {
-          e.preventDefault()
-          onRead(item.id)
-        }}
-        title="Marquer comme lu"
-        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-muted hover:bg-line hover:text-ink"
+        onClick={() => onRead(item.id)}
+        aria-label={`Marquer comme lue : ${item.title}`}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-line hover:text-ink"
       >
-        <X size={12} />
+        <CheckCheck size={16} aria-hidden="true" />
       </button>
     </div>
   )
-
-  if (item.related_quote_id) {
-    return (
-      <Link
-        to={`/app/quotes/${item.related_quote_id}`}
-        onClick={() => onRead(item.id)}
-      >
-        {content}
-      </Link>
-    )
-  }
-  return <div>{content}</div>
 }

@@ -3,6 +3,7 @@ import {
   useContext,
   useCallback,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react"
@@ -28,20 +29,25 @@ const CompanyContext = createContext<CompanyContextValue | undefined>(undefined)
  * query only ever returns the caller's own membership.
  */
 export function CompanyProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [company, setCompany] = useState<Company | null>(null)
   const [role, setRole] = useState<MemberRole | null>(null)
   const [loading, setLoading] = useState(true)
   const [schemaMissing, setSchemaMissing] = useState(false)
+  const resolvedUser = useRef<string | null>(null)
 
   const load = useCallback(async () => {
+    // Wait for the restored session before resolving company membership.
+    if (authLoading) return
     if (!user) {
+      resolvedUser.current = null
       setCompany(null)
       setRole(null)
       setLoading(false)
       return
     }
-    setLoading(true)
+    // Background refreshes keep the current page and its feedback mounted.
+    setLoading(resolvedUser.current !== user.id)
     const { data, error } = await supabase
       .from("company_members")
       .select("role, companies:company_id (id, name, created_at, updated_at)")
@@ -57,11 +63,12 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       setSchemaMissing(false)
     }
 
-    const companyRow = data?.companies as unknown as Company | null ?? null
+    const companyRow = (data?.companies as unknown as Company | null) ?? null
     setCompany(companyRow)
-    setRole(data?.role as MemberRole | undefined ?? null)
+    setRole((data?.role as MemberRole | undefined) ?? null)
+    resolvedUser.current = user.id
     setLoading(false)
-  }, [user])
+  }, [user, authLoading])
 
   useEffect(() => {
     load()
@@ -69,7 +76,14 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   return (
     <CompanyContext.Provider
-      value={{ company, role, loading, schemaMissing, refresh: load }}
+      value={{
+        company,
+        role,
+        loading:
+          authLoading || loading || Boolean(user && resolvedUser.current !== user.id),
+        schemaMissing,
+        refresh: load,
+      }}
     >
       {children}
     </CompanyContext.Provider>

@@ -10,6 +10,9 @@ import {
   LinkButton,
   Spinner,
   StatusBadge,
+  Input,
+  Select,
+  TableScroll,
   cx,
 } from "@/components/ui"
 import { useCompany } from "@/features/company/CompanyContext"
@@ -55,14 +58,29 @@ export function QuotesListPage() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [company?.id])
 
   const filtered = useMemo(() => {
-    let result = filter === "all" ? quotes : filter === "followup" ? quotes.filter(isQuoteDueForFollowUp) : quotes.filter((q) => q.status === filter)
+    let result =
+      filter === "all"
+        ? quotes
+        : filter === "followup"
+          ? quotes.filter(isQuoteDueForFollowUp)
+          : quotes.filter((q) => q.status === filter)
     const needle = query.trim().toLocaleLowerCase("fr")
-    if (needle) result = result.filter((q) => q.reference.toLocaleLowerCase("fr").includes(needle) || q.client?.name.toLocaleLowerCase("fr").includes(needle))
-    return [...result].sort((a, b) => sort === "amount" ? b.amount_cents - a.amount_cents : sort === "waiting" ? daysWaiting(b) - daysWaiting(a) : b.created_at.localeCompare(a.created_at))
+    if (needle)
+      result = result.filter(
+        (q) =>
+          q.reference.toLocaleLowerCase("fr").includes(needle) ||
+          q.client?.name.toLocaleLowerCase("fr").includes(needle),
+      )
+    return [...result].sort((a, b) =>
+      sort === "amount"
+        ? b.amount_cents - a.amount_cents
+        : sort === "waiting"
+          ? (daysWaiting(b) ?? -1) - (daysWaiting(a) ?? -1)
+          : b.created_at.localeCompare(a.created_at),
+    )
   }, [quotes, filter, query, sort])
 
   return (
@@ -84,7 +102,7 @@ export function QuotesListPage() {
       ) : quotes.length === 0 ? (
         <EmptyState
           title="Aucun devis pour le moment"
-          description="Créez un devis et Cadova vous dira quand le relancer."
+          description="Ajoutez un devis pour suivre son statut et préparer vos relances."
           action={
             <LinkButton to="/app/quotes/new">
               <Plus size={16} /> Créer mon premier devis
@@ -93,17 +111,73 @@ export function QuotesListPage() {
         />
       ) : (
         <>
-          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="relative flex-1 lg:max-w-sm"><Search size={16} className="absolute left-3 top-3 text-muted"/><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Client ou référence…" className="h-10 w-full rounded-[10px] border border-line-strong bg-surface pl-9 pr-3 text-sm outline-none focus:border-primary"/></div>
-            <div className="flex flex-wrap gap-2"><select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} className="h-10 rounded-[10px] border border-line-strong bg-surface px-3 text-sm"><option value="recent">Plus récents</option><option value="amount">Montant décroissant</option><option value="waiting">Sans réponse depuis longtemps</option></select><button onClick={() => setView("list")} className={cx("flex h-10 items-center gap-2 rounded-[10px] border px-3 text-sm", view === "list" ? "border-primary bg-primary-soft text-primary" : "border-line-strong")}><List size={16}/> Liste</button><button onClick={() => setView("pipeline")} className={cx("flex h-10 items-center gap-2 rounded-[10px] border px-3 text-sm", view === "pipeline" ? "border-primary bg-primary-soft text-primary" : "border-line-strong")}><LayoutGrid size={16}/> Pipeline</button></div>
+          <div className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="relative flex-1 xl:max-w-xs">
+              <Search
+                size={16}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-3.5 text-muted"
+              />
+              <Input
+                aria-label="Rechercher un devis par client ou référence"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Client ou référence"
+                className="pl-9"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                aria-label="Trier les devis"
+                value={sort}
+                onChange={(e) => setSort(e.target.value as typeof sort)}
+              >
+                <option value="recent">Plus récents</option>
+                <option value="amount">Montant décroissant</option>
+                <option value="waiting">Attente la plus longue</option>
+              </Select>
+              <div
+                className="flex gap-1 rounded-lg border border-line bg-surface p-1"
+                role="group"
+                aria-label="Affichage des devis"
+              >
+                <button
+                  aria-pressed={view === "list"}
+                  onClick={() => setView("list")}
+                  className={cx(
+                    "flex min-h-9 items-center gap-2 rounded-md px-3 text-sm",
+                    view === "list"
+                      ? "bg-primary-soft font-semibold text-primary"
+                      : "text-muted hover:bg-background",
+                  )}
+                >
+                  <List size={16} aria-hidden="true" />
+                  Liste
+                </button>
+                <button
+                  aria-pressed={view === "pipeline"}
+                  onClick={() => setView("pipeline")}
+                  className={cx(
+                    "flex min-h-9 items-center gap-2 rounded-md px-3 text-sm",
+                    view === "pipeline"
+                      ? "bg-primary-soft font-semibold text-primary"
+                      : "text-muted hover:bg-background",
+                  )}
+                >
+                  <LayoutGrid size={16} aria-hidden="true" />
+                  Pipeline
+                </button>
+              </div>
+            </div>
           </div>
           <div className="mb-4 flex flex-wrap gap-2">
             {filters.map((f) => (
               <button
                 key={f.key}
+                aria-pressed={filter === f.key}
                 onClick={() => setFilter(f.key)}
                 className={cx(
-                  "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  "min-h-11 rounded-lg border px-3 py-2 text-xs font-medium transition-colors",
                   filter === f.key
                     ? "border-primary bg-primary text-white"
                     : "border-line-strong bg-surface text-ink-soft hover:bg-background",
@@ -120,15 +194,25 @@ export function QuotesListPage() {
             <Pipeline quotes={filtered} />
           ) : (
             <Card className="overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <TableScroll>
+                <table className="min-w-[640px] w-full text-sm">
                   <thead>
                     <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-muted">
-                      <th className="px-5 py-3 font-medium">Référence</th>
-                      <th className="px-5 py-3 font-medium">Client</th>
-                      <th className="px-5 py-3 font-medium">Montant</th>
-                      <th className="px-5 py-3 font-medium">Envoyé le</th>
-                      <th className="px-5 py-3 font-medium">Statut</th>
+                      <th scope="col" className="px-5 py-3 font-medium">
+                        Référence
+                      </th>
+                      <th scope="col" className="px-5 py-3 font-medium">
+                        Client
+                      </th>
+                      <th scope="col" className="px-5 py-3 text-right font-medium">
+                        Montant
+                      </th>
+                      <th scope="col" className="px-5 py-3 font-medium">
+                        Envoyé le
+                      </th>
+                      <th scope="col" className="px-5 py-3 font-medium">
+                        Statut
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -145,10 +229,8 @@ export function QuotesListPage() {
                             {q.reference}
                           </Link>
                         </td>
-                        <td className="px-5 py-3 text-ink">
-                          {q.client?.name ?? "—"}
-                        </td>
-                        <td className="px-5 py-3 font-mono text-ink">
+                        <td className="px-5 py-3 text-ink">{q.client?.name ?? "—"}</td>
+                        <td className="px-5 py-3 text-right font-semibold tabular-nums text-ink">
                           {formatCents(q.amount_cents)}
                         </td>
                         <td className="px-5 py-3 text-muted">
@@ -166,7 +248,7 @@ export function QuotesListPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableScroll>
             </Card>
           )}
         </>
@@ -176,10 +258,68 @@ export function QuotesListPage() {
 }
 
 function Pipeline({ quotes }: { quotes: QuoteWithClient[] }) {
-  const columns: { title: string; status: QuoteWithClient["status"]; followup?: boolean }[] = [
-    { title: "Brouillon", status: "draft" }, { title: "Envoyé", status: "sent" },
-    { title: "À relancer", status: "sent", followup: true }, { title: "Accepté", status: "accepted" },
+  const columns: {
+    title: string
+    status: QuoteWithClient["status"]
+    followup?: boolean
+  }[] = [
+    { title: "Brouillon", status: "draft" },
+    { title: "Envoyé", status: "sent" },
+    { title: "À relancer", status: "sent", followup: true },
+    { title: "Accepté", status: "accepted" },
     { title: "Refusé", status: "refused" },
   ]
-  return <div className="grid gap-4 overflow-x-auto pb-2 md:grid-cols-2 xl:grid-cols-5">{columns.map((column) => { const items = quotes.filter((q) => q.status === column.status && (column.followup ? isQuoteDueForFollowUp(q) : q.status !== "sent" || !isQuoteDueForFollowUp(q))); return <section key={column.title} className="min-w-[220px] rounded-[var(--radius-cadova)] bg-background p-3"><div className="mb-3 flex items-center justify-between"><h3 className="text-xs font-semibold uppercase tracking-wider text-ink-soft">{column.title}</h3><span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted">{items.length}</span></div><div className="space-y-2">{items.map((q) => <Link key={q.id} to={`/app/quotes/${q.id}`} className="block rounded-xl border border-line bg-surface p-3 transition hover:border-primary/40 hover:shadow-sm"><p className="font-mono text-xs font-semibold text-ink">{q.reference}</p><p className="mt-2 truncate text-sm text-ink-soft">{q.client?.name ?? "—"}</p><p className="mt-3 font-mono text-sm font-semibold text-ink">{formatCents(q.amount_cents)}</p>{column.followup && <p className="mt-2 text-xs font-medium text-warning">Sans réponse · {daysWaiting(q)} j</p>}</Link>)}{items.length === 0 && <p className="py-8 text-center text-xs text-muted">Aucun devis</p>}</div></section> })}</div>
+  return (
+    <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+      {columns.map((column) => {
+        const items = quotes.filter(
+          (q) =>
+            q.status === column.status &&
+            (column.followup
+              ? isQuoteDueForFollowUp(q)
+              : q.status !== "sent" || !isQuoteDueForFollowUp(q)),
+        )
+        return (
+          <section
+            key={column.title}
+            className="min-w-0 rounded-xl border border-line bg-[#eeefe9] p-4"
+          >
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-ink-soft">{column.title}</h3>
+              <span className="rounded-md border border-line bg-surface px-2 py-1 text-xs tabular-nums text-muted">
+                {items.length}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {items.map((q) => (
+                <Link
+                  key={q.id}
+                  to={`/app/quotes/${q.id}`}
+                  className="block rounded-lg border border-line bg-surface p-4 transition-colors hover:border-primary"
+                >
+                  <p className="break-words font-mono text-xs font-semibold text-ink">
+                    {q.reference}
+                  </p>
+                  <p className="mt-2 truncate text-sm text-ink-soft">
+                    {q.client?.name ?? "—"}
+                  </p>
+                  <p className="mt-4 text-base font-semibold tabular-nums text-ink">
+                    {formatCents(q.amount_cents)}
+                  </p>
+                  {column.followup && (
+                    <p className="mt-2 text-xs text-warning">
+                      Sans réponse depuis {daysWaiting(q)} j
+                    </p>
+                  )}
+                </Link>
+              ))}
+              {items.length === 0 && (
+                <p className="py-6 text-center text-xs text-muted">Aucun devis</p>
+              )}
+            </div>
+          </section>
+        )
+      })}
+    </div>
+  )
 }

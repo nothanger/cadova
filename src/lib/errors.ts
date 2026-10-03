@@ -38,7 +38,6 @@ export function humanizeError(
       return "Trop de tentatives. Veuillez patienter quelques minutes avant de réessayer."
     }
   }
-  // eslint-disable-next-line no-console
   console.error("[Cadova] error:", err)
   return fallback
 }

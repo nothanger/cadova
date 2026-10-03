@@ -2,11 +2,13 @@ import { useState, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
 import { CadovaLogo } from "@/components/CadovaLogo"
 import { Button, Field, Input } from "@/components/ui"
+import { usePageTitle } from "@/lib/usePageTitle"
 import { createCompanyWithOwner } from "./api"
 import { useCompany } from "./CompanyContext"
 import { humanizeError } from "@/lib/errors"
 
 export function OnboardingPage() {
+  usePageTitle("Votre espace entreprise")
   const navigate = useNavigate()
   const { refresh } = useCompany()
   const [name, setName] = useState("")
@@ -34,18 +36,17 @@ export function OnboardingPage() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center px-5 py-12">
       <div className="w-full max-w-md">
         <div className="mb-8 flex justify-center">
           <CadovaLogo variant="full" className="h-8" />
         </div>
-        <div className="rounded-[var(--radius-cadova)] border border-line bg-surface p-8">
+        <div className="rounded-[var(--radius-cadova)] border border-line bg-surface p-6 sm:p-8">
           <h1 className="text-2xl font-semibold tracking-tight text-ink">
-            Bienvenue sur Cadova
+            Votre espace entreprise
           </h1>
           <p className="mt-2 text-sm text-muted">
-            Créez l’espace de votre entreprise pour commencer à suivre vos
-            devis.
+            Créez l’espace de votre entreprise pour commencer à suivre vos devis.
           </p>
           <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
             {error && (
@@ -60,7 +61,6 @@ export function OnboardingPage() {
               <Input
                 id="company"
                 required
-                autoFocus
                 placeholder="Ex. Dupont Électricité"
                 value={name}
                 onChange={(e) => setName(e.target.value)}

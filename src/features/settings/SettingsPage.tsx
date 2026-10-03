@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Mail, Bell, Save, Building2 } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
-import { Button, Card, Field, Input, Spinner } from "@/components/ui"
+import { Button, Card, Field, Input, Select, Spinner } from "@/components/ui"
 import { useAuth } from "@/features/auth/AuthContext"
 import { useCompany } from "@/features/company/CompanyContext"
 import {
@@ -136,9 +136,7 @@ export function SettingsPage() {
       setCompanyNameSaved(true)
       setTimeout(() => setCompanyNameSaved(false), 3000)
     } catch (err) {
-      setCompanyNameError(
-        humanizeError(err, "Impossible de renommer l'entreprise."),
-      )
+      setCompanyNameError(humanizeError(err, "Impossible de renommer l'entreprise."))
     } finally {
       setCompanyNameSaving(false)
     }
@@ -148,31 +146,28 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Paramètres"
-        subtitle="Préférences de votre compte Cadova."
-      />
+      <PageHeader title="Paramètres" subtitle="Préférences de votre compte Cadova." />
 
       {loading ? (
         <Spinner />
       ) : (
-        <div className="space-y-4">
+        <div className="max-w-3xl space-y-6">
           {/* ── Migration banner ── */}
           {(migrationMissing || prefsMigrationMissing) && (
             <p
               role="alert"
               className="rounded-[10px] bg-warning-soft px-3 py-2 text-sm text-warning"
             >
-              Les notifications ne sont pas encore configurées. Exécutez les
-              migrations <code>0002_notifications.sql</code>
+              Les notifications ne sont pas encore configurées. Exécutez les migrations{" "}
+              <code>0002_notifications.sql</code>
               {prefsMigrationMissing && " et "}
-              {prefsMigrationMissing && <code>0004_reminder_prefs.sql</code>}{" "}
-              dans le SQL Editor Supabase, puis rechargez cette page.
+              {prefsMigrationMissing && <code>0004_reminder_prefs.sql</code>} dans le
+              SQL Editor Supabase, puis rechargez cette page.
             </p>
           )}
 
           {/* ── Email toggle ── */}
-          <Card className="p-5">
+          <Card className="p-5 sm:p-7">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
@@ -183,9 +178,8 @@ export function SettingsPage() {
                     Résumé quotidien par email
                   </p>
                   <p className="mt-0.5 text-xs leading-relaxed text-muted">
-                    Recevez chaque matin un email listant vos devis à relancer.
-                    Aucun email n'est envoyé si vous n'avez rien à relancer ce
-                    jour-là.
+                    Recevez chaque matin un email listant vos devis à relancer. Aucun
+                    email n'est envoyé si vous n'avez rien à relancer ce jour-là.
                   </p>
                   {emailError && (
                     <p className="mt-1 text-xs text-danger">{emailError}</p>
@@ -200,14 +194,14 @@ export function SettingsPage() {
                 onClick={toggleEmail}
                 disabled={emailSaving || migrationMissing}
                 className={[
-                  "relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors focus:outline-none disabled:opacity-50",
+                  "relative mt-0.5 h-8 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50",
                   emailEnabled ? "bg-primary" : "bg-line-strong",
                 ].join(" ")}
               >
                 <span
                   className={[
-                    "absolute left-0 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
-                    emailEnabled ? "translate-x-[22px]" : "translate-x-[2px]",
+                    "absolute left-0 top-1 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
+                    emailEnabled ? "translate-x-[20px]" : "translate-x-[4px]",
                   ].join(" ")}
                 />
               </button>
@@ -215,18 +209,16 @@ export function SettingsPage() {
           </Card>
 
           {/* ── Reminder prefs ── */}
-          <Card className="p-5">
+          <Card className="p-5 sm:p-7">
             <div className="flex items-start gap-3 mb-5">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
                 <Bell size={18} />
               </div>
               <div>
-                <p className="text-sm font-semibold text-ink">
-                  Préférences de relance
-                </p>
+                <p className="text-sm font-semibold text-ink">Préférences de relance</p>
                 <p className="mt-0.5 text-xs leading-relaxed text-muted">
-                  Contrôlez quand un devis devient « À relancer » et à quelle
-                  heure l'email part.
+                  Choisissez le délai de relance du tableau de bord et enregistrez vos
+                  préférences email.
                 </p>
               </div>
             </div>
@@ -234,10 +226,14 @@ export function SettingsPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               {/* Délai */}
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-ink-soft">
+                <label
+                  htmlFor="followup-delay"
+                  className="mb-1.5 block text-sm font-medium text-ink-soft"
+                >
                   Délai avant relance
                 </label>
-                <select
+                <Select
+                  id="followup-delay"
                   value={prefs.followupDelayDays}
                   onChange={(e) =>
                     setPrefs((p) => ({
@@ -246,14 +242,13 @@ export function SettingsPage() {
                     }))
                   }
                   disabled={prefsSaving || prefsMigrationMissing}
-                  className="w-full rounded-[10px] border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-primary focus:outline-none disabled:opacity-50"
                 >
                   {DELAY_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <p className="mt-1 text-xs text-muted">
                   Un devis envoyé il y a au moins{" "}
                   <strong>{prefs.followupDelayDays} j</strong> apparaît dans « À
@@ -263,13 +258,15 @@ export function SettingsPage() {
 
               {/* Heure d'envoi */}
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-ink-soft">
+                <label
+                  htmlFor="reminder-hour"
+                  className="mb-1.5 block text-sm font-medium text-ink-soft"
+                >
                   Heure d'envoi de l'email{" "}
-                  <span className="font-normal text-muted">
-                    (heure de Paris)
-                  </span>
+                  <span className="font-normal text-muted">(heure de Paris)</span>
                 </label>
-                <select
+                <Select
+                  id="reminder-hour"
                   value={prefs.reminderHour}
                   onChange={(e) =>
                     setPrefs((p) => ({
@@ -278,27 +275,26 @@ export function SettingsPage() {
                     }))
                   }
                   disabled={prefsSaving || prefsMigrationMissing}
-                  className="w-full rounded-[10px] border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-primary focus:outline-none disabled:opacity-50"
                 >
                   {HOUR_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <p className="mt-1 text-xs text-muted">
-                  Le résumé quotidien sera envoyé à{" "}
-                  <strong>
-                    {prefs.reminderHour.toString().padStart(2, "0")}h00
-                  </strong>{" "}
+                  Heure souhaitée pour le résumé quotidien :{" "}
+                  <strong>{prefs.reminderHour.toString().padStart(2, "0")}h00</strong>{" "}
                   heure de Paris.
                 </p>
               </div>
             </div>
 
-            {prefsError && (
-              <p className="mt-3 text-xs text-danger">{prefsError}</p>
-            )}
+            <p className="mt-3 text-xs leading-5 text-muted">
+              L’heure d’envoi dépend aussi de la configuration du service de rappels.
+            </p>
+
+            {prefsError && <p className="mt-3 text-xs text-danger">{prefsError}</p>}
 
             <div className="mt-4 flex items-center gap-3">
               <Button
@@ -311,8 +307,8 @@ export function SettingsPage() {
                 Enregistrer
               </Button>
               {prefsSaved && (
-                <span className="text-xs font-medium text-success">
-                  Préférences enregistrées ✓
+                <span role="status" className="text-xs font-medium text-success">
+                  Préférences enregistrées
                 </span>
               )}
             </div>
@@ -320,22 +316,20 @@ export function SettingsPage() {
 
           {/* ── Entreprise ── */}
           {role === "owner" && (
-            <Card className="p-5">
+            <Card className="p-5 sm:p-7">
               <div className="flex items-start gap-3 mb-5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
                   <Building2 size={18} />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-ink">
-                    Nom de l'entreprise
-                  </p>
+                  <p className="text-sm font-semibold text-ink">Nom de l'entreprise</p>
                   <p className="mt-0.5 text-xs leading-relaxed text-muted">
-                    Modifiez le nom affiché dans Cadova FollowUp.
+                    Modifiez le nom affiché dans Cadova.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-end gap-3">
+              <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-end">
                 <div className="flex-1">
                   <Field label="Nom de l'entreprise" htmlFor="company-name">
                     <Input
@@ -353,9 +347,7 @@ export function SettingsPage() {
                 <Button
                   onClick={saveCompanyName}
                   loading={companyNameSaving}
-                  disabled={
-                    !companyName.trim() || companyName.trim() === company?.name
-                  }
+                  disabled={!companyName.trim() || companyName.trim() === company?.name}
                   className="shrink-0 gap-1.5"
                 >
                   <Save size={15} />
@@ -367,22 +359,21 @@ export function SettingsPage() {
                 <p className="mt-2 text-xs text-danger">{companyNameError}</p>
               )}
               {companyNameSaved && (
-                <p className="mt-2 text-xs font-medium text-success">
-                  Nom mis à jour ✓
+                <p role="status" className="mt-2 text-xs font-medium text-success">
+                  Nom mis à jour
                 </p>
               )}
             </Card>
           )}
 
           {/* ── Compte ── */}
-          <Card className="p-5">
+          <Card className="p-5 sm:p-7">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted">
               Compte
             </p>
             <div className="mt-3 space-y-1 text-sm text-ink-soft">
               <p>
-                <span className="font-medium text-ink">Email :</span>{" "}
-                {user?.email}
+                <span className="font-medium text-ink">Email :</span> {user?.email}
               </p>
               <p>
                 <span className="font-medium text-ink">Entreprise :</span>{" "}

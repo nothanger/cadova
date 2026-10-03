@@ -30,14 +30,11 @@ export function LoginPage() {
   return (
     <AuthShell
       title="Connexion"
-      subtitle="Accédez à votre espace Cadova FollowUp."
+      subtitle="Retrouvez vos clients et vos devis."
       footer={
         <>
           Pas encore de compte ?{" "}
-          <Link
-            to="/signup"
-            className="font-medium text-primary hover:underline"
-          >
+          <Link to="/signup" className="font-medium text-primary hover:underline">
             Créer un compte
           </Link>
         </>

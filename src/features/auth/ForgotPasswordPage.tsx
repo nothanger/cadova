@@ -20,9 +20,7 @@ export function ForgotPasswordPage() {
       await resetPassword(email.trim())
       setSent(true)
     } catch (err) {
-      setError(
-        humanizeError(err, "Impossible d'envoyer le lien de réinitialisation."),
-      )
+      setError(humanizeError(err, "Impossible d'envoyer le lien de réinitialisation."))
     } finally {
       setSubmitting(false)
     }
@@ -31,7 +29,7 @@ export function ForgotPasswordPage() {
   return (
     <AuthShell
       title="Mot de passe oublié"
-      subtitle="Saisissez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe."
+      subtitle="Recevez un lien pour choisir un nouveau mot de passe."
       footer={
         <Link to="/login" className="font-medium text-primary hover:underline">
           Retour à la connexion
@@ -40,8 +38,8 @@ export function ForgotPasswordPage() {
     >
       {sent ? (
         <div className="rounded-[10px] bg-success-soft px-4 py-3 text-sm text-success">
-          Un email de réinitialisation a été envoyé à <strong>{email}</strong>.
-          Vérifiez votre boîte de réception et cliquez sur le lien.
+          Un email de réinitialisation a été envoyé à <strong>{email}</strong>. Vérifiez
+          votre boîte de réception et cliquez sur le lien.
         </div>
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-4">

@@ -43,10 +43,7 @@ export function SignupPage() {
         title="Vérifiez votre email"
         subtitle="Une dernière étape avant de commencer."
         footer={
-          <Link
-            to="/login"
-            className="font-medium text-primary hover:underline"
-          >
+          <Link to="/login" className="font-medium text-primary hover:underline">
             Retour à la connexion
           </Link>
         }
@@ -56,8 +53,8 @@ export function SignupPage() {
             <MailCheck size={22} />
           </div>
           <p className="text-sm text-ink-soft">
-            Nous avons envoyé un lien de confirmation à <strong>{email}</strong>
-            . Cliquez sur ce lien puis connectez-vous.
+            Nous avons envoyé un lien de confirmation à <strong>{email}</strong>.
+            Cliquez sur ce lien puis connectez-vous.
           </p>
         </div>
       </AuthShell>
@@ -67,14 +64,11 @@ export function SignupPage() {
   return (
     <AuthShell
       title="Créer un compte"
-      subtitle="Commencez à suivre vos devis en quelques minutes."
+      subtitle="Créez votre espace pour suivre vos clients et vos devis."
       footer={
         <>
           Déjà un compte ?{" "}
-          <Link
-            to="/login"
-            className="font-medium text-primary hover:underline"
-          >
+          <Link to="/login" className="font-medium text-primary hover:underline">
             Se connecter
           </Link>
         </>
@@ -119,17 +113,11 @@ export function SignupPage() {
         </Button>
         <p className="-mt-1 text-center text-xs leading-5 text-muted">
           En créant un compte, vous acceptez les{" "}
-          <Link
-            to="/terms"
-            className="font-medium text-primary hover:underline"
-          >
+          <Link to="/terms" className="font-medium text-primary hover:underline">
             conditions d’utilisation
           </Link>{" "}
           et reconnaissez avoir lu notre{" "}
-          <Link
-            to="/privacy"
-            className="font-medium text-primary hover:underline"
-          >
+          <Link to="/privacy" className="font-medium text-primary hover:underline">
             politique de confidentialité
           </Link>
           .
