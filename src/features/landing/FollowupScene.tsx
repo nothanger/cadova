@@ -59,7 +59,7 @@ export function FollowupScene() {
     renderer.toneMapping = THREE.NeutralToneMapping
     renderer.toneMappingExposure = 1
     renderer.shadowMap.enabled = true
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    renderer.shadowMap.type = THREE.PCFShadowMap
 
     const scene = new THREE.Scene()
     const camera = new THREE.OrthographicCamera(-3.2, 3.2, 3, -3, 0.1, 40)
