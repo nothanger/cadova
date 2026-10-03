@@ -6,6 +6,8 @@ Cadova s’adresse d’abord aux artisans et indépendants, puis aux petites ent
 
 Une interface de travail calme : fond papier (#f6f6f2), surfaces blanches, encre bleu nuit du logo (#0b1020), accent indigo (#4f52e8) pour les actions. Le site doit prolonger le logo existant sans transformer chaque surface en violet. Aucun dégradé, effet lumineux ou décor sans rôle.
 
+La vitrine doit oser davantage que les pages d'application : premier écran éditorial, scène 3D abstraite issue du logo, sections courtes et contrastées. La 3D sert à matérialiser l'idée de dossiers/devis en mouvement autour de Cadova ; elle reste non interactive, légère, sans données fictives et respecte `prefers-reduced-motion`.
+
 Police système pour éviter un téléchargement tiers et assurer la lisibilité. Titres courts, graisse 600, interlignage 1,15 à 1,3 ; corps 14 à 16 px, interlignage 1,5 à 1,7. Chiffres tabulaires pour les montants ; monospace réservé aux références.
 
 ## Composants
