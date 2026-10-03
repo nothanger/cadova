@@ -7,7 +7,15 @@ import {
   type ReactNode,
 } from "react"
 import { Link } from "react-router-dom"
-import { ArrowRight, BellRing, FolderKanban, Menu, ShieldCheck, X } from "lucide-react"
+import {
+  ArrowDown,
+  ArrowRight,
+  BellRing,
+  FolderKanban,
+  Menu,
+  ShieldCheck,
+  X,
+} from "lucide-react"
 import { CadovaLogo } from "@/components/CadovaLogo"
 import { LinkButton } from "@/components/ui"
 import { useAuth } from "@/features/auth/AuthContext"
@@ -143,31 +151,38 @@ export function LandingPage() {
           tabIndex={-1}
           className="relative isolate overflow-hidden border-b border-line"
         >
-          <div className="page-container relative grid items-center pb-2 pt-8 md:min-h-[calc(100svh-120px)] md:grid-cols-[0.92fr_1.08fr] md:py-14 lg:py-20">
+          <div className="page-container relative grid items-center pb-2 pt-6 md:min-h-[calc(100svh-120px)] md:grid-cols-[0.92fr_1.08fr] md:py-14 lg:py-20">
             <div className="min-w-0 max-w-2xl">
-              <p className="section-kicker">Cadova</p>
-              <h1 className="mt-5 max-w-[12ch] text-[2.65rem] font-semibold leading-[1.02] tracking-normal min-[390px]:text-[3.2rem] lg:text-[4.5rem] xl:text-[5.25rem]">
+              <p className="section-kicker hidden md:block">Cadova</p>
+              <h1 className="max-w-[12ch] text-[2.5rem] font-semibold leading-[1.02] tracking-normal min-[390px]:text-[2.75rem] md:mt-5 md:text-[3.2rem] lg:text-[4.5rem] xl:text-[5.25rem]">
                 Le suivi commercial, sans bruit.
               </h1>
-              <p className="mt-7 max-w-md text-base leading-7 text-ink-soft">
+              <p className="mt-5 max-w-md text-base leading-7 text-ink-soft md:mt-7">
                 Un espace net pour retrouver vos clients, vos devis et la prochaine
                 relance utile.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-5 flex flex-wrap gap-3 md:mt-8">
                 <LinkButton to={destination}>
                   {action}
                   <ArrowRight size={16} aria-hidden="true" />
                 </LinkButton>
                 <a
                   href="#usage"
+                  aria-label="Voir l’usage"
+                  title="Voir l’usage"
                   onClick={(e) => scrollToSection("usage", e)}
-                  className="ui-button border border-line-strong bg-background text-ink hover:bg-primary-soft"
+                  className="ui-button border border-line-strong bg-background text-ink hover:bg-primary-soft max-[389px]:w-11 max-[389px]:px-0"
                 >
-                  Voir l’usage
+                  <ArrowDown
+                    size={18}
+                    aria-hidden="true"
+                    className="min-[390px]:hidden"
+                  />
+                  <span className="hidden min-[390px]:inline">Voir l’usage</span>
                 </a>
               </div>
             </div>
-            <div className="relative -mx-4 mt-3 h-[260px] min-w-0 min-[390px]:h-[300px] md:-mr-8 md:ml-0 md:mt-0 md:h-[520px] lg:h-[600px]">
+            <div className="relative -mx-4 mt-3 h-[410px] min-w-0 min-[390px]:h-[450px] md:-mr-8 md:ml-0 md:mt-0 md:h-[580px] lg:h-[640px]">
               <Suspense fallback={null}>
                 <FollowupScene />
               </Suspense>

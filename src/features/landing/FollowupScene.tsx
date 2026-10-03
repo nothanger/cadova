@@ -6,27 +6,30 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js"
 import { CadovaLogo } from "@/components/CadovaLogo"
 import { cadovaLogoContour } from "./cadovaLogoShape"
+import { STORY_DURATION, chapterAt, storyChapters } from "./followupStory"
 
-const DURATION = 9
+const DURATION = STORY_DURATION
 const clamp = THREE.MathUtils.clamp
 const ease = (value: number) => {
   const t = clamp(value, 0, 1)
   return t * t * (3 - 2 * t)
 }
 
-function cardTexture(label: string) {
+function cardTexture(label: string, lines: readonly string[]) {
   const canvas = document.createElement("canvas")
-  canvas.width = 768
-  canvas.height = 320
+  canvas.width = 1024
+  canvas.height = 576
   const context = canvas.getContext("2d")!
   context.fillStyle = "#ffffff"
   context.fillRect(0, 0, canvas.width, canvas.height)
   context.fillStyle = "#0b1020"
-  context.font = "600 64px system-ui, sans-serif"
-  context.fillText(label, 70, 128)
+  context.font = "600 116px system-ui, sans-serif"
+  context.fillText(label, 80, 170)
   context.fillStyle = "#e4e5ea"
-  context.fillRect(70, 181, 430, 14)
-  context.fillRect(70, 222, 290, 14)
+  context.fillRect(80, 226, 850, 3)
+  context.fillStyle = "#424756"
+  context.font = "500 76px system-ui, sans-serif"
+  lines.forEach((line, index) => context.fillText(line, 80, 346 + index * 104))
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
   return texture
@@ -34,16 +37,19 @@ function cardTexture(label: string) {
 
 export function FollowupScene() {
   const hostRef = useRef<HTMLDivElement>(null)
+  const viewportRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const toggleRef = useRef<(() => void) | null>(null)
+  const seekRef = useRef<((chapter: number) => void) | null>(null)
   const [ready, setReady] = useState(false)
   const [playing, setPlaying] = useState(true)
   const [finished, setFinished] = useState(false)
   const [motionAllowed, setMotionAllowed] = useState(false)
+  const [activeChapter, setActiveChapter] = useState(0)
 
   useEffect(() => {
     const canvas = canvasRef.current
-    const element = hostRef.current
+    const element = viewportRef.current
     if (!canvas || !element) return
     const host = element
 
@@ -52,7 +58,11 @@ export function FollowupScene() {
     try {
       renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
     } catch {
-      return
+      setActiveChapter(3)
+      seekRef.current = setActiveChapter
+      return () => {
+        seekRef.current = null
+      }
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75))
     renderer.outputColorSpace = THREE.SRGBColorSpace
@@ -63,8 +73,8 @@ export function FollowupScene() {
 
     const scene = new THREE.Scene()
     const camera = new THREE.OrthographicCamera(-3.2, 3.2, 3, -3, 0.1, 40)
-    camera.position.set(0, 0.35, 12)
-    camera.lookAt(0, 0, 0)
+    camera.position.set(0.22, 0.25, 12)
+    camera.lookAt(0.22, 0, 0)
     function makeEnvironment() {
       const room = new RoomEnvironment()
       const pmrem = new THREE.PMREMGenerator(renderer)
@@ -104,7 +114,7 @@ export function FollowupScene() {
       cadovaLogoContour.map(([x, y]) => new THREE.Vector2(x, y)),
     )
     const extrusion = new THREE.ExtrudeGeometry(shape, {
-      depth: 0.32,
+      depth: 0.4,
       bevelEnabled: true,
       bevelThickness: 0.055,
       bevelSize: 0.045,
@@ -116,73 +126,87 @@ export function FollowupScene() {
     bodyGeometry.computeVertexNormals()
     extrusion.dispose()
     const body = new THREE.Mesh(bodyGeometry, ink)
-    body.position.z = -0.16
+    body.position.z = -0.2
     body.castShadow = true
     body.receiveShadow = true
     logo.add(body)
     const dot = new THREE.Mesh(new THREE.SphereGeometry(0.32361, 48, 32), indigo)
     dot.position.set(0.093676, -0.122583, 0.17)
     dot.castShadow = true
-    logo.add(dot)
+    world.add(dot)
     world.add(logo)
 
-    const cardGeometry = new RoundedBoxGeometry(1.67, 0.74, 0.09, 4, 0.065)
-    const faceGeometry = new THREE.PlaneGeometry(1.52, 0.63)
+    const cardGeometry = new RoundedBoxGeometry(2.38, 1.4, 0.115, 4, 0.065)
+    const faceGeometry = new THREE.PlaneGeometry(2.24, 1.28)
     const cards = [
-      { label: "Clients", start: [-1.92, 1.77, -0.65], y: 0.89, tilt: -0.2 },
-      { label: "Devis", start: [1.81, 1.7, -0.32], y: 0, tilt: 0.18 },
-      { label: "Relances", start: [0.68, -1.6, 0.45], y: -0.89, tilt: -0.15 },
-    ].map(({ label, start, y, tilt }, index) => {
+      { label: "Client", lines: ["Coordonnées", "Notes"], focusY: 0 },
+      { label: "Devis", lines: ["Envoyé", "En attente"], focusY: -0.2 },
+      { label: "Relance", lines: ["À préparer", "Message"], focusY: -0.88 },
+    ].map(({ label, lines, focusY }, index) => {
       const group = new THREE.Group()
       const card = new THREE.Mesh(cardGeometry, paper)
       card.castShadow = true
       card.receiveShadow = true
-      const texture = cardTexture(label)
+      const texture = cardTexture(label, lines)
       const face = new THREE.Mesh(
         faceGeometry,
         new THREE.MeshBasicMaterial({ map: texture, toneMapped: false }),
       )
-      face.position.z = 0.049
+      face.position.z = 0.062
       const railMaterial = new THREE.MeshBasicMaterial({ color: "#c4c7d2" })
       const rail = new THREE.Mesh(
-        new THREE.BoxGeometry(0.035, 0.48, 0.012),
+        new THREE.BoxGeometry(0.035, 1.04, 0.012),
         railMaterial,
       )
-      rail.position.set(-0.72, 0, 0.057)
+      rail.position.set(-1.05, 0, 0.072)
       group.add(card, face, rail)
       world.add(group)
       return {
         group,
         texture,
         railMaterial,
-        tilt,
         index,
+        settled: new THREE.Vector3(1.46, 1.18 - index * 1.18, 0.18),
         path: new THREE.CubicBezierCurve3(
-          new THREE.Vector3(...(start as [number, number, number])),
-          new THREE.Vector3(start[0] * 0.4, start[1] * 0.65, -0.9),
-          new THREE.Vector3(0.55, y + 0.2, -0.18),
-          new THREE.Vector3(1.68, y, 0.15),
+          new THREE.Vector3(2.2, focusY + 0.5, -1.5),
+          new THREE.Vector3(1.7, focusY + 0.3, -0.75),
+          new THREE.Vector3(1.3, focusY, 0.5),
+          new THREE.Vector3(1.3, focusY, 0.65),
         ),
       }
     })
 
-    const actionPath = new THREE.CubicBezierCurve3(
-      new THREE.Vector3(0.093676, -0.122583, 0.17),
-      new THREE.Vector3(0.92, -0.05, 0.75),
-      new THREE.Vector3(1.3, -0.85, 0.75),
-      new THREE.Vector3(1.69, -0.97, 0.6),
-    )
-    const actionMaterial = new THREE.MeshBasicMaterial({
-      color: "#6054ff",
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
+    const links = [0, 1].map((index) => {
+      const material = new THREE.LineBasicMaterial({
+        color: "#6054ff",
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+      })
+      const path = new THREE.CubicBezierCurve3(
+        new THREE.Vector3(0.48, 1.18 - index * 1.18, 0.4),
+        new THREE.Vector3(0.28, 1.05 - index * 1.18, 0.6),
+        new THREE.Vector3(0.28, 0.13 - index * 1.18, 0.6),
+        new THREE.Vector3(0.48, -index * 1.18, 0.4),
+      )
+      const positions = new Float32Array(49 * 3)
+      const geometry = new THREE.BufferGeometry()
+      geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage),
+      )
+      const line = new THREE.Line(geometry, material)
+      line.frustumCulled = false
+      world.add(line)
+      return { line, material, path, positions }
     })
-    const actionLine = new THREE.Mesh(
-      new THREE.TubeGeometry(actionPath, 56, 0.012, 6, false),
-      actionMaterial,
-    )
-    logo.add(actionLine)
+    const rest = new THREE.Vector3()
+    const marker = new THREE.Vector3()
+    const transitionEnd = new THREE.Vector3()
+    const departureTarget = new THREE.Vector3()
+    const linkPoint = new THREE.Vector3()
+    const gray = new THREE.Color("#c4c7d2")
+    const accent = new THREE.Color("#6054ff")
 
     const key = new THREE.DirectionalLight("#ffffff", 3.6)
     key.position.set(-3, 6, 6)
@@ -201,7 +225,7 @@ export function FollowupScene() {
     scene.add(rim, new THREE.HemisphereLight("#ffffff", "#a1a5b4", 1.1))
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(30, 30),
-      new THREE.ShadowMaterial({ color: "#252a3b", opacity: 0.045 }),
+      new THREE.ShadowMaterial({ color: "#252a3b", opacity: 0.025 }),
     )
     floor.position.z = -0.58
     floor.receiveShadow = true
@@ -213,29 +237,112 @@ export function FollowupScene() {
     let contextLost = false
     let frame = 0
     let previousTime = 0
+    let lastChapter = -1
     const pointer = new THREE.Vector2()
 
-    // Dispersed dossiers align in order; the logo point then marks the next action.
-    function pose() {
-      logo.rotation.set(0.09, -0.62 + ease(elapsed / 2.2) * 0.42, -0.025)
-      const entrance = 0.92 + ease(elapsed / 1.8) * 0.08
-      logo.scale.setScalar(entrance)
-      cards.forEach(({ group, path, tilt, railMaterial, index }) => {
-        const progress = ease((elapsed - 1.1 - index * 0.78) / 2.45)
-        path.getPoint(progress, group.position)
-        group.rotation.set(
-          THREE.MathUtils.lerp(0.14, 0.04, progress),
-          THREE.MathUtils.lerp(index === 0 ? 0.38 : -0.34, -0.16, progress),
-          tilt * (1 - progress),
+    function updateLinks() {
+      links.forEach(({ line, material, path, positions }, index) => {
+        material.opacity = ease((elapsed - (index + 1) * 6 - 1.3) / 1.2) * 0.38
+        const first = cards[index].group
+        const second = cards[index + 1].group
+        path.v0.set(
+          first.position.x - first.scale.x * 1.22,
+          first.position.y,
+          first.position.z + 0.2,
         )
-        railMaterial.color.set(index === 2 && elapsed > 6.2 ? "#6054ff" : "#c4c7d2")
+        path.v3.set(
+          second.position.x - second.scale.x * 1.22,
+          second.position.y,
+          second.position.z + 0.2,
+        )
+        const left = Math.min(path.v0.x, path.v3.x) - 0.24
+        path.v1.set(left, path.v0.y, 0.55)
+        path.v2.set(left, path.v3.y, 0.55)
+        for (let vertex = 0; vertex <= 48; vertex++) {
+          path.getPoint(vertex / 48, linkPoint)
+          linkPoint.toArray(positions, vertex * 3)
+        }
+        line.geometry.attributes.position.needsUpdate = true
       })
-      const outbound = ease((elapsed - 5.3) / 1.15)
-      const inbound = ease((elapsed - 7) / 1.25)
-      const travel = outbound * (1 - inbound)
-      actionPath.getPoint(travel, dot.position)
-      dot.scale.setScalar(1 - travel * 0.55)
-      actionMaterial.opacity = Math.sin(travel * Math.PI) * 0.3
+    }
+
+    // Each chapter gives its dossier the foreground before revealing the full relationship.
+    function pose() {
+      const current = chapterAt(elapsed)
+      if (current !== lastChapter) {
+        lastChapter = current
+        setActiveChapter(current)
+      }
+      const introduction = ease(elapsed / 2.2)
+      const conclusion = ease((elapsed - 18) / 2.2)
+      logo.position.set(-0.5 - introduction * 0.62 + conclusion * 0.14, 0.05, -0.25)
+      logo.rotation.set(0.08, -0.6 + introduction * 0.36 + conclusion * 0.08, -0.025)
+      logo.scale.setScalar(0.96 - introduction * 0.22 + conclusion * 0.26)
+
+      cards.forEach(({ group, path, railMaterial, index, settled }) => {
+        const arrival = ease((elapsed - index * 6 - 0.2) / 1.6)
+        group.visible = arrival > 0
+        path.getPoint(arrival, group.position)
+        let scale = 0.72 + arrival * 0.5
+        const departure = ease((elapsed - (index + 1) * 6) / 1.6)
+        if (index < 2) {
+          departureTarget.set(1.62, index === 0 ? 1.48 : 0.6, 0.08)
+          group.position.lerp(departureTarget, departure)
+          scale = THREE.MathUtils.lerp(scale, index === 0 ? 0.62 : 0.5, departure)
+        }
+        if (index === 0) {
+          scale = THREE.MathUtils.lerp(scale, 0.5, ease((elapsed - 12) / 1.6))
+        }
+        group.position.lerp(settled, conclusion)
+        scale = THREE.MathUtils.lerp(scale, 0.72, conclusion)
+        group.scale.setScalar(scale)
+        group.rotation.set(0.06, -0.3 + arrival * 0.2, (1 - arrival) * -0.1)
+        const emphasis = index === Math.min(current, 2) ? arrival : 0
+        railMaterial.color.copy(gray).lerp(accent, emphasis)
+
+        if (current === index) {
+          marker.set(
+            group.position.x - 1.22 * scale,
+            group.position.y,
+            group.position.z + 0.3,
+          )
+        }
+      })
+
+      updateLinks()
+      rest
+        .set(0.093676, -0.122583, 0.17)
+        .multiplyScalar(logo.scale.x)
+        .applyEuler(logo.rotation)
+        .add(logo.position)
+      if (current === 0) {
+        const outbound = ease((elapsed - 1.4) / 1.6)
+        dot.position.copy(rest).lerp(marker, outbound)
+        dot.position.z += Math.sin(outbound * Math.PI) * 0.35
+      } else if (current < 3) {
+        const progress = ease((elapsed - current * 6 - 0.4) / 2)
+        links[current - 1].path.getPoint(progress, dot.position)
+        dot.position.z += 0.1
+      } else {
+        const relance = cards[2].group
+        transitionEnd.set(
+          relance.position.x - 1.22 * relance.scale.x,
+          relance.position.y,
+          relance.position.z + 0.3,
+        )
+        dot.position.copy(transitionEnd).lerp(rest, ease((elapsed - 20.8) / 1.8))
+      }
+      dot.scale.setScalar(
+        THREE.MathUtils.lerp(
+          0.52,
+          1,
+          current === 0
+            ? 1 - ease((elapsed - 1.4) / 1.6)
+            : current === 3
+              ? ease((elapsed - 20.8) / 1.8)
+              : 0,
+        ),
+      )
       world.rotation.set(pointer.y * 0.045, pointer.x * 0.07, 0)
     }
 
@@ -279,7 +386,7 @@ export function FollowupScene() {
       if (!width || !height) return
       renderer.setSize(width, height, false)
       const aspect = width / height
-      const viewHeight = Math.max(5.35, 6.15 / aspect)
+      const viewHeight = Math.max(4.65, 5.45 / aspect)
       camera.left = (-viewHeight * aspect) / 2
       camera.right = (viewHeight * aspect) / 2
       camera.top = viewHeight / 2
@@ -350,6 +457,16 @@ export function FollowupScene() {
       resume()
     }
 
+    seekRef.current = (chapter) => {
+      elapsed = chapter === 3 ? 23 : storyChapters[chapter].start + 3.2
+      if (reducedMotion.matches) running = false
+      setFinished(false)
+      setPlaying(running)
+      stopFrame()
+      draw()
+      resume()
+    }
+
     const observer = new ResizeObserver(resize)
     const intersection = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting
@@ -370,6 +487,7 @@ export function FollowupScene() {
 
     return () => {
       toggleRef.current = null
+      seekRef.current = null
       stopFrame()
       observer.disconnect()
       intersection.disconnect()
@@ -382,7 +500,7 @@ export function FollowupScene() {
       const geometries = new Set<THREE.BufferGeometry>()
       const materials = new Set<THREE.Material>()
       scene.traverse((object) => {
-        if (object instanceof THREE.Mesh) {
+        if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
           geometries.add(object.geometry)
           const list = Array.isArray(object.material)
             ? object.material
@@ -407,36 +525,66 @@ export function FollowupScene() {
 
   return (
     <div ref={hostRef} className="relative h-full w-full">
-      {!ready && (
-        <div
-          className="absolute inset-0 flex items-center justify-center"
+      <div
+        ref={viewportRef}
+        className="absolute inset-x-0 top-0 bottom-[116px] md:bottom-[124px]"
+      >
+        {!ready && (
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            aria-hidden="true"
+          >
+            <CadovaLogo className="h-12" alt="" />
+          </div>
+        )}
+        <canvas
+          ref={canvasRef}
           aria-hidden="true"
-        >
-          <CadovaLogo className="h-12" alt="" />
-        </div>
-      )}
-      <canvas
-        ref={canvasRef}
-        aria-hidden="true"
-        className={`pointer-events-none absolute inset-0 h-full w-full transition-opacity duration-500 ${ready ? "opacity-100" : "opacity-0"}`}
-      />
-      {ready && motionAllowed && (
-        <button
-          type="button"
-          onClick={() => toggleRef.current?.()}
-          aria-label={controlLabel}
-          title={controlLabel}
-          className="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-lg border border-line bg-background/90 text-ink-soft transition-colors hover:border-line-strong hover:text-primary md:bottom-8 md:right-8"
-        >
-          {playing ? (
-            <Pause size={17} />
-          ) : finished ? (
-            <RotateCcw size={17} />
-          ) : (
-            <Play size={17} />
+          className={`pointer-events-none absolute inset-0 h-full w-full transition-opacity duration-500 ${ready ? "opacity-100" : "opacity-0"}`}
+        />
+      </div>
+      <div className="absolute inset-x-4 bottom-3 md:inset-x-6 md:bottom-5">
+        <div className="flex min-h-[48px] items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold leading-6 text-ink">
+              {storyChapters[activeChapter].title}
+            </h2>
+            <p className="text-sm leading-5 text-ink-soft">
+              {storyChapters[activeChapter].detail}
+            </p>
+          </div>
+          {ready && motionAllowed && (
+            <button
+              type="button"
+              onClick={() => toggleRef.current?.()}
+              aria-label={controlLabel}
+              title={controlLabel}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-line bg-background/90 text-ink-soft transition-colors hover:border-line-strong hover:text-primary"
+            >
+              {playing ? (
+                <Pause size={17} />
+              ) : finished ? (
+                <RotateCcw size={17} />
+              ) : (
+                <Play size={17} />
+              )}
+            </button>
           )}
-        </button>
-      )}
+        </div>
+        <nav aria-label="Parcours du dossier" className="mt-2 grid grid-cols-4 gap-2">
+          {storyChapters.map((chapter, index) => (
+            <button
+              type="button"
+              key={chapter.label}
+              aria-pressed={activeChapter === index}
+              onClick={() => seekRef.current?.(index)}
+              className={`min-h-11 border-b-2 px-1 text-sm font-medium transition-colors ${activeChapter === index ? "border-primary text-primary" : "border-line text-muted hover:border-line-strong hover:text-ink"}`}
+            >
+              {chapter.label}
+            </button>
+          ))}
+        </nav>
+      </div>
     </div>
   )
 }

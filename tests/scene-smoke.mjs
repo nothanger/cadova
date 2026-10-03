@@ -20,6 +20,20 @@ let browser
 let decoder
 const errors = []
 let checks = 0
+const chapters = [
+  { label: "Client", title: "Le dossier client", detail: "Coordonnées et notes" },
+  { label: "Devis", title: "Le devis envoyé", detail: "En attente de réponse" },
+  {
+    label: "Relance",
+    title: "La relance à préparer",
+    detail: "Message à personnaliser",
+  },
+  {
+    label: "Dossier",
+    title: "Le dossier complet",
+    detail: "Client, devis et historique",
+  },
+]
 
 function stopServer() {
   if (!server?.pid) return
@@ -52,9 +66,14 @@ try {
   })
   decoder = await browser.newPage()
 
-  async function pageFor(width, reducedMotion = "reduce", noWebGL = false) {
+  async function pageFor(
+    width,
+    reducedMotion = "reduce",
+    noWebGL = false,
+    height = 1000,
+  ) {
     const context = await browser.newContext({
-      viewport: { width, height: 1000 },
+      viewport: { width, height },
       reducedMotion: reducedMotion === "no-preference" ? "reduce" : reducedMotion,
     })
     if (noWebGL) {
@@ -193,6 +212,62 @@ try {
     checks++
   }
 
+  async function assertChapter(page, index) {
+    const chapter = chapters[index]
+    const navigation = page.getByRole("navigation", {
+      name: "Parcours du dossier",
+      exact: true,
+    })
+    await navigation.waitFor({ state: "visible" })
+    const buttons = navigation.getByRole("button")
+    assert.equal(await buttons.count(), chapters.length)
+    assert.equal(
+      await navigation
+        .getByRole("button", { name: chapter.label, exact: true })
+        .getAttribute("aria-pressed"),
+      "true",
+      `Current chapter should be ${chapter.label}`,
+    )
+    assert.equal(await navigation.locator('[aria-pressed="true"]').count(), 1)
+    const heading = page.getByRole("heading", {
+      name: chapter.title,
+      level: 2,
+      exact: true,
+    })
+    const detail = page.getByText(chapter.detail, { exact: true }).first()
+    assert.ok(await heading.isVisible(), `${chapter.title} must be visible`)
+    assert.ok(await detail.isVisible(), `${chapter.detail} must be visible`)
+    for (const element of [heading, detail]) {
+      const metrics = await element.evaluate((node) => {
+        const rect = node.getBoundingClientRect()
+        return {
+          fontSize: parseFloat(window.getComputedStyle(node).fontSize),
+          left: rect.left,
+          right: rect.right,
+          viewport: window.innerWidth,
+          fits: node.scrollWidth <= node.clientWidth,
+        }
+      })
+      assert.ok(metrics.fontSize >= 14, `Readable text: ${JSON.stringify(metrics)}`)
+      assert.ok(
+        metrics.left >= 0 && metrics.right <= metrics.viewport && metrics.fits,
+        `Chapter text should fit: ${JSON.stringify(metrics)}`,
+      )
+    }
+    checks++
+  }
+
+  async function captureChapters(page, canvas, width, elapsed = 0) {
+    for (const [index, time] of [3000, 9000, 15000, 23000].entries()) {
+      await page.clock.fastForward(time - elapsed)
+      elapsed = time
+      await assertChapter(page, index)
+      await assertArtwork(
+        await snapshot(canvas, `story-${width}-${chapters[index].label.toLowerCase()}`),
+      )
+    }
+  }
+
   for (const width of [320, 390, 768, 1440]) {
     const { page, canvas } = await pageFor(width)
     const rect = await canvas.boundingBox()
@@ -205,6 +280,7 @@ try {
     )
     const first = await snapshot(canvas, `static-${width}`)
     await assertArtwork(first)
+    await assertChapter(page, 3)
     await page.waitForTimeout(400)
     assert.equal(
       await difference(first, await snapshot(canvas)),
@@ -218,6 +294,22 @@ try {
       "Reduced motion ignores pointer tilt",
     )
     assert.equal(await page.getByRole("button", { name: /animation/ }).count(), 0)
+    await page
+      .getByRole("navigation", { name: "Parcours du dossier" })
+      .getByRole("button", { name: "Devis", exact: true })
+      .click()
+    await assertChapter(page, 1)
+    const selected = await snapshot(canvas)
+    assert.ok(
+      (await difference(first, selected)) > 0.002,
+      "Reduced motion chapter selection should update the static composition",
+    )
+    await page.waitForTimeout(400)
+    assert.equal(
+      await difference(selected, await snapshot(canvas)),
+      0,
+      "Reduced motion chapter selection must not start animation",
+    )
     await page.context().close()
     checks += 4
     console.log(`PASS: scene frame, pixels and reduced motion ${width}px`)
@@ -238,20 +330,39 @@ try {
     0,
     "Pause should freeze the scene",
   )
+  const chapterNavigation = page.getByRole("navigation", {
+    name: "Parcours du dossier",
+  })
+  await chapterNavigation.getByRole("button", { name: "Relance", exact: true }).focus()
+  await page.keyboard.press("Enter")
+  await assertChapter(page, 2)
+  assert.ok(
+    await page.getByRole("button", { name: "Reprendre l’animation" }).isVisible(),
+    "Selecting a chapter while paused must preserve pause",
+  )
+  const selectedPaused = await snapshot(canvas, "selected-paused")
+  await page.clock.fastForward(500)
+  assert.equal(
+    await difference(selectedPaused, await snapshot(canvas)),
+    0,
+    "Keyboard chapter selection must remain paused",
+  )
   await page.getByRole("button", { name: "Reprendre l’animation" }).click()
   await page.mouse.move(0, 0)
   await page.clock.runFor(32)
-  await page.clock.fastForward(600)
+  await page.clock.fastForward(6500)
+  await assertChapter(page, 3)
   assert.ok(
-    (await difference(paused, await snapshot(canvas))) > 0.002,
+    (await difference(selectedPaused, await snapshot(canvas))) > 0.002,
     "Resume should continue the scene",
   )
-  await page.clock.fastForward(10000)
+  await page.clock.fastForward(27000)
   await page
     .getByRole("button", { name: "Rejouer l’animation" })
     .waitFor({ timeout: 15000 })
   const finished = await snapshot(canvas, "finished")
   await assertArtwork(finished)
+  await assertChapter(page, 3)
   await page.clock.fastForward(400)
   assert.equal(
     await difference(finished, await snapshot(canvas)),
@@ -261,6 +372,7 @@ try {
   await page.getByRole("button", { name: "Rejouer l’animation" }).click()
   await page.mouse.move(0, 0)
   await page.getByRole("button", { name: "Mettre l’animation en pause" }).waitFor()
+  await assertChapter(page, 0)
   assert.ok(
     (await difference(finished, await snapshot(canvas))) > 0.002,
     "Replay should restart the sequence",
@@ -288,6 +400,27 @@ try {
   checks += 8
   console.log("PASS: animation, pause/resume, finish/replay and live motion preference")
 
+  const story = await pageFor(1440, "no-preference")
+  await captureChapters(story.page, story.canvas, 1440)
+  await story.page
+    .getByRole("navigation", { name: "Parcours du dossier" })
+    .getByRole("button", { name: "Devis", exact: true })
+    .click()
+  await story.page.mouse.move(0, 0)
+  await assertChapter(story.page, 1)
+  assert.ok(
+    await story.page
+      .getByRole("button", { name: "Mettre l’animation en pause" })
+      .isVisible(),
+    "Selecting a chapter during playback must preserve playback",
+  )
+  await story.page.clock.runFor(32)
+  await story.page.clock.fastForward(5000)
+  await assertChapter(story.page, 2)
+  await story.page.clock.fastForward(27000)
+  await story.page.getByRole("button", { name: "Rejouer l’animation" }).waitFor()
+  await story.page.context().close()
+
   const mobile = await pageFor(390, "no-preference")
   const mobileStart = await snapshot(mobile.canvas, "mobile-motion-start")
   await mobile.page.clock.fastForward(700)
@@ -298,8 +431,36 @@ try {
     )) > 0.002,
     "Mobile scene should animate",
   )
+  await captureChapters(mobile.page, mobile.canvas, 390, 700)
   await mobile.page.context().close()
   checks++
+
+  for (const [width, height] of [
+    [390, 844],
+    [1440, 900],
+  ]) {
+    const view = await pageFor(width, "reduce", false, height)
+    await assertChapter(view.page, 3)
+    assert.equal(
+      await view.page.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth,
+      ),
+      false,
+      `No page overflow at ${width}px`,
+    )
+    await view.page.screenshot({ path: `${artifacts}scene-page-${width}.png` })
+    await view.page.screenshot({
+      path: `${artifacts}scene-page-full-${width}.png`,
+      fullPage: true,
+    })
+    await view.page
+      .getByRole("navigation", { name: "Parcours du dossier" })
+      .getByRole("button", { name: "Relance", exact: true })
+      .click()
+    await assertChapter(view.page, 2)
+    await view.page.screenshot({ path: `${artifacts}scene-page-relance-${width}.png` })
+    await view.page.context().close()
+  }
 
   const fallback = await pageFor(390, "reduce", true)
   const logo = fallback.canvas.locator("..").locator("img")
@@ -316,6 +477,12 @@ try {
     await fallback.page.getByRole("button", { name: /animation/ }).count(),
     0,
   )
+  await assertChapter(fallback.page, 3)
+  await fallback.page
+    .getByRole("navigation", { name: "Parcours du dossier" })
+    .getByRole("button", { name: "Client", exact: true })
+    .click()
+  await assertChapter(fallback.page, 0)
   assert.ok(
     await fallback.page
       .locator("main")

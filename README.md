@@ -32,7 +32,7 @@ pnpm test:scene
 
 L’aperçu de partage se régénère avec `pnpm assets:social`, également via Chromium. Il réutilise le logo et les couleurs de Cadova, sans chiffres ni données fictives.
 
-`test:scene` vérifie spécifiquement le logo 3D : rendu visible et cadrage sur quatre largeurs, animation, pause, reprise, rejeu, réduction du mouvement et repli sans WebGL. Il démarre son serveur sur le port 8448 et utilise la même simulation Supabase ; `TEST_BASE_URL` permet de réutiliser un serveur existant.
+`test:scene` vérifie spécifiquement le logo 3D : rendu visible et cadrage sur quatre largeurs, les quatre chapitres du parcours, leur lisibilité sur mobile, la navigation clavier, la pause, la reprise, le rejeu, la réduction du mouvement et le repli sans WebGL. Il démarre son serveur sur le port 8448 et utilise la même simulation Supabase ; `TEST_BASE_URL` permet de réutiliser un serveur existant.
 
 ## Production
 
