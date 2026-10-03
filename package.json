@@ -11,6 +11,7 @@
     "lint": "eslint . --max-warnings 0",
     "test": "tsx --test tests/*.test.ts",
     "test:ui": "node tests/ui-smoke.mjs",
+    "test:scene": "node tests/scene-smoke.mjs",
     "assets:social": "node scripts/generate-social-card.mjs"
   },
   "dependencies": {

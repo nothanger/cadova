@@ -143,15 +143,10 @@ export function LandingPage() {
           tabIndex={-1}
           className="relative isolate overflow-hidden border-b border-line"
         >
-          <div className="absolute inset-y-0 right-0 z-0 hidden w-full opacity-95 md:block md:w-[64%]">
-            <Suspense fallback={null}>
-              <FollowupScene />
-            </Suspense>
-          </div>
-          <div className="page-container relative z-10 grid min-h-[calc(100svh-72px)] items-center py-14 md:grid-cols-[0.92fr_1.08fr] lg:py-20">
-            <div className="max-w-2xl">
+          <div className="page-container relative grid items-center pb-2 pt-8 md:min-h-[calc(100svh-120px)] md:grid-cols-[0.92fr_1.08fr] md:py-14 lg:py-20">
+            <div className="min-w-0 max-w-2xl">
               <p className="section-kicker">Cadova</p>
-              <h1 className="mt-5 max-w-[12ch] text-[clamp(3.2rem,8.5vw,7.8rem)] font-semibold leading-[0.88] tracking-[-.065em]">
+              <h1 className="mt-5 max-w-[12ch] text-[2.65rem] font-semibold leading-[1.02] tracking-normal min-[390px]:text-[3.2rem] lg:text-[4.5rem] xl:text-[5.25rem]">
                 Le suivi commercial, sans bruit.
               </h1>
               <p className="mt-7 max-w-md text-base leading-7 text-ink-soft">
@@ -171,16 +166,16 @@ export function LandingPage() {
                   Voir l’usage
                 </a>
               </div>
-              <div className="relative mt-8 h-72 overflow-hidden md:hidden">
-                <Suspense fallback={null}>
-                  <FollowupScene />
-                </Suspense>
-              </div>
+            </div>
+            <div className="relative -mx-4 mt-3 h-[260px] min-w-0 min-[390px]:h-[300px] md:-mr-8 md:ml-0 md:mt-0 md:h-[520px] lg:h-[600px]">
+              <Suspense fallback={null}>
+                <FollowupScene />
+              </Suspense>
             </div>
           </div>
         </section>
 
-        <section id="usage" tabIndex={-1} className="py-14 lg:py-20">
+        <section id="usage" tabIndex={-1} className="py-10 lg:py-20">
           <div className="page-container grid gap-10 lg:grid-cols-[0.72fr_1.28fr]">
             <div>
               <p className="section-kicker">Usage</p>
