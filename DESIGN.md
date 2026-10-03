@@ -4,7 +4,7 @@ Cadova s’adresse d’abord aux artisans et indépendants, puis aux petites ent
 
 ## Direction
 
-Une interface de travail calme : fond papier (#f5f5f0), surfaces blanches, encre (#182725), vert profond (#246052) pour les actions. Le point violet du logo existant reste un détail de marque, pas un thème de surfaces. Aucun dégradé, effet lumineux ou décor sans rôle.
+Une interface de travail calme : fond papier (#f6f6f2), surfaces blanches, encre bleu nuit du logo (#0b1020), accent indigo (#4f52e8) pour les actions. Le site doit prolonger le logo existant sans transformer chaque surface en violet. Aucun dégradé, effet lumineux ou décor sans rôle.
 
 Police système pour éviter un téléchargement tiers et assurer la lisibilité. Titres courts, graisse 600, interlignage 1,15 à 1,3 ; corps 14 à 16 px, interlignage 1,5 à 1,7. Chiffres tabulaires pour les montants ; monospace réservé aux références.
 
