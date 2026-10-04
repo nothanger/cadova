@@ -46,6 +46,7 @@ Appliquer `0007_support_notifications.sql` après `0006_platform_admin.sql`. Les
 ```sh
 pnpm typecheck
 pnpm typecheck:admin
+pnpm typecheck:followups
 pnpm lint
 pnpm test
 pnpm build
@@ -75,4 +76,45 @@ Le domaine prévu dans `CNAME` est `cadova.fr`. `vercel.json` permet l’ouvertu
 
 Dans Supabase Auth, `site_url` est `https://www.cadova.fr`, le domaine canonique du site. `uri_allow_list` doit autoriser `https://cadova.fr`, `https://cadova.fr/**`, `https://www.cadova.fr` et `https://www.cadova.fr/**`. L’inscription demande un retour vers l’origine du site, et la réinitialisation du mot de passe vers `/reset-password`. Ces paramètres sont gérés dans Supabase, indépendamment du déploiement Vercel ; ne pas remettre l’ancienne adresse Figma dans l’URL du site.
 
-Limites préexistantes à vérifier côté backend : le cron et la fonction email utilisent actuellement un horaire et un délai fixes, indépendants de certaines préférences de l’interface. Aucune modification de base de données ou de fonction distante n’est effectuée par la refonte visuelle.
+## Relances automatiques des devis
+
+Dans **Paramètres → Email de réponse**, le propriétaire renseigne l’adresse à laquelle les clients répondront. Il peut aussi mettre en pause tous les envois de son entreprise. La pause ne modifie pas les calendriers individuels.
+
+Dans le détail d’un devis envoyé, **Relances automatiques** permet de modifier le sujet et le message, vérifier l’aperçu et choisir les deux délais. Les valeurs initiales sont J+5 et J+12 après la date d’envoi, à 9 h à Paris. Les variables acceptées sont `{{client_name}}`, `{{quote_reference}}`, `{{company_name}}` et `{{amount_formatted}}` ; les espaces autour du nom sont acceptés. L’activation est explicite et limitée à ce devis ; elle nécessite un email client, une adresse de réponse et un service email prêt. Aucun devis existant n’est activé par l’installation.
+
+Les envois s’arrêtent si le devis est accepté, refusé ou expiré, si l’activation est retirée ou si une réponse est enregistrée dans Cadova. Utiliser **Enregistrer une réponse** pour cela ; une simple note ne bloque pas le calendrier. Cadova ne lit pas les réponses dans la boîte email. Une pause peut être reprise. Le délai entre les deux étapes est conservé même si le premier envoi arrive en retard.
+
+L’historique distingue l’acceptation par le service email, les erreurs et les envois dont le résultat reste incertain. L’acceptation par Resend ne prouve ni la réception ni la lecture par le client. Les résultats apparaissent aussi dans les notifications du compte ayant activé la séquence.
+
+### Installation côté Supabase
+
+Les migrations `0009_quote_email_automation.sql` et `0010_quote_followup_scheduler_auth.sql` doivent suivre `0008`. La file persistante et les RPC vérifient les permissions, l’état du devis et les réservations concurrentes. Le navigateur ne peut ni réclamer un envoi, ni écrire un résultat automatique, ni lire les secrets.
+
+Le script suivant utilise uniquement `SUPABASE_ACCESS_TOKEN` et `SUPABASE_PROJECT_REF`, fournis dans un terminal sécurisé :
+
+```sh
+python3 scripts/deploy-quote-followups.py --inspect
+python3 scripts/deploy-quote-followups.py --deploy
+```
+
+`--inspect` reste en lecture seule. `--deploy` installe les deux migrations une seule fois, déploie `send-quote-followups` et programme le cron `cadova-quote-followups` toutes les cinq minutes. Il conserve le secret de scheduler existant dans Supabase Vault. La commande cron ne contient aucun secret ; la file `pg_net` reçoit seulement une preuve HMAC liée à l’action `run`, valable cinq minutes et utilisable une seule fois. Supabase gère les permissions de son extension réseau ; la clé permanente ne transite donc pas dans cette file. Le script n’active pas l’envoi email, ne crée aucun compte et n’envoie aucun email de test. Redéployer conserve le choix d’activation déjà configuré.
+
+La fonction est déployée avec `verify_jwt=false` et vérifie elle-même les preuves du scheduler avec la clé privée dédiée `QUOTE_FOLLOWUP_SCHEDULER_SECRET`. Les nonces sont consommés atomiquement via une RPC réservée au serveur. Un appel direct d’administration peut utiliser cette clé comme Bearer ; elle ne doit jamais être mise dans une commande cron ou une file réseau. Seules les requêtes POST authentifiées `run` et `health` sont acceptées. `health` synchronise l’état visible du service sans réserver ni envoyer de message. Ne jamais remplacer cette vérification par un simple accès public.
+
+Pour permettre les envois réels, vérifier le domaine d’envoi dans **Resend**, puis renseigner dans **Supabase → Edge Functions → Secrets** :
+
+- `RESEND_API_KEY` : clé Resend autorisée à envoyer ;
+- `RESEND_FROM` : adresse d’envoi du domaine vérifié, éventuellement précédée du nom Cadova ;
+- `QUOTE_FOLLOWUP_EMAIL_ENABLED=true` : activation du service après configuration.
+
+Ne pas mettre ces valeurs dans `VITE_*`, Git ou le chat. Le worker actualise le statut de configuration au prochain passage. Pour arrêter les nouveaux envois au niveau du service, définir `QUOTE_FOLLOWUP_EMAIL_ENABLED=false`.
+
+Chaque job possède une clé d’idempotence stable et conserve le contenu exact transmis au fournisseur. Les nouvelles tentatives réutilisent cette clé et ce contenu, au maximum cinq fois dans une fenêtre prudente de 23 heures. Un résultat ambigu après cette fenêtre passe en vérification manuelle et bloque une réactivation qui pourrait doubler l’envoi. Un redéploiement ne reconstruit pas le contenu d’un envoi déjà tenté. La clé Resend n’est pas une garantie illimitée : sa durée documentée est de 24 heures.
+
+`pnpm test` inclut les tests du worker avec fournisseur simulé : autorisation, état désactivé, échappement, timeout, reprise et absence de double envoi. `pnpm test:admin:db` couvre également l’isolation entre entreprises, les arrêts et les courses de cette file dans PostgreSQL. Pour vérifier l’entrée Edge :
+
+```sh
+pnpm dlx deno@2.5.6 check supabase/functions/send-quote-followups/index.ts
+```
+
+La fonction historique `send-followup-reminders`, qui produit un récapitulatif interne, est distincte des emails aux clients. Son ancien scheduler à placeholders reste inutilisable tel quel. Elle demeure désactivée tant que sa propre configuration et sa clé dédiée ne sont pas fournies ; l’installation des relances clients ne l’active pas. Ses préférences et son calendrier historique doivent faire l’objet d’une vérification séparée avant activation.

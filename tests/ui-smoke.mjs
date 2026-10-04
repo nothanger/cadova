@@ -199,7 +199,7 @@ try {
 
   await app.getByRole("button", { name: "Enregistrer", exact: true }).click()
   await app.getByText("Relance effectuée", { exact: true }).waitFor()
-  await app.getByLabel("Note ou réponse reçue").fill("Réponse de test")
+  await app.getByLabel("Note de suivi").fill("Réponse de test")
   await app.getByRole("button", { name: "Ajouter", exact: true }).click()
   await app.getByText("Réponse de test", { exact: true }).waitFor()
   await app.getByLabel("Date de la prochaine relance").fill("2027-01-01")
@@ -1912,6 +1912,869 @@ try {
     await responsiveCompany.context().close()
     checks += 2
   }
+
+  // A late response for one quote must not replace the quote opened meanwhile.
+  for (const action of ["status", "note"]) {
+    const page = await pageFor({ session: true, quoteMutationDelay: 350 })
+    await visit(page, "/app/quotes/quote-test", "TEST-001")
+    if (action === "status") {
+      await page.getByRole("button", { name: "Marquer accepté" }).click()
+    } else {
+      await page.getByLabel("Note de suivi").fill("Note réservée au premier devis")
+      await page.getByRole("button", { name: "Ajouter", exact: true }).click()
+    }
+    await page.waitForFunction(() => window.__quoteMutationCalls.length === 1)
+    await page.evaluate(() => {
+      window.history.pushState({}, "", "/app/quotes/draft-test")
+      window.dispatchEvent(new window.PopStateEvent("popstate"))
+    })
+    await page.getByRole("heading", { name: "TEST-002", exact: true }).waitFor()
+    await page.waitForFunction(() => window.__quoteMutationCalls[0].completed)
+    assert.equal(
+      await page.getByRole("heading", { name: "TEST-001", exact: true }).count(),
+      0,
+    )
+    assert.equal(
+      await page.getByRole("heading", { name: "TEST-002", exact: true }).isVisible(),
+      true,
+    )
+    assert.equal(
+      await page.evaluate(
+        () =>
+          window.__testStore.quotes.find((quote) => quote.id === "draft-test").status,
+      ),
+      "draft",
+    )
+    assert.equal(
+      await page.getByText("Note réservée au premier devis", { exact: true }).count(),
+      0,
+    )
+    assert.equal(await page.getByLabel("Note de suivi").inputValue(), "")
+    await page.context().close()
+    checks += 5
+  }
+  console.log("PASS: late manual quote actions retain the current route and draft")
+
+  // Client email automation is opt-in for each quote and separate from manual notes.
+  const automationSettings = await pageFor({
+    session: true,
+    automation: true,
+    automationConfigured: false,
+    automationDelay: 180,
+  })
+  await visit(automationSettings, "/app/settings", "Paramètres")
+  await automationSettings
+    .getByRole("heading", { name: "Emails aux clients" })
+    .waitFor()
+  assert.equal(
+    await automationSettings.getByLabel("Nom affiché dans les emails").inputValue(),
+    "Entreprise de test",
+  )
+  assert.equal(
+    await automationSettings
+      .getByLabel("Nom affiché dans les emails")
+      .getAttribute("readonly"),
+    "",
+  )
+  assert.equal(
+    await automationSettings.getByLabel("Adresse de réponse").inputValue(),
+    "test@example.test",
+  )
+  assert.equal(
+    await automationSettings.evaluate(
+      () => window.__testStore.company_email_settings.length,
+    ),
+    0,
+    "A proposed contact is not implicitly saved",
+  )
+  await automationSettings.getByLabel("Adresse de réponse").fill("invalid-address")
+  await automationSettings
+    .getByRole("button", { name: "Enregistrer les coordonnées email" })
+    .click()
+  assert.equal(
+    await automationSettings.evaluate(
+      () =>
+        window.__automationCalls.filter(
+          (call) => call.name === "set_company_email_settings",
+        ).length,
+    ),
+    0,
+  )
+  await automationSettings.getByLabel("Adresse de réponse").fill("REPLY@example.test")
+  await automationSettings
+    .getByRole("button", { name: "Enregistrer les coordonnées email" })
+    .evaluate((button) => {
+      button.click()
+      button.click()
+    })
+  await automationSettings
+    .getByRole("status")
+    .filter({ hasText: "L’adresse de réponse a été enregistrée." })
+    .waitFor()
+  assert.equal(
+    await automationSettings.evaluate(
+      () =>
+        window.__automationCalls.filter(
+          (call) => call.name === "set_company_email_settings",
+        ).length,
+    ),
+    1,
+  )
+  assert.equal(
+    await automationSettings.getByLabel("Adresse de réponse").inputValue(),
+    "reply@example.test",
+  )
+  await automationSettings.reload({ waitUntil: "networkidle" })
+  assert.equal(
+    await automationSettings.getByLabel("Adresse de réponse").inputValue(),
+    "reply@example.test",
+  )
+  assert.equal(
+    await automationSettings.evaluate(
+      () => window.__testStore.quote_followup_automations.length,
+    ),
+    0,
+    "Company contact configuration does not opt any quote in",
+  )
+  await automationSettings.context().close()
+  checks += 9
+
+  const automationMember = await pageFor({
+    session: true,
+    automation: true,
+    memberRole: "member",
+  })
+  await visit(automationMember, "/app/settings", "Paramètres")
+  await automationMember.getByRole("heading", { name: "Emails aux clients" }).waitFor()
+  assert.equal(
+    await automationMember.getByLabel("Adresse de réponse").getAttribute("readonly"),
+    "",
+  )
+  assert.equal(
+    await automationMember
+      .getByRole("button", { name: "Enregistrer les coordonnées email" })
+      .count(),
+    0,
+  )
+  await visit(automationMember, "/app/quotes/quote-test", "TEST-001")
+  await automationMember
+    .getByRole("button", { name: "Activer les relances automatiques" })
+    .waitFor()
+  assert.equal(
+    await automationMember
+      .getByRole("button", { name: "Activer les relances automatiques" })
+      .isEnabled(),
+    true,
+  )
+  await automationMember.goto(`${base}/app/quotes/quote-other`, {
+    waitUntil: "networkidle",
+  })
+  await automationMember.getByText("Devis introuvable.", { exact: true }).waitFor()
+  assert.equal(
+    await automationMember
+      .getByText("client-other@example.test", { exact: true })
+      .count(),
+    0,
+  )
+  await automationMember.context().close()
+  checks += 4
+
+  const automationAnonymous = await pageFor({ automation: true })
+  await visit(automationAnonymous, "/app/quotes/quote-test", "Connexion")
+  assert.equal(
+    await automationAnonymous
+      .getByRole("button", { name: "Activer les relances automatiques" })
+      .count(),
+    0,
+  )
+  await automationAnonymous.context().close()
+  checks++
+
+  for (const scenario of [
+    {
+      serviceReady: false,
+      warning: "Le service email n’est pas encore configuré.",
+      repair: null,
+    },
+    {
+      automationConfigured: false,
+      warning: "Enregistrez une adresse de réponse",
+      repair: "Configurer les emails de l’entreprise",
+    },
+    {
+      clientWithoutEmail: true,
+      warning: "Le client n’a pas d’adresse email.",
+      repair: "Modifier la fiche client",
+    },
+    {
+      quoteStatus: "accepted",
+      warning: "L’activation est réservée aux devis envoyés",
+      repair: null,
+    },
+    {
+      expiresToday: true,
+      warning: "L’activation est réservée aux devis envoyés",
+      repair: null,
+    },
+    {
+      companyAutomationPaused: true,
+      warning: "Les envois automatiques de cette entreprise sont en pause.",
+      repair: null,
+    },
+  ]) {
+    const page = await pageFor({ session: true, automation: true, ...scenario })
+    await visit(page, "/app/quotes/quote-test", "TEST-001")
+    await page.getByText(scenario.warning, { exact: false }).waitFor()
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Activer les relances automatiques" })
+        .isDisabled(),
+      true,
+    )
+    await page.getByRole("button", { name: "Enregistrer les réglages" }).click()
+    await page
+      .getByRole("status")
+      .filter({ hasText: "Aucun envoi automatique n’est activé." })
+      .waitFor()
+    assert.equal(
+      await page.evaluate(
+        () =>
+          window.__testStore.quote_followup_automations.find(
+            (row) => row.quote_id === "quote-test",
+          ).enabled,
+      ),
+      false,
+    )
+    assert.equal(
+      await page.evaluate(() => window.__testStore.quote_followup_jobs.length),
+      0,
+    )
+    if (scenario.repair) {
+      await page.getByRole("button", { name: scenario.repair }).click()
+      await page
+        .getByRole("heading", {
+          name: scenario.clientWithoutEmail ? "Modifier le client" : "Paramètres",
+          exact: true,
+        })
+        .waitFor()
+    }
+    await page.context().close()
+    checks += 3
+  }
+  console.log(
+    "PASS: email prerequisites, per-quote consent, company owner and route permissions",
+  )
+
+  const automatic = await pageFor({
+    session: true,
+    automation: true,
+    automationDelay: 180,
+  })
+  await visit(automatic, "/app/quotes/quote-test", "TEST-001")
+  await automatic
+    .getByRole("button", { name: "Activer les relances automatiques" })
+    .waitFor()
+  assert.equal(await automatic.getByText("Désactivées", { exact: true }).count(), 1)
+  assert.equal(
+    await automatic.evaluate(() => window.__testStore.quote_followup_jobs.length),
+    0,
+  )
+  assert.equal(await automatic.getByLabel("Première relance après").inputValue(), "5")
+  assert.equal(await automatic.getByLabel("Deuxième relance après").inputValue(), "12")
+  assert.equal(
+    await automatic.getByLabel("Objet de la relance").getAttribute("maxlength"),
+    "160",
+  )
+  assert.equal(
+    await automatic
+      .getByLabel("Message de relance automatique")
+      .getAttribute("maxlength"),
+    "4000",
+  )
+  await automatic.getByLabel("Deuxième relance après").fill("5")
+  assert.equal(
+    await automatic
+      .getByRole("button", { name: "Activer les relances automatiques" })
+      .isDisabled(),
+    true,
+  )
+  await automatic
+    .getByText("Le second délai doit dépasser le premier", { exact: false })
+    .waitFor()
+  await automatic.getByLabel("Deuxième relance après").fill("12")
+  await automatic
+    .getByLabel("Message de relance automatique")
+    .fill("Bonjour {{unknown_variable}}")
+  await automatic
+    .getByText("La variable « unknown_variable » n’est pas disponible.")
+    .waitFor()
+  assert.equal(
+    await automatic.getByRole("button", { name: "Voir l’aperçu" }).isDisabled(),
+    true,
+  )
+  await automatic
+    .getByLabel("Message de relance automatique")
+    .fill(
+      "Bonjour {{ client_name }}, pouvez-vous répondre au devis {{quote_reference}} de {{amount_formatted}} ?\n{{company_name}}",
+    )
+  await automatic.getByRole("button", { name: "Voir l’aperçu" }).click()
+  const automaticPreview = automatic.getByRole("dialog", {
+    name: "Aperçu de la relance automatique",
+  })
+  await automaticPreview.waitFor()
+  await automaticPreview.getByText("client@example.test", { exact: true }).waitFor()
+  await automaticPreview.getByText("Votre devis TEST-001", { exact: true }).waitFor()
+  await automaticPreview
+    .getByText("Bonjour Client de test, pouvez-vous répondre au devis TEST-001 de", {
+      exact: false,
+    })
+    .waitFor()
+  assert.match(await automaticPreview.innerText(), /1\s?250,50\s?€/)
+  await automaticPreview.getByText("contact@example.test", { exact: true }).waitFor()
+  assert.equal(await automaticPreview.getByText(/\{\{.*\}\}/).count(), 0)
+  assert.equal(
+    await automatic.evaluate(() => window.__testStore.quote_followup_jobs.length),
+    0,
+    "Preview never schedules an email",
+  )
+  await accessible(automatic)
+  await automatic.keyboard.press("Escape")
+  assert.equal(
+    await automatic
+      .getByRole("button", { name: "Voir l’aperçu" })
+      .evaluate((button) => button === document.activeElement),
+    true,
+  )
+  await automatic
+    .getByRole("button", { name: "Activer les relances automatiques" })
+    .evaluate((button) => {
+      button.click()
+      button.click()
+    })
+  await automatic
+    .getByRole("status")
+    .filter({ hasText: "Les relances automatiques sont activées pour ce devis." })
+    .waitFor()
+  let schedule = await automatic.evaluate(() => ({
+    config: window.__testStore.quote_followup_automations.find(
+      (row) => row.quote_id === "quote-test",
+    ),
+    jobs: window.__testStore.quote_followup_jobs.filter(
+      (job) => job.status === "queued",
+    ),
+    calls: window.__automationCalls.filter(
+      (call) => call.name === "save_quote_followup_automation" && call.args.p_enabled,
+    ).length,
+  }))
+  assert.equal(schedule.config.enabled, true)
+  assert.equal(schedule.calls, 1, "One activation despite a rapid double click")
+  assert.equal(schedule.jobs.length, 2)
+  assert.deepEqual(
+    schedule.jobs.map((job) => job.step),
+    [1, 2],
+  )
+  const parisDate = (value) =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Paris",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(value))
+  const addCalendarDays = (day, count) =>
+    new Date(new Date(`${day}T12:00:00Z`).getTime() + count * 86400000)
+      .toISOString()
+      .slice(0, 10)
+  assert.equal(
+    parisDate(schedule.jobs[0].scheduled_at),
+    addCalendarDays(parisDate(Date.now()), 1),
+    "Overdue first email moves to tomorrow",
+  )
+  assert.equal(
+    parisDate(schedule.jobs[1].scheduled_at),
+    addCalendarDays(parisDate(schedule.jobs[0].scheduled_at), 7),
+  )
+  assert.equal(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Paris",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(schedule.jobs[0].scheduled_at)),
+    "09:00",
+  )
+  const originalDates = schedule.jobs.map((job) => job.scheduled_at)
+  await automatic.getByRole("button", { name: "Mettre en pause" }).click()
+  await automatic.getByText("En pause", { exact: true }).waitFor()
+  assert.deepEqual(
+    await automatic.evaluate(() =>
+      window.__testStore.quote_followup_jobs
+        .filter((job) => job.status === "queued")
+        .map((job) => job.scheduled_at),
+    ),
+    originalDates,
+  )
+  await automatic.getByText("Cette échéance est conservée pendant la pause.").waitFor()
+  await automatic.getByRole("button", { name: "Modifier les réglages" }).click()
+  await automatic.getByRole("button", { name: "Enregistrer les réglages" }).click()
+  await automatic
+    .getByRole("status")
+    .filter({ hasText: "Les réglages des relances ont été enregistrés." })
+    .waitFor()
+  assert.equal(
+    await automatic.evaluate(
+      () =>
+        window.__testStore.quote_followup_automations.find(
+          (row) => row.quote_id === "quote-test",
+        ).paused,
+    ),
+    true,
+    "Editing an active plan does not implicitly resume it",
+  )
+  await automatic.getByText("En pause", { exact: true }).waitFor()
+  await automatic.getByRole("button", { name: "Reprendre les relances" }).click()
+  await automatic.getByText("Actives", { exact: true }).waitFor()
+  assert.deepEqual(
+    await automatic.evaluate(() =>
+      window.__testStore.quote_followup_jobs
+        .filter((job) => job.status === "queued")
+        .map((job) => job.scheduled_at),
+    ),
+    originalDates,
+  )
+  await automatic
+    .getByLabel("Note de suivi")
+    .fill("Note interne sans réponse du client")
+  await automatic.getByRole("button", { name: "Ajouter", exact: true }).click()
+  await automatic
+    .getByText("Note interne sans réponse du client", { exact: true })
+    .waitFor()
+  assert.equal(
+    await automatic.evaluate(
+      () =>
+        window.__testStore.quote_followup_automations.find(
+          (row) => row.quote_id === "quote-test",
+        ).enabled,
+    ),
+    true,
+    "A manual note does not stop emails",
+  )
+  await automatic.getByRole("button", { name: "Modifier les réglages" }).click()
+  await automatic.getByLabel("Première relance après").fill("7")
+  await automatic.getByLabel("Deuxième relance après").fill("15")
+  const postponedDay = addCalendarDays(parisDate(Date.now()), 14)
+  await automatic
+    .getByLabel("Reporter la prochaine relance automatique")
+    .fill(parisDate(Date.now()))
+  assert.equal(
+    await automatic
+      .getByRole("button", { name: "Enregistrer les réglages" })
+      .isDisabled(),
+    true,
+  )
+  await automatic
+    .getByLabel("Reporter la prochaine relance automatique")
+    .fill(postponedDay)
+  await automatic.getByRole("button", { name: "Enregistrer les réglages" }).click()
+  await automatic
+    .getByRole("status")
+    .filter({ hasText: "Les réglages des relances ont été enregistrés." })
+    .waitFor()
+  schedule = await automatic.evaluate(() => ({
+    config: window.__testStore.quote_followup_automations.find(
+      (row) => row.quote_id === "quote-test",
+    ),
+    jobs: window.__testStore.quote_followup_jobs.filter(
+      (job) => job.status === "queued",
+    ),
+  }))
+  assert.equal(schedule.config.first_delay_days, 7)
+  assert.equal(schedule.config.second_delay_days, 15)
+  assert.equal(parisDate(schedule.jobs[0].scheduled_at), postponedDay)
+  assert.equal(
+    parisDate(schedule.jobs[1].scheduled_at),
+    addCalendarDays(postponedDay, 8),
+  )
+  await automatic.reload({ waitUntil: "networkidle" })
+  await automatic.getByText("Actives", { exact: true }).waitFor()
+  assert.equal(await automatic.getByText("Programmé", { exact: true }).count(), 2)
+  await automatic.getByRole("button", { name: "Marquer une réponse reçue" }).click()
+  const responseDialog = automatic.getByRole("dialog", {
+    name: "Marquer une réponse reçue",
+  })
+  await responseDialog
+    .getByLabel("Réponse du client")
+    .fill("Le client demande de revoir le délai.")
+  assert.equal(
+    await responseDialog.getByLabel("Réponse du client").getAttribute("maxlength"),
+    "4000",
+  )
+  await responseDialog
+    .getByRole("button", { name: "Enregistrer la réponse" })
+    .evaluate((button) => {
+      button.click()
+      button.click()
+    })
+  await automatic
+    .getByRole("status")
+    .filter({
+      hasText: "La réponse a été enregistrée. Les relances suivantes sont arrêtées.",
+    })
+    .waitFor()
+  await automatic
+    .getByText("Le client demande de revoir le délai.", { exact: true })
+    .waitFor()
+  assert.equal(
+    await automatic.evaluate(
+      () =>
+        window.__testStore.quote_events.filter(
+          (event) => event.event_type === "response",
+        ).length,
+    ),
+    1,
+  )
+  assert.equal(
+    await automatic.evaluate(
+      () =>
+        window.__testStore.quote_followup_automations.find(
+          (row) => row.quote_id === "quote-test",
+        ).stop_reason,
+    ),
+    "response_received",
+  )
+  assert.equal(
+    await automatic.evaluate(
+      () =>
+        window.__testStore.quote_followup_jobs.filter((job) => job.status === "queued")
+          .length,
+    ),
+    0,
+  )
+  await automatic.getByRole("button", { name: "Modifier les réglages" }).click()
+  assert.equal(
+    await automatic
+      .getByRole("button", { name: "Activer les relances automatiques" })
+      .isDisabled(),
+    true,
+  )
+  await automatic.context().close()
+  checks += 37
+  console.log(
+    "PASS: automation preview, validation, scheduling, pause, consent and response stop",
+  )
+
+  for (const action of ["stop", "accepted", "refused"]) {
+    const page = await pageFor({
+      session: true,
+      automation: true,
+      automationState: "enabled",
+    })
+    await visit(page, "/app/quotes/quote-test", "TEST-001")
+    await page.getByText("Actives", { exact: true }).waitFor()
+    await page
+      .getByRole("button", {
+        name:
+          action === "stop"
+            ? "Arrêter les relances"
+            : action === "accepted"
+              ? "Marquer accepté"
+              : "Marquer refusé",
+      })
+      .click()
+    await page
+      .getByText(
+        action === "stop"
+          ? "Les prochaines relances automatiques sont arrêtées."
+          : action === "accepted"
+            ? "Le devis a été accepté."
+            : "Le devis a été refusé.",
+        { exact: true },
+      )
+      .waitFor()
+    assert.equal(
+      await page.evaluate(
+        () =>
+          window.__testStore.quote_followup_automations.find(
+            (row) => row.quote_id === "quote-test",
+          ).stop_reason,
+      ),
+      action === "stop" ? "disabled" : action,
+    )
+    assert.equal(
+      await page.evaluate(() =>
+        window.__testStore.quote_followup_jobs.some((job) => job.status === "queued"),
+      ),
+      false,
+    )
+    await page.context().close()
+    checks += 2
+  }
+
+  const automationFailure = await pageFor({
+    session: true,
+    automation: true,
+    automationFailure: "save_quote_followup_automation",
+  })
+  await visit(automationFailure, "/app/quotes/quote-test", "TEST-001")
+  await automationFailure
+    .getByLabel("Objet de la relance")
+    .fill("Message conservé en cas d’erreur")
+  await automationFailure
+    .getByRole("button", { name: "Activer les relances automatiques" })
+    .click()
+  await automationFailure
+    .getByRole("alert")
+    .filter({ hasText: "Impossible d’enregistrer les relances automatiques." })
+    .waitFor()
+  assert.equal(
+    await automationFailure.getByLabel("Objet de la relance").inputValue(),
+    "Message conservé en cas d’erreur",
+  )
+  assert.equal(
+    await automationFailure.evaluate(
+      () => window.__testStore.quote_followup_jobs.length,
+    ),
+    0,
+  )
+  assert.equal(await automationFailure.getByText("Actives", { exact: true }).count(), 0)
+  await automationFailure.evaluate(() => {
+    window.__scenario.automationFailure = null
+  })
+  await automationFailure
+    .getByRole("button", { name: "Activer les relances automatiques" })
+    .click()
+  await automationFailure.getByText("Actives", { exact: true }).waitFor()
+  assert.equal(
+    await automationFailure.evaluate(
+      () =>
+        window.__testStore.quote_followup_jobs.filter((job) => job.status === "queued")
+          .length,
+    ),
+    2,
+  )
+  await automationFailure.context().close()
+  checks += 4
+
+  const contactFailure = await pageFor({
+    session: true,
+    automation: true,
+    automationConfigured: false,
+    automationFailure: "set_company_email_settings",
+  })
+  await visit(contactFailure, "/app/settings", "Paramètres")
+  await contactFailure
+    .getByLabel("Adresse de réponse")
+    .fill("keep-contact@example.test")
+  await contactFailure
+    .getByRole("button", { name: "Enregistrer les coordonnées email" })
+    .click()
+  await contactFailure
+    .getByRole("alert")
+    .filter({ hasText: "Impossible d’enregistrer l’adresse de réponse." })
+    .waitFor()
+  assert.equal(
+    await contactFailure.getByLabel("Adresse de réponse").inputValue(),
+    "keep-contact@example.test",
+  )
+  assert.equal(
+    await contactFailure.evaluate(
+      () => window.__testStore.company_email_settings.length,
+    ),
+    0,
+  )
+  await contactFailure.context().close()
+  checks += 2
+
+  for (const state of [
+    "sent",
+    "failed",
+    "processing",
+    "delivery_unknown",
+    "completed",
+  ]) {
+    const page = await pageFor({
+      session: true,
+      automation: true,
+      automationState: state,
+      automationHistory: state === "sent",
+    })
+    await visit(page, "/app/quotes/quote-test", "TEST-001")
+    await page
+      .getByRole("heading", { name: "Historique des envois automatiques" })
+      .waitFor()
+    const label = {
+      sent: "Envoyé",
+      failed: "Échec",
+      processing: "Envoi en cours",
+      delivery_unknown: "Résultat à vérifier",
+      completed: "Envoyé",
+    }[state]
+    await page.locator("ol").getByText(label, { exact: true }).first().waitFor()
+    if (["processing", "delivery_unknown"].includes(state)) {
+      const settingsButton = page.getByRole("button", {
+        name: /^(Modifier|Masquer) les réglages$/,
+      })
+      if (state === "processing") assert.equal(await settingsButton.isDisabled(), true)
+      else assert.equal(await page.getByLabel("Objet de la relance").isDisabled(), true)
+      await page
+        .getByText("Un envoi est en cours ou son résultat reste à vérifier.", {
+          exact: false,
+        })
+        .waitFor()
+      if (state === "delivery_unknown") {
+        await page
+          .getByText(
+            "Aucun nouvel essai automatique n’est effectué pour éviter un doublon.",
+            { exact: false },
+          )
+          .waitFor()
+        assert.equal(
+          await page
+            .getByRole("button", { name: "Activer les relances automatiques" })
+            .isDisabled(),
+          true,
+        )
+      } else {
+        await page.getByRole("button", { name: "Mettre en pause" }).click()
+        await page.getByText("En pause", { exact: true }).waitFor()
+        await page.getByRole("button", { name: "Arrêter les relances" }).click()
+        await page
+          .getByRole("status")
+          .filter({ hasText: "Les prochaines relances automatiques sont arrêtées." })
+          .waitFor()
+        assert.equal(
+          await page.locator("ol").getByText("Envoi en cours", { exact: true }).count(),
+          1,
+          "An in-flight result stays visible after stop",
+        )
+      }
+    }
+    if (state === "completed") {
+      await page.getByText("Les deux relances sont terminées.").waitFor()
+      assert.equal(
+        await page
+          .getByRole("button", { name: "Activer les relances automatiques" })
+          .isDisabled(),
+        true,
+      )
+      assert.equal(
+        await page.locator("ol").getByText("Envoyé", { exact: true }).count(),
+        2,
+      )
+    }
+    if (state === "sent") {
+      const pagination = page.getByRole("navigation", {
+        name: "Pagination des envois automatiques",
+      })
+      await pagination.getByRole("button", { name: "Envois précédents" }).click()
+      await pagination.getByText("Page 2", { exact: true }).waitFor()
+      await page.locator("ol").getByText("Annulé", { exact: true }).first().waitFor()
+      await pagination.getByRole("button", { name: "Envois plus récents" }).click()
+      await pagination.getByText("Page 1", { exact: true }).waitFor()
+      await page.locator("ol").getByText("Envoyé", { exact: true }).waitFor()
+      await page
+        .getByRole("button", { name: /^Notifications/ })
+        .first()
+        .click()
+      const notificationRegion = page.getByRole("region", {
+        name: "Notifications",
+        exact: true,
+      })
+      await notificationRegion
+        .getByRole("link")
+        .filter({ hasText: "Relance automatique envoyée" })
+        .click()
+      await page.getByRole("heading", { name: "TEST-001", exact: true }).waitFor()
+      assert.equal(new URL(page.url()).pathname, "/app/quotes/quote-test")
+      assert.equal(
+        await page.evaluate(
+          () =>
+            window.__testStore.quote_followup_jobs.filter(
+              (job) => job.status === "sent",
+            ).length,
+        ),
+        1,
+      )
+      await page.getByRole("button", { name: "Modifier les réglages" }).click()
+      await page.getByRole("button", { name: "Enregistrer les réglages" }).click()
+      await page
+        .getByRole("status")
+        .filter({ hasText: "Les réglages des relances ont été enregistrés." })
+        .waitFor()
+      assert.equal(
+        await page.evaluate(
+          () =>
+            window.__testStore.quote_followup_jobs.filter(
+              (job) => job.step === 1 && job.status === "queued",
+            ).length,
+        ),
+        0,
+        "Changing settings cannot schedule the already-sent first step again",
+      )
+      assert.equal(
+        await page.evaluate(
+          () =>
+            window.__testStore.quote_followup_jobs.filter(
+              (job) => job.step === 2 && job.status === "queued",
+            ).length,
+        ),
+        1,
+      )
+      checks += 2
+    }
+    await page.context().close()
+    checks += 2
+  }
+  console.log(
+    "PASS: automatic send history, notifications, terminal states and failures without duplicates",
+  )
+
+  for (const width of [320, 390, 1280]) {
+    const page = await pageFor({ session: true, automation: true }, width)
+    await visit(page, "/app/quotes/quote-test", "TEST-001")
+    await page.getByRole("button", { name: "Voir l’aperçu" }).waitFor()
+    await accessible(page)
+    await page.screenshot({
+      path: `${artifacts}automation-${width}.png`,
+      fullPage: true,
+    })
+    await page.getByRole("button", { name: "Voir l’aperçu" }).click()
+    const preview = page.getByRole("dialog", {
+      name: "Aperçu de la relance automatique",
+    })
+    const box = await preview.boundingBox()
+    assert.ok(
+      box.x >= 0 && box.x + box.width <= width,
+      "Email preview fits the viewport",
+    )
+    await accessible(page)
+    await page.screenshot({ path: `${artifacts}automation-preview-${width}.png` })
+    await page.keyboard.press("Escape")
+    await page.getByRole("button", { name: "Marquer une réponse reçue" }).click()
+    const response = page.getByRole("dialog", { name: "Marquer une réponse reçue" })
+    await response.getByLabel("Réponse du client").fill("Réponse à conserver")
+    await accessible(page)
+    await page.screenshot({ path: `${artifacts}automation-response-${width}.png` })
+    await response.getByRole("button", { name: "Annuler" }).click()
+    assert.equal(
+      await page.evaluate(() =>
+        window.__testStore.quote_events.some(
+          (event) => event.event_type === "response",
+        ),
+      ),
+      false,
+    )
+    await visit(page, "/app/settings", "Paramètres")
+    await page.getByLabel("Adresse de réponse").waitFor()
+    await accessible(page)
+    await page.screenshot({
+      path: `${artifacts}automation-settings-${width}.png`,
+      fullPage: true,
+    })
+    await page.context().close()
+    checks += 2
+  }
+  console.log(
+    "PASS: automated followups and company email settings at 320/390/1280px, accessibility and dialogs",
+  )
 
   const assets = await pageFor()
   for (const path of ["/favicon.svg", "/favicon.png", "/social-card.png"])

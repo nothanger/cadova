@@ -34,7 +34,7 @@ function sql(input) {
   )
 }
 
-function concurrentSql(input) {
+function concurrentSql(input, onOutput = () => {}) {
   return new Promise((resolve, reject) => {
     const child = spawn("docker", [
       "exec",
@@ -51,6 +51,7 @@ function concurrentSql(input) {
     let output = ""
     child.stdout.on("data", (chunk) => {
       output += chunk
+      onOutput(output)
     })
     child.stderr.on("data", (chunk) => {
       output += chunk
@@ -89,6 +90,8 @@ try {
     "0006_platform_admin.sql",
     "0007_support_notifications.sql",
     "0008_admin_company_management.sql",
+    "0009_quote_email_automation.sql",
+    "0010_quote_followup_scheduler_auth.sql",
   ]) {
     sql(
       readFileSync(
@@ -101,6 +104,12 @@ try {
   sql(readFileSync(new URL("../tests/notifications-rls.sql", import.meta.url), "utf8"))
   sql(
     readFileSync(new URL("../tests/admin-companies-rls.sql", import.meta.url), "utf8"),
+  )
+  sql(
+    readFileSync(new URL("../tests/quote-automation-rls.sql", import.meta.url), "utf8"),
+  )
+  sql(
+    readFileSync(new URL("../tests/quote-followup-scheduler-auth.sql", import.meta.url), "utf8"),
   )
   sql(`
     insert into auth.users(id,email) values
@@ -294,8 +303,120 @@ try {
       end if;
     end $$;
   `)
+  sql(`
+    insert into public.companies(id,name) values ('73000000-0000-4000-8000-000000000001','Automation races');
+    insert into public.clients(id,company_id,name,email) values
+      ('83000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000001','Race recipient','recipient@example.test');
+    insert into public.quotes(id,company_id,client_id,reference,amount_cents,status,sent_at) values
+      ('93000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000001','83000000-0000-4000-8000-000000000001','RACE',10000,'sent',current_date-20);
+    set role service_role;
+    select public.set_quote_followup_service_status(true,true,'ready');
+    reset role;
+    set role authenticated;
+    select set_config('request.jwt.claim.sub','60000000-0000-4000-8000-000000000004',false);
+    select public.set_company_email_settings('73000000-0000-4000-8000-000000000001','contact@example.test');
+    select public.save_quote_followup_automation('93000000-0000-4000-8000-000000000001',true);
+    reset role;
+    update public.quote_followup_jobs set next_attempt_at=clock_timestamp()-interval '1 minute'
+      where quote_id='93000000-0000-4000-8000-000000000001' and step=1;
+  `)
+  let releaseConfigurationReady
+  const configurationReady = new Promise((resolve) => {
+    releaseConfigurationReady = resolve
+  })
+  const configurationWrite = concurrentSql(
+    `
+      begin;
+      set local role authenticated;
+      select set_config('request.jwt.claim.sub','60000000-0000-4000-8000-000000000004',true);
+      select public.save_quote_followup_automation('93000000-0000-4000-8000-000000000001',true,5,12,'Updated {{quote_reference}}','Updated {{client_name}}');
+      reset role;
+      update public.quote_followup_jobs set next_attempt_at=clock_timestamp()-interval '1 minute'
+        where quote_id='93000000-0000-4000-8000-000000000001' and generation=2 and step=1;
+      select 'AUTOMATION_CONFIGURATION_LOCKED';
+      select pg_sleep(1);
+      commit;
+    `,
+    (output) => {
+      if (output.includes("AUTOMATION_CONFIGURATION_LOCKED")) {
+        releaseConfigurationReady()
+      }
+    },
+  )
+  // Also release on failure so a failed setup cannot leave the test waiting.
+  configurationWrite.then(releaseConfigurationReady, releaseConfigurationReady)
+  await configurationReady
+  const claimDuringConfiguration = await concurrentSql(`
+    set role service_role;
+    select 'CLAIMED='||count(*) from public.claim_quote_followup_jobs();
+  `)
+  const configurationResult = await configurationWrite
+  if (
+    configurationResult.code !== 0 ||
+    claimDuringConfiguration.code !== 0 ||
+    !claimDuringConfiguration.output.includes("CLAIMED=0")
+  ) {
+    throw new Error("A worker claimed an old generation during a configuration write")
+  }
+  sql(`
+    do $$ begin
+      if exists(select 1 from public.quote_followup_jobs where quote_id='93000000-0000-4000-8000-000000000001' and generation=1 and status<>'cancelled')
+        or (select count(*) from public.quote_followup_jobs where quote_id='93000000-0000-4000-8000-000000000001' and generation=2 and status='queued')<>2 then
+        raise exception 'Configuration race retained two active generations';
+      end if;
+    end $$;
+    update public.quote_followup_jobs set next_attempt_at=clock_timestamp()-interval '1 minute'
+      where quote_id='93000000-0000-4000-8000-000000000001' and generation=2 and step=1;
+  `)
+  const duplicateClaims = await Promise.all(
+    [1, 2].map(() =>
+      concurrentSql(`
+        begin;
+        set local role service_role;
+        select 'CLAIMED='||count(*) from public.claim_quote_followup_jobs();
+        select pg_sleep(0.25);
+        commit;
+      `),
+    ),
+  )
+  if (
+    duplicateClaims.some((result) => result.code !== 0) ||
+    duplicateClaims.reduce(
+      (count, result) => count + Number(result.output.match(/CLAIMED=(\d+)/)?.[1] ?? -10),
+      0,
+    ) !== 1
+  ) {
+    throw new Error("Two concurrent workers claimed the same follow-up")
+  }
+  sql(`
+    do $$ begin
+      if (select count(*) from public.quote_followup_jobs where quote_id='93000000-0000-4000-8000-000000000001' and status='processing' and attempts=1)<>1
+        or (select count(*) from public.quote_followup_attempts where company_id='73000000-0000-4000-8000-000000000001')<>1 then
+        raise exception 'Concurrent claims duplicated an attempt';
+      end if;
+    end $$;
+  `)
+  const proofEpoch = Math.floor(Date.now() / 1000)
+  const proofRetries = await Promise.all(
+    [1, 2].map(() =>
+      concurrentSql(`
+        begin;
+        set local role service_role;
+        select 'CONSUMED='||public.consume_quote_followup_scheduler_nonce('da000000-0000-4000-8000-000000000010',${proofEpoch});
+        select pg_sleep(0.25);
+        commit;
+      `),
+    ),
+  )
+  if (
+    proofRetries.some((result) => result.code !== 0) ||
+    proofRetries.filter((result) => result.output.includes("CONSUMED=true")).length !== 1 ||
+    proofRetries.filter((result) => result.output.includes("CONSUMED=false")).length !== 1
+  ) {
+    throw new Error("Concurrent scheduler proof replay was not rejected")
+  }
   console.log(
-    "Administration et messagerie : RLS, gestion d’entreprises, journal atomique, 34 destinataires et six courses concurrentes validés.",
+    "Administration, messagerie et relances : RLS, calendrier, arrêts, reprises, snapshots, preuves uniques et neuf courses concurrentes validés. Aucun email envoyé.",
   )
 } finally {
   docker(["exec", container, "dropdb", "-U", "postgres", "--force", database])

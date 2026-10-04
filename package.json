@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "typecheck:admin": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/platform-admin/handler.ts tests/admin-api.test.ts",
+    "typecheck:followups": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/send-quote-followups/handler.ts tests/quote-followup-worker.test.ts",
     "lint": "eslint . --max-warnings 0",
     "test": "tsx --test tests/*.test.ts",
     "test:ui": "node tests/ui-smoke.mjs",

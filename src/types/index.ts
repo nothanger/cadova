@@ -51,6 +51,8 @@ export type QuoteEventType =
   | "note"
   | "status_change"
   | "followup_scheduled"
+  | "followup_auto_sent"
+  | "followup_auto_failed"
 
 export interface QuoteEvent {
   id: string
@@ -60,6 +62,8 @@ export interface QuoteEvent {
   content: string | null
   occurred_at: string
   created_by: string | null
+  automation_job_id?: string | null
+  delivery_status?: "sent" | "failed" | "delivery_unknown" | null
 }
 
 /** A quote joined with its client name — the common read shape in lists. */

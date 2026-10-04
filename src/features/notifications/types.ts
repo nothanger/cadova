@@ -4,6 +4,8 @@ export type NotificationType =
   | "support_message"
   | "admin_message"
   | "admin_announcement"
+  | "quote_followup_sent"
+  | "quote_followup_failed"
 
 export interface Notification {
   id: string

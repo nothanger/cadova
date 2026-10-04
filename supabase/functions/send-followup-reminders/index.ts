@@ -9,14 +9,17 @@
  *
  * Variables d'environnement requises (côté Supabase secrets) :
  *   RESEND_API_KEY   — clé API Resend (jamais exposée au frontend)
- *   RESEND_FROM      — adresse expéditrice vérifiée, ex. "Cadova <hello@cadova.app>"
- *   APP_URL          — URL publique de l'application, ex. "https://app.cadova.app"
+ *   RESEND_FROM      — adresse expéditrice vérifiée (aucune valeur par défaut)
+ *   APP_URL          — URL HTTPS publique de l'application
+ *   FOLLOWUP_REMINDER_SCHEDULER_SECRET — secret dédié, au moins 32 caractères
+ *   FOLLOWUP_REMINDER_EMAIL_ENABLED  — "true" après validation du service email
  *
  * Sécurité : la fonction est appelée par le scheduler avec le header Authorization
- * contenant la SUPABASE_SERVICE_ROLE_KEY, jamais depuis le frontend.
+ * contenant le secret dédié, jamais depuis le frontend. Ce worker interne est
+ * indépendant des relances clients et reste désactivé tant que non configuré.
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { createClient } from "npm:@supabase/supabase-js@2.112.4"
 
 const FOLLOWUP_DAYS = 3
 
@@ -35,18 +38,36 @@ interface MemberRow {
 }
 
 Deno.serve(async (req) => {
-  // Only accept calls from the scheduler (service role key in Authorization)
+  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 })
   const authHeader = req.headers.get("Authorization") ?? ""
+  const schedulerSecret = Deno.env.get("FOLLOWUP_REMINDER_SCHEDULER_SECRET")
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  if (!authHeader.includes(serviceKey)) {
+  if (
+    !schedulerSecret ||
+    schedulerSecret.length < 32 ||
+    /\s/.test(schedulerSecret) ||
+    !serviceKey
+  ) {
+    return new Response("Scheduler not configured", { status: 503 })
+  }
+  if (authHeader !== `Bearer ${schedulerSecret}`) {
     return new Response("Unauthorized", { status: 401 })
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
   const resendKey = Deno.env.get("RESEND_API_KEY") ?? ""
-  const resendFrom =
-    Deno.env.get("RESEND_FROM") ?? "Cadova <noreply@cadova.app>"
-  const appUrl = Deno.env.get("APP_URL") ?? "https://app.cadova.app"
+  const resendFrom = Deno.env.get("RESEND_FROM")
+  const appUrl = safeAppUrl(Deno.env.get("APP_URL"))
+  if (
+    Deno.env.get("FOLLOWUP_REMINDER_EMAIL_ENABLED") !== "true" ||
+    !supabaseUrl ||
+    !resendKey ||
+    !resendFrom ||
+    /[\r\n\x00]/.test(resendFrom) ||
+    !appUrl
+  ) {
+    return new Response("Email service not configured", { status: 503 })
+  }
 
   const db = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false },
@@ -62,13 +83,13 @@ Deno.serve(async (req) => {
     .eq("email_followup_reminders", true)
 
   if (membersErr) {
-    console.error("[reminders] failed to fetch members", membersErr.message)
+    console.error("[reminders] failed to fetch members")
     return new Response("DB error", { status: 500 })
   }
 
-  const results: string[] = []
+  const results = { sent: 0, skipped: 0, failed: 0 }
 
-  for (const member of members as unknown as MemberRow[] ?? []) {
+  for (const member of (members as unknown as MemberRow[]) ?? []) {
     const { user_id, company_id } = member
 
     // 2. Devis à relancer pour cette entreprise
@@ -81,22 +102,18 @@ Deno.serve(async (req) => {
       .order("sent_at", { ascending: true })
 
     if (quotesErr) {
-      console.error(
-        `[reminders] quotes error for company ${company_id}`,
-        quotesErr.message,
-      )
+      console.error("[reminders] failed to fetch quotes")
       continue
     }
 
-    const dueQuotes = quotes as unknown as QuoteRow[] ?? []
+    const dueQuotes = (quotes as unknown as QuoteRow[]) ?? []
     if (dueQuotes.length === 0) continue // Pas d'email si rien à relancer
 
     // The service role bypasses RLS: check the current Auth state before any
     // notification or email, including when the user still holds an old JWT.
-    const { data: authUser, error: authErr } =
-      await db.auth.admin.getUserById(user_id)
+    const { data: authUser, error: authErr } = await db.auth.admin.getUserById(user_id)
     if (authErr || !authUser?.user?.email) {
-      console.error(`[reminders] cannot get email for user ${user_id}`)
+      console.error("[reminders] recipient unavailable")
       continue
     }
     const bannedUntil = authUser.user.banned_until
@@ -118,18 +135,12 @@ Deno.serve(async (req) => {
       notification_date: today,
     })
 
-    if (notifErr && notifErr.code !== "23505") {
-      // 23505 = unique_violation = déjà créée aujourd'hui → OK
-      console.error(
-        `[reminders] notif insert error for user ${user_id}`,
-        notifErr.message,
-      )
-    }
-
-    // 4. Envoyer l'email via Resend
-    if (!resendKey) {
-      console.warn("[reminders] RESEND_API_KEY not set — skipping email send")
-      results.push(`skipped:${user_id}`)
+    // This legacy digest is attempted at most once per notification/day. The
+    // quote automation worker has a separate durable queue for safe retries.
+    if (notifErr) {
+      if (notifErr.code !== "23505")
+        console.error("[reminders] notification unavailable")
+      results.skipped += 1
       continue
     }
 
@@ -146,27 +157,35 @@ Deno.serve(async (req) => {
       appUrl,
     })
 
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: resendFrom,
-        to: userEmail,
-        subject: `${count} devis à relancer aujourd'hui`,
-        html,
-        text,
-      }),
-    })
+    let res: Response
+    try {
+      res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${resendKey}`,
+          "Content-Type": "application/json",
+          "Idempotency-Key": `cadova-summary-${company_id}-${user_id}-${today}`,
+        },
+        signal: AbortSignal.timeout(15000),
+        body: JSON.stringify({
+          from: resendFrom,
+          to: userEmail,
+          subject: `${count} devis à relancer aujourd'hui`,
+          html,
+          text,
+        }),
+      })
+    } catch {
+      console.error("[reminders] provider request interrupted")
+      results.failed += 1
+      continue
+    }
 
     if (!res.ok) {
-      const body = await res.text()
-      console.error(`[reminders] Resend error for ${userEmail}`, body)
-      results.push(`error:${user_id}`)
+      console.error("[reminders] provider rejected request")
+      results.failed += 1
     } else {
-      results.push(`sent:${user_id}`)
+      results.sent += 1
     }
   }
 
@@ -178,6 +197,36 @@ Deno.serve(async (req) => {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function safeAppUrl(value: string | undefined): string | null {
+  if (!value) return null
+  try {
+    const url = new URL(value)
+    return url.protocol === "https:" &&
+      !url.username &&
+      !url.password &&
+      !url.search &&
+      !url.hash
+      ? url.href.replace(/\/$/, "")
+      : null
+  } catch {
+    return null
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[character]!,
+  )
+}
 
 function todayParis(): string {
   return new Date().toLocaleDateString("fr-CA", { timeZone: "Europe/Paris" })
@@ -212,8 +261,8 @@ function buildEmailHtml({
     .map(
       (q) => `
       <tr>
-        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">${q.client?.name ?? "—"}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-family:monospace;font-size:13px;color:#6b7280;">${q.reference}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">${escapeHtml(q.client?.name ?? "—")}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-family:monospace;font-size:13px;color:#6b7280;">${escapeHtml(q.reference)}</td>
         <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-family:monospace;text-align:right;">${formatEur(q.amount_cents)}</td>
       </tr>`,
     )
@@ -246,7 +295,7 @@ function buildEmailHtml({
           : ""
       }
       <div style="margin-top:32px;text-align:center;">
-        <a href="${appUrl}/app" style="display:inline-block;background:#5a5cff;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;">
+        <a href="${escapeHtml(appUrl)}/app" style="display:inline-block;background:#5a5cff;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;">
           Ouvrir Cadova
         </a>
       </div>
@@ -254,7 +303,7 @@ function buildEmailHtml({
     <div style="padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
       <p style="margin:0;font-size:12px;color:#9ca3af;">
         Vous recevez cet email car vous utilisez Cadova FollowUp.<br>
-        Pour vous désabonner, désactivez les rappels dans vos <a href="${appUrl}/app/settings" style="color:#5a5cff;">paramètres</a>.
+        Pour vous désabonner, désactivez les rappels dans vos <a href="${escapeHtml(appUrl)}/app/settings" style="color:#5a5cff;">paramètres</a>.
       </p>
     </div>
   </div>

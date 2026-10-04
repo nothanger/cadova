@@ -32,7 +32,7 @@ const legalPages: Record<
       {
         title: "Accès et prestataires",
         content:
-          "Les données métier sont rattachées à une entreprise. Le code prévoit des contrôles d’accès Supabase et des rappels email via Resend. La liste des prestataires effectivement activés, les lieux d’hébergement et les garanties de transfert restent à confirmer.",
+          "Les données métier sont rattachées à une entreprise. Supabase gère les comptes et la base de données. Les relances automatiques, lorsqu’elles sont activées, transmettent à Resend l’adresse du destinataire et le contenu de l’email. La liste des prestataires effectivement activés, les lieux d’hébergement et les garanties de transfert restent à confirmer.",
       },
       {
         title: "Conservation et suppression",
@@ -64,7 +64,7 @@ const legalPages: Record<
       {
         title: "Le service",
         content:
-          "Cadova permet de conserver les coordonnées des clients, suivre les devis et préparer des relances. La préparation d’un message ne l’envoie pas automatiquement au client : vous utilisez votre propre messagerie.",
+          "Cadova permet de conserver les coordonnées des clients, suivre les devis et préparer des relances dans votre messagerie. Les relances automatiques sont activées séparément pour chaque devis, après vérification du calendrier et du message. Elles nécessitent un service email configuré. Une réponse enregistrée dans Cadova, un devis accepté, refusé ou expiré arrête les prochains envois. Cadova ne lit pas votre boîte email : les réponses reçues doivent être enregistrées dans le dossier.",
       },
       {
         title: "Votre compte",

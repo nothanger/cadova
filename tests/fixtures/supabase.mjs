@@ -23,7 +23,7 @@ const db = {
           {
             company_id: company.id,
             user_id: user.id,
-            role: "owner",
+            role: options.memberRole ?? "owner",
             companies: company,
             email_followup_reminders: true,
             followup_delay_days: 3,
@@ -37,7 +37,7 @@ const db = {
           id: "client-test",
           company_id: company.id,
           name: "Client de test",
-          email: "client@example.test",
+          email: options.clientWithoutEmail ? null : "client@example.test",
           phone: "0102030405",
           notes: "Note de test",
           created_at: today.toISOString(),
@@ -53,8 +53,16 @@ const db = {
           client_id: "client-test",
           reference: "TEST-001",
           amount_cents: 125050,
-          status: "sent",
+          status: options.quoteStatus ?? "sent",
           sent_at: iso(ago),
+          expires_at: options.expiresToday
+            ? new Intl.DateTimeFormat("en-CA", {
+                timeZone: "Europe/Paris",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+              }).format(today)
+            : null,
           notes: "Dossier de test",
           created_at: today.toISOString(),
           updated_at: today.toISOString(),
@@ -91,8 +99,25 @@ const db = {
   ],
   support_threads: [],
   support_messages: [],
+  company_email_settings:
+    options.automation && options.automationConfigured !== false
+      ? [
+          {
+            company_id: company.id,
+            reply_to: "contact@example.test",
+            automation_paused: Boolean(options.companyAutomationPaused),
+            updated_at: today.toISOString(),
+          },
+        ]
+      : [],
+  quote_followup_automations: [],
+  quote_followup_jobs: [],
 }
 window.__testStore = db
+const automationCalls = []
+window.__automationCalls = automationCalls
+const quoteMutationCalls = []
+window.__quoteMutationCalls = quoteMutationCalls
 
 const messagingCalls = []
 const messagingRequests = new Map()
@@ -272,7 +297,7 @@ const adminCompanies = options.admin
       })),
     ].map((entry) => ({ ...entry, owners: [] }))
   : []
-if (options.admin) {
+if (options.admin || options.automation) {
   db.companies.push(otherCompany, ...adminCompanies.slice(2))
   db.company_members.push({
     company_id: otherCompany.id,
@@ -457,6 +482,12 @@ async function companyRpc(name, args = {}) {
   db.notifications = db.notifications.filter(
     (notification) => notification.company_id !== entry.id,
   )
+  for (const table of [
+    "company_email_settings",
+    "quote_followup_automations",
+    "quote_followup_jobs",
+  ])
+    db[table] = db[table].filter((row) => row.company_id !== entry.id)
   adminCompanies.splice(
     adminCompanies.findIndex((company) => company.id === entry.id),
     1,
@@ -651,6 +682,446 @@ async function messagingRpc(name, args = {}) {
   return messagingFailure("22023", "Action inconnue.")
 }
 
+const automationStorageKey = "cadova-test-automation"
+const automationTables = [
+  "company_email_settings",
+  "quote_followup_automations",
+  "quote_followup_jobs",
+  "quotes",
+  "clients",
+  "quote_events",
+  "notifications",
+]
+const automationSubject = "Votre devis {{quote_reference}}"
+const automationBody =
+  "Bonjour {{client_name}}, avez-vous pu consulter le devis {{quote_reference}} ? {{company_name}}"
+const parisDay = (date) =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date)
+const addDays = (day, days) =>
+  new Date(new Date(`${day}T12:00:00Z`).getTime() + days * 86400000)
+    .toISOString()
+    .slice(0, 10)
+function scheduledAt(day) {
+  const noon = new Date(`${day}T12:00:00Z`)
+  const offset = new Intl.DateTimeFormat("en", {
+    timeZone: "Europe/Paris",
+    timeZoneName: "shortOffset",
+  })
+    .formatToParts(noon)
+    .find((part) => part.type === "timeZoneName").value
+  return new Date(
+    `${day}T09:00:00${offset === "GMT+2" ? "+02:00" : "+01:00"}`,
+  ).toISOString()
+}
+function persistAutomation() {
+  if (options.automation)
+    window.sessionStorage.setItem(
+      automationStorageKey,
+      JSON.stringify(
+        Object.fromEntries(automationTables.map((table) => [table, db[table]])),
+      ),
+    )
+}
+function hasCompany(companyId, ownerOnly = false) {
+  return Boolean(
+    session &&
+    (options.admin ||
+      db.company_members.some(
+        (member) =>
+          member.user_id === user.id &&
+          member.company_id === companyId &&
+          (!ownerOnly || member.role === "owner"),
+      )),
+  )
+}
+function automationFailure(code, message) {
+  return { data: null, error: { code, message } }
+}
+function stopAutomation(quoteId, reason) {
+  const config = db.quote_followup_automations.find((row) => row.quote_id === quoteId)
+  if (!config) return
+  Object.assign(config, {
+    enabled: false,
+    next_send_at: null,
+    stop_reason: reason,
+    updated_at: new Date().toISOString(),
+  })
+  db.quote_followup_jobs
+    .filter(
+      (job) =>
+        job.quote_id === quoteId && job.status === "queued" && !job.provider_message_id,
+    )
+    .forEach((job) => {
+      job.status = "cancelled"
+      job.last_error_code = reason
+    })
+}
+function makeJob(quote, generation, step, day, status = "queued") {
+  const when = scheduledAt(day)
+  return {
+    id: `automation-job-${db.quote_followup_jobs.length + 1}`,
+    quote_id: quote.id,
+    company_id: quote.company_id,
+    generation,
+    step,
+    created_at: new Date().toISOString(),
+    status,
+    attempts: status === "queued" ? 0 : 1,
+    scheduled_at: when,
+    next_attempt_at: status === "queued" ? when : null,
+    first_attempt_at: status === "queued" ? null : when,
+    provider_message_id: status === "sent" ? `provider-${step}` : null,
+    sent_at: status === "sent" ? when : null,
+    last_error_code:
+      status === "failed"
+        ? "provider_rejected"
+        : status === "delivery_unknown"
+          ? "provider_timeout"
+          : null,
+  }
+}
+if (options.automation && options.automationState) {
+  const quote = db.quotes.find((row) => row.id === "quote-test")
+  const tomorrow = addDays(parisDay(today), 1)
+  const state = options.automationState
+  const enabled = !["completed", "failed", "delivery_unknown"].includes(state)
+  const config = {
+    quote_id: quote.id,
+    company_id: quote.company_id,
+    enabled,
+    paused: state === "paused",
+    generation: 1,
+    activated_by: user.id,
+    first_delay_days: 5,
+    second_delay_days: 12,
+    subject_template: automationSubject,
+    body_template: automationBody,
+    next_send_at: enabled ? scheduledAt(tomorrow) : null,
+    stop_reason:
+      state === "completed"
+        ? "completed"
+        : state === "delivery_unknown"
+          ? "delivery_unknown"
+          : state === "failed"
+            ? "delivery_failed"
+            : null,
+    updated_at: today.toISOString(),
+  }
+  db.quote_followup_automations.push(config)
+  const firstStatus = [
+    "sent",
+    "failed",
+    "processing",
+    "delivery_unknown",
+    "completed",
+  ].includes(state)
+    ? state === "completed"
+      ? "sent"
+      : state
+    : "queued"
+  db.quote_followup_jobs.push(
+    makeJob(
+      quote,
+      1,
+      1,
+      firstStatus === "queued" ? tomorrow : parisDay(today),
+      firstStatus,
+    ),
+  )
+  db.quote_followup_jobs.push(
+    makeJob(
+      quote,
+      1,
+      2,
+      addDays(tomorrow, 7),
+      state === "completed"
+        ? "sent"
+        : ["failed", "delivery_unknown"].includes(state)
+          ? "cancelled"
+          : "queued",
+    ),
+  )
+  if (state === "sent") config.next_send_at = db.quote_followup_jobs[1].scheduled_at
+  if (options.automationHistory)
+    for (let index = 0; index < 11; index++) {
+      const job = makeJob(
+        quote,
+        0,
+        (index % 2) + 1,
+        addDays(parisDay(today), -index - 1),
+        "cancelled",
+      )
+      job.created_at = new Date(today.getTime() - (index + 1) * 86400000).toISOString()
+      db.quote_followup_jobs.push(job)
+    }
+  if (["sent", "failed", "delivery_unknown"].includes(state)) {
+    const job = db.quote_followup_jobs[0]
+    db.quote_events.push({
+      id: "automation-event-test",
+      quote_id: quote.id,
+      company_id: quote.company_id,
+      event_type: state === "sent" ? "followup_auto_sent" : "followup_auto_failed",
+      content:
+        state === "sent"
+          ? "Première relance automatique envoyée."
+          : "La première relance automatique n’a pas été confirmée.",
+      delivery_status: state === "delivery_unknown" ? "delivery_unknown" : state,
+      automation_job_id: job.id,
+      created_at: today.toISOString(),
+      occurred_at: today.toISOString(),
+    })
+    db.notifications.push({
+      id: "automation-notification-test",
+      user_id: user.id,
+      company_id: quote.company_id,
+      type: state === "sent" ? "quote_followup_sent" : "quote_followup_failed",
+      related_quote_id: quote.id,
+      automation_job_id: job.id,
+      title:
+        state === "sent"
+          ? "Relance automatique envoyée"
+          : "Relance automatique à vérifier",
+      message: "Résultat de l’envoi pour TEST-001.",
+      read_at: null,
+      created_at: today.toISOString(),
+    })
+  }
+}
+if (options.automation) {
+  const saved = window.sessionStorage.getItem(automationStorageKey)
+  if (saved) Object.assign(db, JSON.parse(saved))
+}
+async function automationRpc(name, args = {}) {
+  automationCalls.push({ name, args: window.structuredClone(args) })
+  if (options.automationDelay)
+    await new Promise((resolve) => setTimeout(resolve, options.automationDelay))
+  if (options.automationFailure === name)
+    return automationFailure("XX000", "Test automation connection failure")
+  if (!session) return automationFailure("42501", "Compte actif requis.")
+  const ready = Boolean(options.automation && options.serviceReady !== false)
+  if (name === "read_quote_followup_service_status")
+    return {
+      data: { ready, code: ready ? "ready" : "email_configuration_missing" },
+      error: null,
+    }
+  if (name === "set_company_email_settings") {
+    if (!hasCompany(args.p_company_id, true))
+      return automationFailure(
+        "42501",
+        "Seul un propriétaire actif peut modifier ce contact.",
+      )
+    const reply = args.p_reply_to?.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(reply ?? ""))
+      return automationFailure(
+        "22023",
+        "Saisissez une adresse email de réponse valide.",
+      )
+    let profile = db.company_email_settings.find(
+      (row) => row.company_id === args.p_company_id,
+    )
+    if (!profile) {
+      profile = { company_id: args.p_company_id, automation_paused: false }
+      db.company_email_settings.push(profile)
+    }
+    Object.assign(profile, { reply_to: reply, updated_at: new Date().toISOString() })
+    persistAutomation()
+    return { data: { ...profile }, error: null }
+  }
+  const quote = db.quotes.find((row) => row.id === args.p_quote_id)
+  if (!quote) return automationFailure("P0002", "Devis introuvable.")
+  if (!hasCompany(quote.company_id))
+    return automationFailure("42501", "Ce devis est inaccessible.")
+  let config = db.quote_followup_automations.find((row) => row.quote_id === quote.id)
+  if (name === "get_quote_followup_automation")
+    return { data: config ? { ...config } : null, error: null }
+  if (name === "record_quote_response") {
+    const content = args.p_content?.trim()
+    if (!content || content.length > 4000)
+      return automationFailure(
+        "22023",
+        "La réponse doit contenir entre 1 et 4 000 caractères.",
+      )
+    const event = {
+      id: `response-${db.quote_events.length + 1}`,
+      company_id: quote.company_id,
+      quote_id: quote.id,
+      event_type: "response",
+      content,
+      created_by: user.id,
+      created_at: new Date().toISOString(),
+      occurred_at: new Date().toISOString(),
+    }
+    db.quote_events.push(event)
+    stopAutomation(quote.id, "response_received")
+    persistAutomation()
+    return { data: event.id, error: null }
+  }
+  if (name === "set_quote_followup_automation_paused") {
+    if (config)
+      Object.assign(config, {
+        paused: args.p_paused,
+        updated_at: new Date().toISOString(),
+      })
+    persistAutomation()
+    return { data: config ? { ...config } : null, error: null }
+  }
+  if (
+    !args.p_enabled &&
+    args.p_subject_template === undefined &&
+    args.p_body_template === undefined
+  ) {
+    stopAutomation(quote.id, "disabled")
+    persistAutomation()
+    return { data: config ? { ...config } : null, error: null }
+  }
+  if (
+    db.quote_followup_jobs.some(
+      (job) =>
+        job.quote_id === quote.id &&
+        (["processing", "delivery_unknown"].includes(job.status) ||
+          (job.status === "queued" && job.first_attempt_at)),
+    )
+  )
+    return automationFailure(
+      "23514",
+      "Un envoi est en cours de résolution. Vous pouvez le mettre en pause ou arrêter la suite.",
+    )
+  const first = args.p_first_delay_days
+  const second = args.p_second_delay_days
+  const normalizeVariables = (value) =>
+    value
+      ?.trim()
+      .replace(
+        /\{\{\s*(client_name|quote_reference|company_name|amount_formatted)\s*\}\}/g,
+        "{{$1}}",
+      )
+  const subject = normalizeVariables(args.p_subject_template)
+  const body = normalizeVariables(args.p_body_template)
+  if (
+    !Number.isInteger(first) ||
+    !Number.isInteger(second) ||
+    first < 1 ||
+    second > 90 ||
+    second <= first
+  )
+    return automationFailure(
+      "22023",
+      "Choisissez deux délais croissants entre 1 et 90 jours.",
+    )
+  if (
+    !subject ||
+    subject.length > 160 ||
+    /[\r\n]/.test(subject) ||
+    !body ||
+    body.length > 4000
+  )
+    return automationFailure(
+      "22023",
+      "Vérifiez l’objet (160 caractères) et le message (4 000 caractères).",
+    )
+  if (
+    /\{\{|\}\}/.test(
+      (subject + body).replace(
+        /\{\{(client_name|quote_reference|company_name|amount_formatted)\}\}/g,
+        "",
+      ),
+    )
+  )
+    return automationFailure(
+      "22023",
+      "Les variables autorisées sont client_name, quote_reference et company_name.",
+    )
+  const tomorrow = addDays(parisDay(new Date()), 1)
+  if (args.p_next_send_date && args.p_next_send_date < tomorrow)
+    return automationFailure("22023", "La prochaine date doit être à partir de demain.")
+  if (args.p_enabled) {
+    if (!ready)
+      return automationFailure(
+        "23514",
+        "Le service email doit être configuré avant l’activation.",
+      )
+    if (
+      quote.status !== "sent" ||
+      !quote.sent_at ||
+      (quote.expires_at && quote.expires_at <= parisDay(new Date())) ||
+      db.quote_events.some(
+        (event) => event.quote_id === quote.id && event.event_type === "response",
+      )
+    )
+      return automationFailure(
+        "23514",
+        "Ce devis ne peut plus être relancé automatiquement.",
+      )
+    const profile = db.company_email_settings.find(
+      (row) => row.company_id === quote.company_id,
+    )
+    const client = db.clients.find((row) => row.id === quote.client_id)
+    if (!profile?.reply_to || profile.automation_paused || !client?.email)
+      return automationFailure(
+        "23514",
+        "Renseignez une adresse client et une adresse de réponse valides.",
+      )
+  }
+  if (!config) {
+    config = { quote_id: quote.id, company_id: quote.company_id, generation: 0 }
+    db.quote_followup_automations.push(config)
+  }
+  db.quote_followup_jobs
+    .filter((job) => job.quote_id === quote.id && job.status === "queued")
+    .forEach((job) => {
+      job.status = "cancelled"
+      job.last_error_code = "configuration_changed"
+    })
+  Object.assign(config, {
+    enabled: args.p_enabled,
+    paused: Boolean(args.p_enabled && config.paused),
+    generation: config.generation + 1,
+    activated_by: user.id,
+    first_delay_days: first,
+    second_delay_days: second,
+    subject_template: subject,
+    body_template: body,
+    next_send_at: null,
+    stop_reason: args.p_enabled ? null : "disabled",
+    updated_at: new Date().toISOString(),
+  })
+  if (args.p_enabled) {
+    const sent = db.quote_followup_jobs.filter(
+      (job) => job.quote_id === quote.id && job.status === "sent",
+    )
+    if (sent.some((job) => job.step === 2)) stopAutomation(quote.id, "completed")
+    else {
+      const firstDay =
+        args.p_next_send_date ?? [addDays(quote.sent_at, first), tomorrow].sort().at(-1)
+      const secondDay = sent.some((job) => job.step === 1)
+        ? (args.p_next_send_date ??
+          [addDays(quote.sent_at, second), tomorrow].sort().at(-1))
+        : [addDays(quote.sent_at, second), addDays(firstDay, second - first)]
+            .sort()
+            .at(-1)
+      if (!sent.some((job) => job.step === 1))
+        db.quote_followup_jobs.push(makeJob(quote, config.generation, 1, firstDay))
+      db.quote_followup_jobs.push(makeJob(quote, config.generation, 2, secondDay))
+      config.next_send_at = db.quote_followup_jobs
+        .filter(
+          (job) =>
+            job.quote_id === quote.id &&
+            job.generation === config.generation &&
+            job.status === "queued",
+        )
+        .map((job) => job.scheduled_at)
+        .sort()[0]
+    }
+  }
+  persistAutomation()
+  return { data: { ...config }, error: null }
+}
+
 class Query {
   constructor(table) {
     this.table = table
@@ -658,11 +1129,14 @@ class Query {
     this.mode = "read"
     this.payload = null
     this.one = false
+    this.optionalOne = false
     this.sorts = []
     this.start = 0
     this.end = Infinity
+    this.columns = "*"
   }
-  select() {
+  select(columns = "*") {
+    this.columns = columns
     return this
   }
   eq(key, value) {
@@ -703,6 +1177,7 @@ class Query {
   }
   maybeSingle() {
     this.one = true
+    this.optionalOne = true
     return this
   }
   insert(payload) {
@@ -717,11 +1192,32 @@ class Query {
   }
   then(resolve, reject) {
     return Promise.resolve()
-      .then(() => {
+      .then(async () => {
+        let mutation
+        if (
+          options.quoteMutationDelay &&
+          this.mode !== "read" &&
+          ["quotes", "quote_events"].includes(this.table)
+        ) {
+          mutation = {
+            table: this.table,
+            payload: window.structuredClone(this.payload),
+            completed: false,
+          }
+          quoteMutationCalls.push(mutation)
+          await new Promise((resolve) =>
+            setTimeout(resolve, options.quoteMutationDelay),
+          )
+        }
         if (options.fail && this.table === "quotes")
           return { data: null, error: { message: "Test connection failure" } }
         if (options.messagingFailure === this.table)
           return { data: null, error: { message: "Test messaging connection failure" } }
+        if (options.automationFailure === this.table)
+          return {
+            data: null,
+            error: { message: "Test automation connection failure" },
+          }
         if (
           options.messagingFailure === "read_notifications" &&
           this.table === "notifications" &&
@@ -736,6 +1232,17 @@ class Query {
         )
         if (this.table === "notifications")
           rows = rows.filter((row) => session && row.user_id === user.id)
+        if (
+          [
+            "quotes",
+            "clients",
+            "quote_events",
+            "company_email_settings",
+            "quote_followup_automations",
+            "quote_followup_jobs",
+          ].includes(this.table)
+        )
+          rows = rows.filter((row) => hasCompany(row.company_id))
         if (this.table === "support_threads")
           rows = rows.filter(
             (row) => session && (options.admin || row.user_id === user.id),
@@ -759,11 +1266,18 @@ class Query {
           }
           db[this.table].push(row)
           rows = [row]
+          if (this.table === "quote_events" && row.event_type === "response")
+            stopAutomation(row.quote_id, "response_received")
         }
         if (this.mode === "update")
           rows.forEach((row) => Object.assign(row, this.payload))
+        if (this.mode === "update" && this.table === "quotes" && this.payload.status)
+          rows
+            .filter((quote) => quote.status !== "sent")
+            .forEach((quote) => stopAutomation(quote.id, quote.status))
         if (this.mode !== "read") persistMessaging()
         if (this.mode !== "read") persistCompanies()
+        if (this.mode !== "read") persistAutomation()
         const count = rows.length
         rows = [...rows]
           .sort((a, b) => {
@@ -774,10 +1288,24 @@ class Query {
             return 0
           })
           .slice(this.start, this.end + 1)
+        const clientColumns = this.columns
+          .match(/client:clients\s*\(([^)]*)\)/)?.[1]
+          .split(",")
+          .map((column) => column.trim())
         const joined = rows.map((row) => ({
           ...row,
           ...(this.table === "quotes"
-            ? { client: db.clients.find((c) => c.id === row.client_id) || null }
+            ? {
+                client: (() => {
+                  const client = db.clients.find((entry) => entry.id === row.client_id)
+                  if (!client) return null
+                  return clientColumns && !clientColumns.includes("*")
+                    ? Object.fromEntries(
+                        clientColumns.map((column) => [column, client[column]]),
+                      )
+                    : { ...client }
+                })(),
+              }
             : {}),
           ...(this.table === "clients"
             ? {
@@ -787,6 +1315,16 @@ class Query {
               }
             : {}),
         }))
+        if (mutation) mutation.completed = true
+        if (this.one && !this.optionalOne && joined.length !== 1)
+          return {
+            data: null,
+            error: {
+              code: "PGRST116",
+              message: "JSON object requested, multiple (or no) rows returned",
+            },
+            count,
+          }
         return { data: this.one ? joined[0] || null : joined, error: null, count }
       })
       .then(resolve, reject)
@@ -796,6 +1334,17 @@ export const isSupabaseConfigured = true
 export const supabase = {
   from: (table) => new Query(table),
   rpc: async (name, args) => {
+    if (
+      [
+        "get_quote_followup_automation",
+        "save_quote_followup_automation",
+        "set_quote_followup_automation_paused",
+        "record_quote_response",
+        "read_quote_followup_service_status",
+        "set_company_email_settings",
+      ].includes(name)
+    )
+      return automationRpc(name, args)
     if (["admin_create_company", "admin_delete_company"].includes(name))
       return companyRpc(name, args)
     if (

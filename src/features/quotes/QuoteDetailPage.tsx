@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import {
   AlertTriangle,
@@ -36,6 +36,8 @@ import { humanizeError } from "@/lib/errors"
 import { formatCents } from "@/lib/money"
 import { formatDate, todayISO } from "@/lib/dates"
 import { daysWaiting, isQuoteDueForFollowUp } from "@/lib/followup"
+import { useAuth } from "@/features/auth/AuthContext"
+import { AutomationPanel } from "./AutomationPanel"
 import type { QuoteEvent, QuoteStatus, QuoteWithClient } from "@/types"
 
 type Template = "first" | "second" | "expiry"
@@ -55,6 +57,7 @@ function messageFor(kind: Template, quote: QuoteWithClient) {
 
 export function QuoteDetailPage() {
   const { quoteId } = useParams()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [quote, setQuote] = useState<QuoteWithClient | null>(null)
   const [events, setEvents] = useState<QuoteEvent[]>([])
@@ -70,98 +73,162 @@ export function QuoteDetailPage() {
   const [copied, setCopied] = useState(false)
   const [copyError, setCopyError] = useState("")
   const [duplicating, setDuplicating] = useState(false)
+  const [loadedScope, setLoadedScope] = useState("")
+  const active = useRef(true)
+  const request = useRef(0)
+  const scope = `${user?.id}:${quoteId}`
+  const identity = useRef(scope)
+  identity.current = scope
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!quoteId) return
+    const ticket = ++request.current
+    const currentScope = `${user?.id}:${quoteId}`
     setLoading(true)
     setError("")
+    setQuote(null)
+    setEvents([])
+    setModal(false)
+    setNote("")
+    setCopied(false)
+    setCopyError("")
+    setUpdating(null)
+    setSaving(false)
+    setDuplicating(false)
     try {
       const q = await getQuote(quoteId)
+      const nextEvents = await listQuoteEvents(quoteId).catch(() => [])
+      if (ticket !== request.current || identity.current !== currentScope) return
       setQuote(q)
+      setLoadedScope(currentScope)
       setNextDate(q.next_followup_at ?? "")
       setMessage(messageFor("first", q))
-      setEvents(await listQuoteEvents(quoteId).catch(() => []))
+      setEvents(nextEvents)
     } catch (e) {
-      setError(humanizeError(e, "Devis introuvable."))
+      if (ticket === request.current && identity.current === currentScope)
+        setError(humanizeError(e, "Devis introuvable."))
     } finally {
-      setLoading(false)
+      if (ticket === request.current && identity.current === currentScope)
+        setLoading(false)
     }
-  }
+  }, [quoteId, user?.id])
   useEffect(() => {
-    load()
-  }, [quoteId])
+    active.current = true
+    void load()
+    return () => {
+      active.current = false
+      request.current++
+    }
+  }, [load])
+  const refreshDetails = useCallback(async () => {
+    if (!quoteId) return
+    const currentScope = `${user?.id}:${quoteId}`
+    try {
+      const [updatedQuote, nextEvents] = await Promise.all([
+        getQuote(quoteId),
+        listQuoteEvents(quoteId),
+      ])
+      if (!active.current || identity.current !== currentScope) return
+      setQuote(updatedQuote)
+      setEvents(nextEvents)
+    } catch {
+      if (active.current && identity.current === currentScope)
+        setError(
+          "La modification a été enregistrée, mais l’historique n’a pas pu être actualisé. Rechargez le devis.",
+        )
+    }
+  }, [quoteId, user?.id])
   function chooseTemplate(value: Template) {
     setTemplate(value)
     if (quote) setMessage(messageFor(value, quote))
   }
   async function changeStatus(status: QuoteStatus) {
     if (!quote || updating) return
+    const currentScope = scope
     setUpdating(status)
     try {
       await setQuoteStatus(quote.id, status)
-      setQuote({ ...quote, status })
+      if (active.current && identity.current === currentScope)
+        setQuote({ ...quote, status })
       const event = await addQuoteEvent(
         quote,
         "status_change",
         `Statut : ${status}`,
       ).catch(() => null)
-      if (event) setEvents((v) => [event, ...v])
+      if (event && active.current && identity.current === currentScope)
+        setEvents((v) => [event, ...v])
     } catch (e) {
-      setError(humanizeError(e, "Mise à jour impossible."))
+      if (active.current && identity.current === currentScope)
+        setError(humanizeError(e, "Mise à jour impossible."))
     } finally {
-      setUpdating(null)
+      if (active.current && identity.current === currentScope) setUpdating(null)
     }
   }
   async function recordFollowUp() {
     if (!quote) return
+    const currentScope = scope
     setSaving(true)
     try {
       const event = await addQuoteEvent(quote, "followup", message)
+      if (!active.current || identity.current !== currentScope) return
       setEvents((v) => [event, ...v])
       setModal(false)
     } catch (e) {
-      setError(humanizeError(e, "Impossible d’enregistrer la relance."))
+      if (active.current && identity.current === currentScope)
+        setError(humanizeError(e, "Impossible d’enregistrer la relance."))
     } finally {
-      setSaving(false)
+      if (active.current && identity.current === currentScope) setSaving(false)
     }
   }
   async function copyMessage() {
+    const currentScope = scope
     setCopyError("")
     try {
       await navigator.clipboard.writeText(message)
+      if (!active.current || identity.current !== currentScope) return
       setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
+      setTimeout(() => {
+        if (active.current && identity.current === currentScope) setCopied(false)
+      }, 1500)
     } catch {
-      setCopyError("Copie indisponible. Sélectionnez le message pour le copier.")
+      if (active.current && identity.current === currentScope)
+        setCopyError("Copie indisponible. Sélectionnez le message pour le copier.")
     }
   }
   async function duplicate() {
     if (!quote || duplicating) return
+    const currentScope = scope
     setDuplicating(true)
     try {
       const copy = await duplicateQuote(quote)
+      if (!active.current || identity.current !== currentScope) return
       navigate(`/app/quotes/${copy.id}/edit`)
     } catch (e) {
-      setError(humanizeError(e, "Impossible de dupliquer le devis."))
+      if (active.current && identity.current === currentScope)
+        setError(humanizeError(e, "Impossible de dupliquer le devis."))
     } finally {
-      setDuplicating(false)
+      if (active.current && identity.current === currentScope) setDuplicating(false)
     }
   }
   async function addNote() {
     if (!quote || !note.trim()) return
+    const currentScope = scope
     setSaving(true)
     try {
       const event = await addQuoteEvent(quote, "note", note)
+      if (!active.current || identity.current !== currentScope) return
       setEvents((v) => [event, ...v])
       setNote("")
     } catch (e) {
-      setError(humanizeError(e, "Impossible d’ajouter la note."))
+      if (active.current && identity.current === currentScope)
+        setError(humanizeError(e, "Impossible d’ajouter la note."))
     } finally {
-      setSaving(false)
+      if (active.current && identity.current === currentScope) setSaving(false)
     }
   }
   async function plan() {
     if (!quote) return
+    const currentScope = scope
     setSaving(true)
     try {
       await scheduleFollowUp(quote.id, nextDate || null)
@@ -171,16 +238,19 @@ export function QuoteDetailPage() {
           "followup_scheduled",
           `Prochaine relance : ${formatDate(nextDate)}`,
         )
-        setEvents((v) => [event, ...v])
+        if (active.current && identity.current === currentScope)
+          setEvents((v) => [event, ...v])
       }
-      setQuote({ ...quote, next_followup_at: nextDate || null })
+      if (active.current && identity.current === currentScope)
+        setQuote({ ...quote, next_followup_at: nextDate || null })
     } catch (e) {
-      setError(humanizeError(e, "Planification impossible."))
+      if (active.current && identity.current === currentScope)
+        setError(humanizeError(e, "Planification impossible."))
     } finally {
-      setSaving(false)
+      if (active.current && identity.current === currentScope) setSaving(false)
     }
   }
-  if (loading) return <Spinner />
+  if (loading || (quote && loadedScope !== scope)) return <Spinner />
   if (error && !quote) return <ErrorState message={error} onRetry={load} />
   if (!quote) return null
   const due = isQuoteDueForFollowUp(quote)
@@ -255,6 +325,7 @@ export function QuoteDetailPage() {
               </div>
             </dl>
           </Card>
+          <AutomationPanel quote={quote} onChanged={refreshDetails} />
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -302,10 +373,10 @@ export function QuoteDetailPage() {
             </div>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Input
-                aria-label="Note ou réponse reçue"
+                aria-label="Note de suivi"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Ajouter une note ou une réponse reçue…"
+                placeholder="Ajouter une note de suivi…"
               />
               <Button
                 variant="secondary"
@@ -351,7 +422,7 @@ export function QuoteDetailPage() {
                 Préparer la relance
               </h2>
               <p className="mt-1 text-sm text-muted">
-                Vous gardez le contrôle : aucun envoi automatique.
+                Adaptez le message, puis envoyez-le depuis votre messagerie.
               </p>
             </div>
             <button
@@ -429,6 +500,11 @@ function Timeline({ event }: { event: QuoteEvent }) {
     note: "Note",
     status_change: "Statut modifié",
     followup_scheduled: "Relance planifiée",
+    followup_auto_sent: "Relance automatique envoyée",
+    followup_auto_failed:
+      event.delivery_status === "delivery_unknown"
+        ? "Envoi automatique à vérifier"
+        : "Échec de la relance automatique",
   }
   return (
     <div className="relative">
