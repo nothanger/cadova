@@ -84,6 +84,46 @@ export async function transferCompanyOwner(companyId: string, ownerId: string) {
   }
 }
 
+export async function createAdminCompany(name: string, ownerId: string | null) {
+  const { data, error } = await supabase.rpc("admin_create_company", {
+    company_name: name.trim(),
+    owner_id: ownerId,
+  })
+  if (error) {
+    throw new AdminApiError(
+      ["42501", "22023", "P0002", "23514"].includes(error.code)
+        ? error.message
+        : "La création n’a pas pu être confirmée. Actualisez la liste des entreprises avant de réessayer.",
+    )
+  }
+  if (typeof data !== "string") {
+    throw new AdminApiError(
+      "La création de l’entreprise n’a pas pu être confirmée. Actualisez la liste.",
+    )
+  }
+  return data
+}
+
+export async function deleteAdminCompany(companyId: string, confirmationName: string) {
+  const { data, error } = await supabase.rpc("admin_delete_company", {
+    target_company_id: companyId,
+    confirmation_name: confirmationName.trim(),
+  })
+  if (error) {
+    throw new AdminApiError(
+      ["42501", "22023", "P0002"].includes(error.code)
+        ? error.message
+        : "Impossible de supprimer cette entreprise. Réessayez dans un instant.",
+    )
+  }
+  if (typeof data !== "string") {
+    throw new AdminApiError(
+      "La suppression de l’entreprise n’a pas pu être confirmée. Actualisez la liste.",
+    )
+  }
+  return data
+}
+
 export function adminErrorMessage(error: unknown, fallback: string) {
   return error instanceof AdminApiError ? error.message : fallback
 }

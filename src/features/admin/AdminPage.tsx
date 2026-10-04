@@ -9,6 +9,7 @@ import {
   LogOut,
   Pause,
   Play,
+  Plus,
   RefreshCw,
   ShieldCheck,
   Trash2,
@@ -37,6 +38,8 @@ import { useAdmin } from "./AdminContext"
 import { AdminNotificationComposer } from "./AdminNotificationComposer"
 import {
   adminErrorMessage,
+  createAdminCompany,
+  deleteAdminCompany,
   deleteAdminUser,
   listAdminCompanies,
   listAdminUsers,
@@ -49,6 +52,8 @@ type AccountAction = {
   kind: "delete" | "suspend" | "resume"
   user: AdminUser
 }
+
+type CompanyAction = { kind: "create" } | { kind: "delete"; company: AdminCompany }
 
 function isSuspended(user: AdminUser) {
   return Boolean(user.banned_until && Date.parse(user.banned_until) > Date.now())
@@ -276,6 +281,297 @@ function AccountActionDialog({
   )
 }
 
+function CreateCompanyDialog({
+  onClose,
+  onDone,
+}: {
+  onClose: () => void
+  onDone: (message: string, companyId: string) => void
+}) {
+  const { user } = useAuth()
+  const accounts = usePagedList(listAdminUsers, true)
+  const [name, setName] = useState("")
+  const [filter, setFilter] = useState("")
+  const [selected, setSelected] = useState<{ id: string; email: string | null } | null>(
+    user ? { id: user.id, email: user.email ?? null } : null,
+  )
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+  const sending = useRef(false)
+  const active = useRef(true)
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
+  const candidates = (accounts.data?.users ?? []).filter((account) =>
+    (account.email ?? "")
+      .toLocaleLowerCase("fr")
+      .includes(filter.trim().toLocaleLowerCase("fr")),
+  )
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (sending.current || !name.trim() || !selected) return
+    sending.current = true
+    setSaving(true)
+    setError("")
+    try {
+      const id = await createAdminCompany(name, selected.id)
+      if (active.current) onDone(`L’entreprise ${name.trim()} a été créée.`, id)
+    } catch (err) {
+      if (active.current)
+        setError(adminErrorMessage(err, "Impossible de créer cette entreprise."))
+    } finally {
+      sending.current = false
+      if (active.current) setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog
+      titleId="create-company-title"
+      onClose={() => !sending.current && onClose()}
+    >
+      <form onSubmit={submit}>
+        <h2 id="create-company-title" className="text-xl font-semibold text-ink">
+          Créer une entreprise
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-muted">
+          Le propriétaire choisi pourra gérer les clients et les devis de cette
+          entreprise.
+        </p>
+        <div className="mt-5">
+          <Field
+            htmlFor="new-company-name"
+            label="Nom de l’entreprise"
+            required
+            hint="120 caractères maximum."
+          >
+            <Input
+              id="new-company-name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              maxLength={120}
+              required
+              disabled={saving}
+            />
+          </Field>
+        </div>
+        <div className="mt-5">
+          <Field
+            htmlFor="new-company-owner-filter"
+            label="Filtrer les comptes de cette page"
+          >
+            <Input
+              id="new-company-owner-filter"
+              type="search"
+              value={filter}
+              onChange={(event) => setFilter(event.target.value)}
+              placeholder="Rechercher une adresse email"
+              disabled={saving}
+            />
+          </Field>
+        </div>
+        <div className="mt-4 overflow-hidden rounded-lg border border-line">
+          {accounts.loading ? (
+            <Spinner label="Chargement des comptes…" />
+          ) : accounts.error ? (
+            <ErrorState message={accounts.error} onRetry={accounts.refresh} />
+          ) : (
+            <fieldset className="max-h-60 overflow-y-auto p-3">
+              <legend className="sr-only">Propriétaire de l’entreprise</legend>
+              {candidates.length === 0 ? (
+                <p className="p-2 text-sm text-muted">Aucun compte sur cette page.</p>
+              ) : (
+                candidates.map((account) => {
+                  const memberElsewhere =
+                    !account.is_admin && account.companies.length > 0
+                  const suspended = isSuspended(account)
+                  const unavailable = suspended || memberElsewhere || !account.email
+                  return (
+                    <label
+                      key={account.id}
+                      className={cx(
+                        "flex items-start gap-3 rounded-md p-3 text-sm",
+                        unavailable
+                          ? "text-muted"
+                          : "cursor-pointer hover:bg-background",
+                        selected?.id === account.id && "bg-primary-soft",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="company-owner"
+                        value={account.id}
+                        checked={selected?.id === account.id}
+                        disabled={saving || unavailable}
+                        onChange={() =>
+                          setSelected({ id: account.id, email: account.email })
+                        }
+                        className="mt-1 shrink-0 accent-primary"
+                      />
+                      <span className="min-w-0 break-all">
+                        {account.email ?? "Compte sans adresse email"}
+                        {suspended ? (
+                          <span className="mt-1 block text-xs">Compte suspendu</span>
+                        ) : memberElsewhere ? (
+                          <span className="mt-1 block text-xs">
+                            Déjà rattaché à une autre entreprise
+                          </span>
+                        ) : account.is_admin ? (
+                          <span className="mt-1 block text-xs">Administrateur</span>
+                        ) : null}
+                      </span>
+                    </label>
+                  )
+                })
+              )}
+            </fieldset>
+          )}
+          <Pagination
+            page={accounts.page}
+            hasMore={accounts.data?.hasMore ?? false}
+            loading={accounts.loading || saving}
+            label="Choix du propriétaire"
+            onChange={(page) => {
+              accounts.setPage(page)
+              setFilter("")
+            }}
+          />
+        </div>
+        {selected && (
+          <div className="mt-4 rounded-lg border border-primary/20 bg-primary-soft p-3 text-sm">
+            <p className="text-ink">Propriétaire sélectionné</p>
+            <p className="mt-1 break-all font-medium text-primary">
+              {selected.email ?? "Votre compte administrateur"}
+            </p>
+          </div>
+        )}
+        {error && (
+          <p
+            role="alert"
+            className="mt-4 rounded-lg bg-danger-soft p-3 text-sm text-danger"
+          >
+            {error}
+          </p>
+        )}
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="secondary" disabled={saving} onClick={onClose}>
+            Annuler
+          </Button>
+          <Button
+            type="submit"
+            disabled={
+              !name.trim() || !selected || accounts.loading || Boolean(accounts.error)
+            }
+            loading={saving}
+          >
+            <Plus size={16} aria-hidden="true" /> Créer l’entreprise
+          </Button>
+        </div>
+      </form>
+    </Dialog>
+  )
+}
+
+function DeleteCompanyDialog({
+  company,
+  onClose,
+  onDone,
+}: {
+  company: AdminCompany
+  onClose: () => void
+  onDone: (message: string, companyId: string) => void
+}) {
+  const [confirmation, setConfirmation] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+  const sending = useRef(false)
+  const active = useRef(true)
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (sending.current || confirmation.trim() !== company.name) return
+    sending.current = true
+    setSaving(true)
+    setError("")
+    try {
+      const id = await deleteAdminCompany(company.id, confirmation)
+      if (active.current) onDone(`L’entreprise ${company.name} a été supprimée.`, id)
+    } catch (err) {
+      if (active.current)
+        setError(adminErrorMessage(err, "Impossible de supprimer cette entreprise."))
+    } finally {
+      sending.current = false
+      if (active.current) setSaving(false)
+    }
+  }
+  return (
+    <Dialog
+      titleId="delete-company-title"
+      onClose={() => !sending.current && onClose()}
+    >
+      <form onSubmit={submit}>
+        <h2 id="delete-company-title" className="text-xl font-semibold text-ink">
+          Supprimer l’entreprise
+        </h2>
+        <p className="mt-2 break-words text-sm font-medium text-ink">{company.name}</p>
+        <p className="mt-4 text-sm leading-6 text-muted">
+          Cette suppression est définitive. Les clients, les devis et leur historique
+          seront supprimés. Les membres perdront l’accès à cette entreprise. Les comptes
+          utilisateurs sont conservés.
+        </p>
+        <div className="mt-5">
+          <Field
+            htmlFor="delete-company-name"
+            label="Nom de l’entreprise à supprimer"
+            required
+            hint="Recopiez exactement le nom ci-dessus, en respectant les majuscules et les accents."
+          >
+            <Input
+              id="delete-company-name"
+              value={confirmation}
+              onChange={(event) => setConfirmation(event.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+              disabled={saving}
+              required
+            />
+          </Field>
+        </div>
+        {error && (
+          <p
+            role="alert"
+            className="mt-4 rounded-lg bg-danger-soft p-3 text-sm text-danger"
+          >
+            {error}
+          </p>
+        )}
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="secondary" disabled={saving} onClick={onClose}>
+            Annuler
+          </Button>
+          <Button
+            type="submit"
+            variant="danger"
+            disabled={confirmation.trim() !== company.name}
+            loading={saving}
+          >
+            <Trash2 size={16} aria-hidden="true" /> Supprimer définitivement
+          </Button>
+        </div>
+      </form>
+    </Dialog>
+  )
+}
+
 function TransferDialog({
   company,
   onClose,
@@ -456,7 +752,12 @@ export function AdminPage() {
     error: adminError,
     refresh: refreshAdmin,
   } = useAdmin()
-  const { selectCompany } = useCompany()
+  const {
+    company: selectedCompany,
+    selectCompany,
+    clearSelectedCompany,
+    refresh: refreshCompany,
+  } = useCompany()
   const navigate = useNavigate()
   const accounts = usePagedList(listAdminUsers, isAdmin && !adminLoading)
   const companies = usePagedList(listAdminCompanies, isAdmin && !adminLoading)
@@ -465,6 +766,7 @@ export function AdminPage() {
   const [companyFilter, setCompanyFilter] = useState("")
   const [accountAction, setAccountAction] = useState<AccountAction | null>(null)
   const [transferCompany, setTransferCompany] = useState<AdminCompany | null>(null)
+  const [companyAction, setCompanyAction] = useState<CompanyAction | null>(null)
   const [notice, setNotice] = useState("")
   const [actionError, setActionError] = useState("")
   const [opening, setOpening] = useState<string | null>(null)
@@ -521,6 +823,23 @@ export function AdminPage() {
     if (deletedLastRow) accounts.setPage(accounts.page - 1)
     else void accounts.refresh()
     void companies.refresh()
+  }
+
+  function companyMutationDone(message: string, companyId: string) {
+    const deleting = companyAction?.kind === "delete"
+    setCompanyAction(null)
+    setActionError("")
+    setNotice(message)
+    if (companies.page > 1) companies.setPage(1)
+    else void companies.refresh()
+    void accounts.refresh()
+    if (deleting && selectedCompany?.id === companyId) clearSelectedCompany()
+    else
+      void refreshCompany().catch(() =>
+        setActionError(
+          "Impossible d’actualiser l’entreprise sélectionnée. Rechargez la page.",
+        ),
+      )
   }
 
   return (
@@ -618,16 +937,28 @@ export function AdminPage() {
                   />
                 </Field>
               </div>
-              <Button
-                variant="secondary"
-                loading={activeList.loading}
-                onClick={() => {
-                  setActionError("")
-                  void activeList.refresh()
-                }}
-              >
-                <RefreshCw size={16} aria-hidden="true" /> Actualiser
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                {tab === "companies" && (
+                  <Button
+                    onClick={() => {
+                      setNotice("")
+                      setCompanyAction({ kind: "create" })
+                    }}
+                  >
+                    <Plus size={16} aria-hidden="true" /> Créer une entreprise
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  loading={activeList.loading}
+                  onClick={() => {
+                    setActionError("")
+                    void activeList.refresh()
+                  }}
+                >
+                  <RefreshCw size={16} aria-hidden="true" /> Actualiser
+                </Button>
+              </div>
             </div>
             {activeList.loading ? (
               <Spinner />
@@ -839,6 +1170,17 @@ export function AdminPage() {
                                   <ArrowRightLeft size={16} aria-hidden="true" />{" "}
                                   Transférer la propriété
                                 </Button>
+                                <Button
+                                  variant="ghost"
+                                  className="text-danger"
+                                  aria-label={`Supprimer l’entreprise ${company.name}`}
+                                  onClick={() => {
+                                    setNotice("")
+                                    setCompanyAction({ kind: "delete", company })
+                                  }}
+                                >
+                                  <Trash2 size={16} aria-hidden="true" /> Supprimer
+                                </Button>
                               </div>
                             </td>
                           </tr>
@@ -879,6 +1221,19 @@ export function AdminPage() {
           company={transferCompany}
           onClose={() => setTransferCompany(null)}
           onDone={mutationDone}
+        />
+      )}
+      {companyAction?.kind === "create" && (
+        <CreateCompanyDialog
+          onClose={() => setCompanyAction(null)}
+          onDone={companyMutationDone}
+        />
+      )}
+      {companyAction?.kind === "delete" && (
+        <DeleteCompanyDialog
+          company={companyAction.company}
+          onClose={() => setCompanyAction(null)}
+          onDone={companyMutationDone}
         />
       )}
     </div>

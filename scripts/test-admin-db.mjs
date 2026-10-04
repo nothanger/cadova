@@ -88,6 +88,7 @@ try {
     "0005_quote_workflow.sql",
     "0006_platform_admin.sql",
     "0007_support_notifications.sql",
+    "0008_admin_company_management.sql",
   ]) {
     sql(
       readFileSync(
@@ -98,6 +99,9 @@ try {
   }
   sql(readFileSync(new URL("../tests/admin-rls.sql", import.meta.url), "utf8"))
   sql(readFileSync(new URL("../tests/notifications-rls.sql", import.meta.url), "utf8"))
+  sql(
+    readFileSync(new URL("../tests/admin-companies-rls.sql", import.meta.url), "utf8"),
+  )
   sql(`
     insert into auth.users(id,email) values
       ('60000000-0000-4000-8000-000000000001','race-owner-a@example.test'),
@@ -215,8 +219,83 @@ try {
       end if;
     end $$;
   `)
+  sql(
+    "insert into auth.users(id,email) values ('60000000-0000-4000-8000-000000000005','race-company-owner@example.test');",
+  )
+  const adminCreationAndOnboarding = await Promise.all([
+    concurrentSql(`
+      begin;
+      set local role authenticated;
+      select set_config('request.jwt.claim.sub','60000000-0000-4000-8000-000000000004',true);
+      select public.admin_create_company('Concurrent admin creation','60000000-0000-4000-8000-000000000005');
+      select pg_sleep(0.25);
+      commit;
+    `),
+    concurrentSql(`
+      begin;
+      set local role authenticated;
+      select set_config('request.jwt.claim.sub','60000000-0000-4000-8000-000000000005',true);
+      select public.create_company_with_owner('Concurrent normal onboarding');
+      select pg_sleep(0.25);
+      commit;
+    `),
+  ])
+  if (adminCreationAndOnboarding.filter((result) => result.code === 0).length !== 1) {
+    throw new Error(
+      "Concurrent admin creation and onboarding violated one-company rule",
+    )
+  }
+  sql(`
+    do $$ begin
+      if (select count(*) from public.company_members where user_id='60000000-0000-4000-8000-000000000005') <> 1 then
+        raise exception 'Concurrent admin creation and onboarding duplicated memberships';
+      end if;
+    end $$;
+    set role authenticated;
+    select set_config('request.jwt.claim.sub','60000000-0000-4000-8000-000000000004',false);
+    select public.admin_create_company('Concurrent deletion company');
+    reset role;
+  `)
+  const deletionId = sql(
+    "select id from public.companies where name='Concurrent deletion company';",
+  ).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0]
+  if (!deletionId) throw new Error("Concurrent deletion fixture was not created")
+  const companyDeletes = await Promise.all(
+    [1, 2].map(() =>
+      concurrentSql(`
+    begin;
+    set local role authenticated;
+    select set_config('request.jwt.claim.sub','60000000-0000-4000-8000-000000000004',true);
+    select public.admin_delete_company('${deletionId}','Concurrent deletion company');
+    select pg_sleep(0.25);
+    commit;
+  `),
+    ),
+  )
+  if (
+    companyDeletes.filter((result) => result.code === 0).length !== 1 ||
+    !companyDeletes.some((result) =>
+      result.output.includes("Cette entreprise n’existe plus"),
+    )
+  ) {
+    throw new Error("Concurrent company deletion did not serialize the target")
+  }
+  sql(`
+    do $$ begin
+      if exists(select 1 from public.companies where id='${deletionId}') then
+        raise exception 'Concurrent deletion left target company';
+      end if;
+      if (select count(*) from public.admin_audit_log where action='delete_company' and company_id='${deletionId}') <> 1 then
+        raise exception 'Concurrent deletion duplicated or omitted audit';
+      end if;
+      if not exists(select 1 from auth.users where id='60000000-0000-4000-8000-000000000004')
+        or not exists(select 1 from public.platform_admins where user_id='60000000-0000-4000-8000-000000000004') then
+        raise exception 'Concurrent deletion affected administrator identity';
+      end if;
+    end $$;
+  `)
   console.log(
-    "Administration et messagerie : RLS, permissions, journal, 34 destinataires et quatre courses concurrentes validés.",
+    "Administration et messagerie : RLS, gestion d’entreprises, journal atomique, 34 destinataires et six courses concurrentes validés.",
   )
 } finally {
   docker(["exec", container, "dropdb", "-U", "postgres", "--force", database])

@@ -23,6 +23,7 @@ interface CompanyContextValue {
   /** Re-read membership (e.g. right after onboarding or after setup). */
   refresh: () => Promise<void>
   selectCompany: (companyId: string) => Promise<void>
+  clearSelectedCompany: () => void
 }
 
 const CompanyContext = createContext<CompanyContextValue | undefined>(undefined)
@@ -36,7 +37,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const { isAdmin, loading: adminLoading } = useAdmin()
   const [selection, setSelection] = useState<{
     userId: string
-    companyId: string
+    companyId: string | null
   } | null>(null)
   const selectedCompanyId = useMemo(() => {
     if (!isAdmin || !user) return null
@@ -136,6 +137,21 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     [isAdmin, user],
   )
 
+  const clearSelectedCompany = useCallback(() => {
+    if (!isAdmin || !user) return
+    requestId.current++
+    try {
+      sessionStorage.removeItem(`cadova.admin-company.${user.id}`)
+    } catch {
+      // Memory selection is still cleared when browser storage is unavailable.
+    }
+    setSelection({ userId: user.id, companyId: null })
+    setCompany(null)
+    setRole(null)
+    setSchemaMissing(false)
+    setResolution({ scope: `${user.id}:admin`, loading: false })
+  }, [isAdmin, user])
+
   useEffect(() => {
     load()
   }, [load])
@@ -153,6 +169,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         schemaMissing,
         refresh: load,
         selectCompany,
+        clearSelectedCompany,
       }}
     >
       {children}

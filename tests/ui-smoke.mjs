@@ -1458,6 +1458,461 @@ try {
     checks += 4
   }
 
+  const companyAdmin = await pageFor(
+    {
+      session: true,
+      admin: true,
+      member: false,
+      companyManagement: true,
+      companyDelay: 150,
+    },
+    1280,
+  )
+  await visit(companyAdmin, "/admin", "Administration")
+  await companyAdmin.getByRole("button", { name: "Entreprises", exact: true }).click()
+  assert.equal(
+    await companyAdmin.evaluate(
+      () =>
+        window.__adminTestStore.users.find((account) => account.id === "user-test")
+          .companies.length,
+    ),
+    0,
+  )
+  await companyAdmin
+    .getByRole("button", { name: "Créer une entreprise", exact: true })
+    .click()
+  let createCompany = companyAdmin.getByRole("dialog", {
+    name: "Créer une entreprise",
+    exact: true,
+  })
+  const companyName = createCompany.getByLabel("Nom de l’entreprise")
+  const createConfirm = createCompany.getByRole("button", {
+    name: "Créer l’entreprise",
+    exact: true,
+  })
+  await createCompany.getByRole("radio", { name: "test@example.test" }).waitFor()
+  assert.ok(
+    await createCompany.getByRole("radio", { name: "test@example.test" }).isChecked(),
+  )
+  assert.ok(
+    await createCompany
+      .getByRole("radio", { name: "owner-other@example.test" })
+      .isDisabled(),
+  )
+  assert.ok(
+    await createCompany
+      .getByRole("radio", { name: "suspended@example.test" })
+      .isDisabled(),
+  )
+  assert.ok(await createConfirm.isDisabled())
+  await companyName.fill("   ")
+  assert.ok(await createConfirm.isDisabled())
+  await companyName.fill("n".repeat(121))
+  assert.equal((await companyName.inputValue()).length, 120)
+  await companyName.fill("Première entreprise admin")
+  await createConfirm.evaluate((button) => {
+    button.click()
+    button.click()
+  })
+  await createCompany.waitFor({ state: "detached" })
+  await companyAdmin
+    .getByRole("row")
+    .filter({ hasText: "Première entreprise admin" })
+    .getByText("test@example.test", { exact: true })
+    .waitFor()
+  assert.equal(
+    await companyAdmin.evaluate(
+      () =>
+        window.__testStore.companies.filter(
+          (entry) => entry.name === "Première entreprise admin",
+        ).length,
+    ),
+    1,
+  )
+  assert.equal(
+    await companyAdmin.evaluate(
+      () =>
+        window.__companyCalls.filter((call) => call.name === "admin_create_company")
+          .length,
+    ),
+    1,
+  )
+  assert.equal(
+    await companyAdmin.evaluate(
+      () =>
+        window.__adminTestStore.users.find((account) => account.id === "user-test")
+          .companies.length,
+    ),
+    1,
+  )
+
+  await companyAdmin
+    .getByRole("button", { name: "Créer une entreprise", exact: true })
+    .click()
+  createCompany = companyAdmin.getByRole("dialog", {
+    name: "Créer une entreprise",
+    exact: true,
+  })
+  await createCompany.getByRole("radio", { name: "test@example.test" }).waitFor()
+  assert.ok(
+    await createCompany.getByRole("radio", { name: "test@example.test" }).isChecked(),
+  )
+  assert.ok(
+    await createCompany.getByRole("radio", { name: "test@example.test" }).isEnabled(),
+  )
+  await createCompany
+    .getByLabel("Nom de l’entreprise")
+    .fill("Deuxième entreprise admin")
+  await createCompany
+    .getByRole("button", { name: "Créer l’entreprise", exact: true })
+    .click()
+  await createCompany.waitFor({ state: "detached" })
+  await companyAdmin.getByText("Deuxième entreprise admin", { exact: true }).waitFor()
+  assert.equal(
+    await companyAdmin.evaluate(
+      () =>
+        window.__adminTestStore.users.find((account) => account.id === "user-test")
+          .companies.length,
+    ),
+    2,
+  )
+
+  await companyAdmin
+    .getByRole("button", { name: "Créer une entreprise", exact: true })
+    .click()
+  createCompany = companyAdmin.getByRole("dialog", {
+    name: "Créer une entreprise",
+    exact: true,
+  })
+  await createCompany.getByRole("radio", { name: "future-owner@example.test" }).check()
+  await createCompany
+    .getByLabel("Nom de l’entreprise")
+    .fill("Entreprise du propriétaire choisi")
+  await createCompany
+    .getByRole("button", { name: "Créer l’entreprise", exact: true })
+    .click()
+  await createCompany.waitFor({ state: "detached" })
+  await companyAdmin
+    .getByRole("row")
+    .filter({ hasText: "Entreprise du propriétaire choisi" })
+    .getByText("future-owner@example.test", { exact: true })
+    .waitFor()
+  assert.equal(
+    await companyAdmin.evaluate(
+      () =>
+        window.__testStore.company_members.filter(
+          (member) => member.user_id === "user-transfer",
+        ).length,
+    ),
+    1,
+  )
+  await companyAdmin
+    .getByRole("button", { name: "Créer une entreprise", exact: true })
+    .click()
+  createCompany = companyAdmin.getByRole("dialog", {
+    name: "Créer une entreprise",
+    exact: true,
+  })
+  await createCompany
+    .getByRole("radio", { name: "future-owner@example.test" })
+    .waitFor()
+  assert.ok(
+    await createCompany
+      .getByRole("radio", { name: "future-owner@example.test" })
+      .isDisabled(),
+  )
+  await companyAdmin.keyboard.press("Escape")
+  checks += 15
+
+  await companyAdmin
+    .getByRole("button", { name: "Ouvrir l’entreprise Autre entreprise", exact: true })
+    .click()
+  await companyAdmin
+    .getByRole("heading", { name: "Tableau de bord", exact: true })
+    .waitFor()
+  await companyAdmin
+    .getByRole("link", { name: "Changer d’entreprise", exact: true })
+    .click()
+  await companyAdmin
+    .getByRole("heading", { name: "Administration", exact: true })
+    .waitFor()
+  await companyAdmin.getByRole("button", { name: "Entreprises", exact: true }).click()
+  const deleteOtherCompany = companyAdmin.getByRole("button", {
+    name: "Supprimer l’entreprise Autre entreprise",
+    exact: true,
+  })
+  await deleteOtherCompany.focus()
+  await companyAdmin.keyboard.press("Enter")
+  let deleteCompany = companyAdmin.getByRole("dialog", {
+    name: "Supprimer l’entreprise",
+    exact: true,
+  })
+  let deleteCompanyConfirm = deleteCompany.getByRole("button", {
+    name: "Supprimer définitivement",
+    exact: true,
+  })
+  assert.ok(await deleteCompanyConfirm.isDisabled())
+  await deleteCompany
+    .getByLabel("Nom de l’entreprise à supprimer")
+    .fill("autre entreprise")
+  assert.ok(await deleteCompanyConfirm.isDisabled())
+  await companyAdmin.keyboard.press("Escape")
+  assert.equal(await deleteCompany.count(), 0)
+  assert.equal(
+    await deleteOtherCompany.evaluate((button) => button === document.activeElement),
+    true,
+  )
+  assert.equal(
+    await companyAdmin.evaluate(
+      () =>
+        window.__companyCalls.filter((call) => call.name === "admin_delete_company")
+          .length,
+    ),
+    0,
+  )
+  await deleteOtherCompany.click()
+  deleteCompany = companyAdmin.getByRole("dialog", {
+    name: "Supprimer l’entreprise",
+    exact: true,
+  })
+  deleteCompanyConfirm = deleteCompany.getByRole("button", {
+    name: "Supprimer définitivement",
+    exact: true,
+  })
+  await deleteCompany
+    .getByLabel("Nom de l’entreprise à supprimer")
+    .fill("Autre entreprise")
+  await deleteCompanyConfirm.evaluate((button) => {
+    button.click()
+    button.click()
+  })
+  await deleteCompany.waitFor({ state: "detached" })
+  assert.equal(
+    await companyAdmin
+      .getByRole("button", {
+        name: "Ouvrir l’entreprise Autre entreprise",
+        exact: true,
+      })
+      .count(),
+    0,
+  )
+  assert.equal(
+    await companyAdmin.evaluate(
+      () =>
+        window.__companyCalls.filter((call) => call.name === "admin_delete_company")
+          .length,
+    ),
+    1,
+  )
+  assert.equal(
+    await companyAdmin.evaluate(() => window.__adminTestStore.users.length),
+    32,
+  )
+  assert.equal(
+    await companyAdmin.evaluate(() =>
+      window.__adminTestStore.users.some((account) => account.id === "user-owner"),
+    ),
+    true,
+  )
+  assert.equal(
+    await companyAdmin.evaluate(() =>
+      window.__testStore.company_members.some(
+        (member) => member.company_id === "company-other",
+      ),
+    ),
+    false,
+  )
+  assert.equal(
+    await companyAdmin.evaluate(() =>
+      window.__testStore.clients.some(
+        (client) => client.company_id === "company-other",
+      ),
+    ),
+    false,
+  )
+  assert.equal(
+    await companyAdmin.evaluate(() =>
+      window.__testStore.quotes.some((quote) => quote.company_id === "company-other"),
+    ),
+    false,
+  )
+  await visit(companyAdmin, "/app", "Administration")
+  assert.equal(new URL(companyAdmin.url()).pathname, "/admin")
+  assert.equal(
+    await companyAdmin.evaluate(() =>
+      window.__testStore.companies.some((entry) => entry.id === "company-other"),
+    ),
+    false,
+  )
+  await companyAdmin.getByRole("button", { name: "Entreprises", exact: true }).click()
+  await companyAdmin
+    .getByRole("button", {
+      name: "Ouvrir l’entreprise Première entreprise admin",
+      exact: true,
+    })
+    .click()
+  await companyAdmin
+    .getByRole("heading", { name: "Tableau de bord", exact: true })
+    .waitFor()
+  await companyAdmin.context().close()
+  checks += 13
+
+  const staleOwner = await pageFor(
+    { session: true, admin: true, member: false, companyManagement: true },
+    1280,
+  )
+  await visit(staleOwner, "/admin", "Administration")
+  await staleOwner.getByRole("button", { name: "Entreprises", exact: true }).click()
+  await staleOwner
+    .getByRole("button", { name: "Créer une entreprise", exact: true })
+    .click()
+  const staleDialog = staleOwner.getByRole("dialog", {
+    name: "Créer une entreprise",
+    exact: true,
+  })
+  await staleDialog.getByRole("radio", { name: "future-owner@example.test" }).check()
+  await staleDialog.getByLabel("Nom de l’entreprise").fill("Création à refuser")
+  await staleOwner.evaluate(() => {
+    window.__testStore.company_members.push({
+      company_id: "company-other",
+      user_id: "user-transfer",
+      role: "member",
+    })
+  })
+  await staleDialog
+    .getByRole("button", { name: "Créer l’entreprise", exact: true })
+    .click()
+  await staleDialog.getByRole("alert").waitFor()
+  assert.equal(
+    await staleDialog.getByLabel("Nom de l’entreprise").inputValue(),
+    "Création à refuser",
+  )
+  assert.equal(
+    await staleOwner.evaluate(() =>
+      window.__testStore.companies.some((entry) => entry.name === "Création à refuser"),
+    ),
+    false,
+  )
+  await staleDialog.getByRole("button", { name: "Annuler", exact: true }).click()
+  await staleOwner.context().close()
+  checks += 2
+
+  for (const action of ["admin_create_company", "admin_delete_company"]) {
+    const failedCompany = await pageFor({
+      session: true,
+      admin: true,
+      member: false,
+      companyManagement: true,
+      companyFailure: action,
+    })
+    await visit(failedCompany, "/admin", "Administration")
+    await failedCompany
+      .getByRole("button", { name: "Entreprises", exact: true })
+      .click()
+    const creating = action === "admin_create_company"
+    await failedCompany
+      .getByRole("button", {
+        name: creating
+          ? "Créer une entreprise"
+          : "Supprimer l’entreprise Autre entreprise",
+        exact: true,
+      })
+      .click()
+    const dialog = failedCompany.getByRole("dialog", {
+      name: creating ? "Créer une entreprise" : "Supprimer l’entreprise",
+      exact: true,
+    })
+    const field = dialog.getByLabel(
+      creating ? "Nom de l’entreprise" : "Nom de l’entreprise à supprimer",
+    )
+    await field.fill(creating ? "Entreprise après erreur" : "Autre entreprise")
+    const confirm = dialog.getByRole("button", {
+      name: creating ? "Créer l’entreprise" : "Supprimer définitivement",
+      exact: true,
+    })
+    await confirm.click()
+    await dialog.getByRole("alert").waitFor()
+    assert.equal(
+      await field.inputValue(),
+      creating ? "Entreprise après erreur" : "Autre entreprise",
+    )
+    assert.equal(
+      await failedCompany.evaluate(() => window.__testStore.companies.length),
+      32,
+    )
+    assert.ok(await confirm.isEnabled())
+    await failedCompany.evaluate(() => {
+      window.__scenario.companyFailure = null
+    })
+    await confirm.click()
+    await dialog.waitFor({ state: "detached" })
+    assert.equal(
+      await failedCompany.evaluate(() => window.__testStore.companies.length),
+      creating ? 33 : 31,
+    )
+    assert.equal(
+      await failedCompany.evaluate(() => window.__adminTestStore.users.length),
+      32,
+    )
+    await failedCompany.context().close()
+    checks += 5
+  }
+
+  for (const width of [320, 390, 1280]) {
+    const responsiveCompany = await pageFor(
+      { session: true, admin: true, member: false, companyManagement: true },
+      width,
+    )
+    await visit(responsiveCompany, "/admin", "Administration")
+    await responsiveCompany
+      .getByRole("button", { name: "Entreprises", exact: true })
+      .click()
+    await responsiveCompany
+      .getByRole("button", { name: "Créer une entreprise", exact: true })
+      .click()
+    const createDialog = responsiveCompany.getByRole("dialog", {
+      name: "Créer une entreprise",
+      exact: true,
+    })
+    await createDialog.getByRole("radio", { name: "test@example.test" }).waitFor()
+    let bounds = await createDialog.boundingBox()
+    assert.ok(
+      bounds.x >= 0 &&
+        bounds.x + bounds.width <= width &&
+        bounds.y >= 0 &&
+        bounds.y + bounds.height <= 900,
+    )
+    await accessible(responsiveCompany)
+    await createDialog.screenshot({
+      path: `${artifacts}admin-create-company-${width}.png`,
+    })
+    await responsiveCompany.keyboard.press("Escape")
+    await responsiveCompany
+      .getByRole("button", {
+        name: "Supprimer l’entreprise Autre entreprise",
+        exact: true,
+      })
+      .click()
+    const deleteDialog = responsiveCompany.getByRole("dialog", {
+      name: "Supprimer l’entreprise",
+      exact: true,
+    })
+    bounds = await deleteDialog.boundingBox()
+    assert.ok(
+      bounds.x >= 0 &&
+        bounds.x + bounds.width <= width &&
+        bounds.y >= 0 &&
+        bounds.y + bounds.height <= 900,
+    )
+    await accessible(responsiveCompany)
+    await deleteDialog.screenshot({
+      path: `${artifacts}admin-delete-company-${width}.png`,
+    })
+    await responsiveCompany.keyboard.press("Escape")
+    await responsiveCompany.context().close()
+    checks += 2
+  }
+
   const assets = await pageFor()
   for (const path of ["/favicon.svg", "/favicon.png", "/social-card.png"])
     assert.equal((await assets.request.get(`${base}${path}`)).status(), 200)

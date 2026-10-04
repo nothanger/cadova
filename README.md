@@ -21,7 +21,9 @@ L’inscription reconnaît les comptes existants signalés par Supabase, y compr
 
 ## Administration
 
-La route `/admin` permet de consulter les comptes et les entreprises, suspendre ou réactiver un compte, supprimer un compte après confirmation de son email et transférer une entreprise à un autre propriétaire. Ouvrir une entreprise donne accès à ses clients, devis et paramètres dans l’interface existante. Les comptes ordinaires restent limités à leur entreprise.
+La route `/admin` permet de consulter les comptes et les entreprises, suspendre ou réactiver un compte, supprimer un compte après confirmation de son email et transférer une entreprise à un autre propriétaire. L’admin peut aussi créer une entreprise, choisir son propriétaire et posséder plusieurs entreprises. Ouvrir une entreprise donne accès à ses clients, devis et paramètres dans l’interface existante. Les comptes ordinaires restent limités à leur entreprise.
+
+La suppression d’une entreprise demande de saisir son nom actuel. Elle retire définitivement ses clients, devis, événements, adhésions et notifications métier, tout en conservant les comptes utilisateurs. La création et la suppression vérifient les droits côté serveur et enregistrent l’action dans le journal de la même transaction. Ces actions nécessitent `0008_admin_company_management.sql`, après `0007_support_notifications.sql`.
 
 Les droits reposent sur `public.platform_admins`, modifiable uniquement côté serveur. Aucun rôle provenant du navigateur ou des métadonnées d’inscription n’accorde un accès administrateur. La fonction Edge `platform-admin` vérifie la session et le rôle à chaque requête ; la clé serveur reste dans Supabase. Les mutations sont journalisées. Une suspension bloque aussi les anciennes sessions dans les règles RLS.
 

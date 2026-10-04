@@ -324,8 +324,147 @@ function syncAdminMemberships() {
       }))
   })
 }
+const companyStorageKey = "cadova-test-companies"
+const companyCalls = []
+window.__companyCalls = companyCalls
+if (options.companyManagement) {
+  const saved = window.sessionStorage.getItem(companyStorageKey)
+  if (saved) {
+    Object.assign(db, JSON.parse(saved))
+    adminCompanies.splice(
+      0,
+      adminCompanies.length,
+      ...[...db.companies]
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+        .map((entry) => ({ ...entry, owners: [] })),
+    )
+  }
+}
+function persistCompanies() {
+  if (options.companyManagement)
+    window.sessionStorage.setItem(
+      companyStorageKey,
+      JSON.stringify({
+        companies: db.companies,
+        company_members: db.company_members,
+        clients: db.clients,
+        quotes: db.quotes,
+        quote_events: db.quote_events,
+        notifications: db.notifications,
+      }),
+    )
+}
 syncAdminMemberships()
 window.__adminTestStore = { users: adminUsers, companies: adminCompanies }
+
+async function companyRpc(name, args = {}) {
+  companyCalls.push({ name, args })
+  if (!session || !options.admin)
+    return {
+      data: null,
+      error: {
+        code: "42501",
+        message:
+          name === "admin_create_company"
+            ? "La création d’entreprise est réservée à un administrateur actif."
+            : "La suppression d’entreprise est réservée à un administrateur actif.",
+      },
+    }
+  if (options.companyDelay)
+    await new Promise((resolve) => setTimeout(resolve, options.companyDelay))
+  if (options.companyFailure === name)
+    return {
+      data: null,
+      error: { code: "XX000", message: "Test company connection failure" },
+    }
+  if (name === "admin_create_company") {
+    const companyName = args.company_name?.trim() ?? ""
+    if (!companyName || companyName.length > 120)
+      return {
+        data: null,
+        error: {
+          code: "22023",
+          message: "Le nom de l’entreprise doit contenir entre 1 et 120 caractères.",
+        },
+      }
+    const owner = adminUsers.find(
+      (account) => account.id === (args.owner_id ?? user.id),
+    )
+    if (!owner || (owner.banned_until && owner.banned_until > new Date().toISOString()))
+      return {
+        data: null,
+        error: { code: "P0002", message: "Ce propriétaire est supprimé ou suspendu." },
+      }
+    if (
+      !owner.is_admin &&
+      db.company_members.some((member) => member.user_id === owner.id)
+    )
+      return {
+        data: null,
+        error: {
+          code: "23514",
+          message: "Ce compte appartient déjà à une entreprise.",
+        },
+      }
+    const entry = {
+      id: `company-created-${db.companies.length + 1}`,
+      name: companyName,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    db.companies.push(entry)
+    db.company_members.push({
+      company_id: entry.id,
+      user_id: owner.id,
+      role: "owner",
+      companies: entry,
+      email_followup_reminders: true,
+      followup_delay_days: 3,
+      reminder_hour: 8,
+    })
+    adminCompanies.unshift({ ...entry, owners: [] })
+    syncAdminMemberships()
+    persistCompanies()
+    return { data: entry.id, error: null }
+  }
+  const entry = db.companies.find((company) => company.id === args.target_company_id)
+  if (!entry)
+    return {
+      data: null,
+      error: {
+        code: "P0002",
+        message: "Cette entreprise n’existe plus. Actualisez la liste.",
+      },
+    }
+  if (args.confirmation_name?.trim() !== entry.name)
+    return {
+      data: null,
+      error: {
+        code: "22023",
+        message: "Le nom saisi ne correspond pas au nom actuel de l’entreprise.",
+      },
+    }
+  const quoteIds = new Set(
+    db.quotes.filter((quote) => quote.company_id === entry.id).map((quote) => quote.id),
+  )
+  db.companies = db.companies.filter((company) => company.id !== entry.id)
+  db.company_members = db.company_members.filter(
+    (member) => member.company_id !== entry.id,
+  )
+  db.clients = db.clients.filter((client) => client.company_id !== entry.id)
+  db.quotes = db.quotes.filter((quote) => quote.company_id !== entry.id)
+  db.quote_events = db.quote_events.filter((event) => !quoteIds.has(event.quote_id))
+  db.notifications = db.notifications.filter(
+    (notification) => notification.company_id !== entry.id,
+  )
+  adminCompanies.splice(
+    adminCompanies.findIndex((company) => company.id === entry.id),
+    1,
+  )
+  syncAdminMemberships()
+  persistCompanies()
+  return { data: entry.id, error: null }
+}
 
 function adminFailure(code, message, status = 400) {
   return {
@@ -624,6 +763,7 @@ class Query {
         if (this.mode === "update")
           rows.forEach((row) => Object.assign(row, this.payload))
         if (this.mode !== "read") persistMessaging()
+        if (this.mode !== "read") persistCompanies()
         const count = rows.length
         rows = [...rows]
           .sort((a, b) => {
@@ -656,6 +796,8 @@ export const isSupabaseConfigured = true
 export const supabase = {
   from: (table) => new Query(table),
   rpc: async (name, args) => {
+    if (["admin_create_company", "admin_delete_company"].includes(name))
+      return companyRpc(name, args)
     if (
       [
         "send_support_message",
