@@ -61,6 +61,6 @@ L’aperçu de partage se régénère avec `pnpm assets:social`, également via 
 
 ## Production
 
-Le domaine prévu dans `CNAME` est `cadova.fr`. Vérifier DNS, HTTPS, chemins des fichiers publics et fallback des routes SPA sur l’hébergeur réel. Configurer les redirections d’authentification Supabase et l’URL publique des emails. Les pages légales indiquent les informations encore manquantes ; elles doivent être complétées et validées avant publication.
+Le domaine prévu dans `CNAME` est `cadova.fr`. `vercel.json` permet l’ouverture directe des routes React, notamment `/login` et `/admin`, sur Vercel. Vérifier DNS, HTTPS, chemins des fichiers publics et le fallback des routes SPA si l’hébergeur change. Configurer les redirections d’authentification Supabase et l’URL publique des emails. Les pages légales indiquent les informations encore manquantes ; elles doivent être complétées et validées avant publication.
 
 Limites préexistantes à vérifier côté backend : le cron et la fonction email utilisent actuellement un horaire et un délai fixes, indépendants de certaines préférences de l’interface. Aucune modification de base de données ou de fonction distante n’est effectuée par la refonte visuelle.
