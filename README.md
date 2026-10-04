@@ -63,4 +63,6 @@ L’aperçu de partage se régénère avec `pnpm assets:social`, également via 
 
 Le domaine prévu dans `CNAME` est `cadova.fr`. `vercel.json` permet l’ouverture directe des routes React, notamment `/login` et `/admin`, sur Vercel. Vérifier DNS, HTTPS, chemins des fichiers publics et le fallback des routes SPA si l’hébergeur change. Configurer les redirections d’authentification Supabase et l’URL publique des emails. Les pages légales indiquent les informations encore manquantes ; elles doivent être complétées et validées avant publication.
 
+Dans Supabase Auth, `site_url` est `https://www.cadova.fr`, le domaine canonique du site. `uri_allow_list` doit autoriser `https://cadova.fr`, `https://cadova.fr/**`, `https://www.cadova.fr` et `https://www.cadova.fr/**`. L’inscription demande un retour vers l’origine du site, et la réinitialisation du mot de passe vers `/reset-password`. Ces paramètres sont gérés dans Supabase, indépendamment du déploiement Vercel ; ne pas remettre l’ancienne adresse Figma dans l’URL du site.
+
 Limites préexistantes à vérifier côté backend : le cron et la fonction email utilisent actuellement un horaire et un délai fixes, indépendants de certaines préférences de l’interface. Aucune modification de base de données ou de fonction distante n’est effectuée par la refonte visuelle.
