@@ -21,17 +21,17 @@ let decoder
 const errors = []
 let checks = 0
 const chapters = [
-  { label: "Client", title: "Le dossier client", detail: "Coordonnées et notes" },
+  { label: "Client", title: "Le dossier du client", detail: "Coordonnées et notes" },
   { label: "Devis", title: "Le devis envoyé", detail: "En attente de réponse" },
   {
     label: "Relance",
-    title: "La relance à préparer",
-    detail: "Message à personnaliser",
+    title: "La prochaine relance",
+    detail: "Un message à adapter",
   },
   {
     label: "Dossier",
-    title: "Le dossier complet",
-    detail: "Client, devis et historique",
+    title: "Le suivi du dossier",
+    detail: "Devis, notes et relances",
   },
 ]
 
@@ -92,7 +92,7 @@ try {
     page.on("pageerror", (error) => errors.push(error.message))
     await page.goto(base, { waitUntil: "networkidle" })
     await page
-      .getByRole("heading", { name: "Le suivi commercial, sans bruit.", exact: true })
+      .getByRole("heading", { name: "Gardez le fil de vos devis.", exact: true })
       .waitFor()
     const canvas = page.locator("main canvas")
     await canvas.waitFor()
@@ -486,7 +486,7 @@ try {
   assert.ok(
     await fallback.page
       .locator("main")
-      .getByRole("link", { name: "Créer mon espace" })
+      .getByRole("link", { name: "Créer mon compte" })
       .first()
       .isVisible(),
     "Signup action should remain available",

@@ -141,7 +141,7 @@ export function FollowupScene() {
     const cards = [
       { label: "Client", lines: ["Coordonnées", "Notes"], focusY: 0 },
       { label: "Devis", lines: ["Envoyé", "En attente"], focusY: -0.2 },
-      { label: "Relance", lines: ["À préparer", "Message"], focusY: -0.88 },
+      { label: "Relance", lines: ["À préparer", "Votre message"], focusY: -0.88 },
     ].map(({ label, lines, focusY }, index) => {
       const group = new THREE.Group()
       const card = new THREE.Mesh(cardGeometry, paper)

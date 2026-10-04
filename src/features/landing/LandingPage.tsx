@@ -10,7 +10,7 @@ import { Link } from "react-router-dom"
 import {
   ArrowDown,
   ArrowRight,
-  BellRing,
+  CalendarDays,
   FolderKanban,
   Menu,
   ShieldCheck,
@@ -27,22 +27,31 @@ const FollowupScene = lazy(() =>
 
 const navItems = [
   { label: "Produit", id: "produit" },
-  { label: "Usage", id: "usage" },
-  { label: "Cadre", id: "cadre" },
+  { label: "Le suivi", id: "usage" },
+  { label: "Vos relances", id: "cadre" },
 ]
 
 const productLines = [
-  "Clients regroupés par dossier.",
-  "Devis suivis par statut.",
-  "Relances préparées, jamais imposées.",
+  {
+    title: "Retrouvez le bon dossier.",
+    text: "Coordonnées, notes et devis sont réunis autour du même client.",
+  },
+  {
+    title: "Repérez les devis en attente.",
+    text: "Retrouvez leur statut et les relances déjà effectuées.",
+  },
+  {
+    title: "Préparez votre prochain message.",
+    text: "Adaptez le texte proposé au dossier avant de contacter le client.",
+  },
 ]
 
 export function LandingPage() {
-  usePageTitle("Clients, devis et relances")
+  usePageTitle("Suivi des devis et relances")
   const { session, loading } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const destination = !loading && session ? "/app" : "/signup"
-  const action = session ? "Ouvrir mon espace" : "Créer mon espace"
+  const action = session ? "Ouvrir mon espace" : "Créer mon compte"
 
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
@@ -153,13 +162,15 @@ export function LandingPage() {
         >
           <div className="page-container relative grid items-center pb-2 pt-6 md:min-h-[calc(100svh-120px)] md:grid-cols-[0.92fr_1.08fr] md:py-14 lg:py-20">
             <div className="min-w-0 max-w-2xl">
-              <p className="section-kicker hidden md:block">Cadova</p>
+              <p className="section-kicker hidden md:block">
+                Artisans et petites entreprises
+              </p>
               <h1 className="max-w-[12ch] text-[2.5rem] font-semibold leading-[1.02] tracking-normal min-[390px]:text-[2.75rem] md:mt-5 md:text-[3.2rem] lg:text-[4.5rem] xl:text-[5.25rem]">
-                Le suivi commercial, sans bruit.
+                Gardez le fil de vos devis.
               </h1>
               <p className="mt-5 max-w-md text-base leading-7 text-ink-soft md:mt-7">
-                Un espace net pour retrouver vos clients, vos devis et la prochaine
-                relance utile.
+                Retrouvez vos clients, suivez les devis en attente et préparez vos
+                relances.
               </p>
               <div className="mt-5 flex flex-wrap gap-3 md:mt-8">
                 <LinkButton to={destination}>
@@ -168,8 +179,8 @@ export function LandingPage() {
                 </LinkButton>
                 <a
                   href="#usage"
-                  aria-label="Voir l’usage"
-                  title="Voir l’usage"
+                  aria-label="Voir le suivi"
+                  title="Voir le suivi"
                   onClick={(e) => scrollToSection("usage", e)}
                   className="ui-button border border-line-strong bg-background text-ink hover:bg-primary-soft max-[389px]:w-11 max-[389px]:px-0"
                 >
@@ -178,7 +189,7 @@ export function LandingPage() {
                     aria-hidden="true"
                     className="min-[390px]:hidden"
                   />
-                  <span className="hidden min-[390px]:inline">Voir l’usage</span>
+                  <span className="hidden min-[390px]:inline">Voir le suivi</span>
                 </a>
               </div>
             </div>
@@ -193,21 +204,26 @@ export function LandingPage() {
         <section id="usage" tabIndex={-1} className="py-10 lg:py-20">
           <div className="page-container grid gap-10 lg:grid-cols-[0.72fr_1.28fr]">
             <div>
-              <p className="section-kicker">Usage</p>
-              <h2 className="section-title mt-4">
-                Une page de travail, pas une promesse.
-              </h2>
+              <p className="section-kicker">Au quotidien</p>
+              <h2 className="section-title mt-4">Du client à la prochaine relance.</h2>
             </div>
             <div className="grid gap-3">
-              {productLines.map((line, index) => (
+              {productLines.map(({ title, text }, index) => (
                 <article
-                  key={line}
-                  className="grid grid-cols-[52px_minmax(0,1fr)] items-center border-t border-line py-5 last:border-b"
+                  key={title}
+                  className="grid grid-cols-[52px_minmax(0,1fr)] items-start border-t border-line py-5 last:border-b"
                 >
-                  <span className="font-mono text-sm text-primary">0{index + 1}</span>
-                  <p className="text-[clamp(1.45rem,3.4vw,3rem)] font-semibold leading-tight tracking-[-.045em]">
-                    {line}
-                  </p>
+                  <span className="pt-1.5 font-mono text-sm text-primary">
+                    0{index + 1}
+                  </span>
+                  <div>
+                    <h3 className="text-2xl font-semibold leading-tight md:text-3xl lg:text-4xl">
+                      {title}
+                    </h3>
+                    <p className="mt-3 max-w-lg text-sm leading-6 text-ink-soft md:text-base">
+                      {text}
+                    </p>
+                  </div>
                 </article>
               ))}
             </div>
@@ -218,18 +234,18 @@ export function LandingPage() {
           <div className="page-container grid gap-0 lg:grid-cols-3">
             <Feature
               icon={<FolderKanban size={22} />}
-              title="Dossiers propres"
-              text="Coordonnées, notes et devis restent attachés au bon client."
+              title="Un historique par devis"
+              text="Gardez vos notes et une trace des relances que vous enregistrez."
             />
             <Feature
-              icon={<BellRing size={22} />}
-              title="Relances prêtes"
-              text="Cadova aide à préparer la suite. Vous décidez du moment et du message."
+              icon={<CalendarDays size={22} />}
+              title="Une date de relance"
+              text="Choisissez la date de la prochaine relance. Elle reste visible dans le devis."
             />
             <Feature
               icon={<ShieldCheck size={22} />}
-              title="Espace séparé"
-              text="Chaque entreprise travaille dans son propre espace."
+              title="Un espace par entreprise"
+              text="Vos dossiers sont accessibles aux personnes autorisées de votre entreprise."
             />
           </div>
         </section>
@@ -237,16 +253,15 @@ export function LandingPage() {
         <section id="cadre" tabIndex={-1} className="py-14 lg:py-20">
           <div className="page-container grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-end">
             <div>
-              <p className="section-kicker">Cadre</p>
+              <p className="section-kicker">La relation client</p>
               <h2 className="mt-4 max-w-xl text-[clamp(2.4rem,6vw,5.6rem)] font-semibold leading-[0.92] tracking-[-.06em]">
-                Vos devis restent vos devis.
+                Vous choisissez la suite.
               </h2>
             </div>
             <div className="max-w-lg lg:justify-self-end">
               <p className="text-base leading-7 text-ink-soft">
-                L’outil ne remplace pas la relation client. Il garde les informations
-                lisibles, prépare le suivi et laisse la décision à la personne qui
-                connaît le dossier.
+                Adaptez le message au dossier et envoyez-le depuis votre messagerie.
+                Enregistrez la relance pour garder une trace du suivi.
               </p>
               <div className="mt-8">
                 <LinkButton to={destination}>
@@ -294,7 +309,7 @@ function Footer() {
             className="flex flex-wrap gap-x-5 gap-y-3 text-xs text-muted"
           >
             <Link to="/privacy" className="hover:text-primary">
-              Confidentialité
+              Politique de confidentialité
             </Link>
             <Link to="/terms" className="hover:text-primary">
               Conditions d’utilisation
@@ -303,7 +318,7 @@ function Footer() {
               Mentions légales
             </Link>
             <Link to="/cookies" className="hover:text-primary">
-              Cookies
+              Cookies et stockage local
             </Link>
           </nav>
         </div>

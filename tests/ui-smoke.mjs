@@ -73,7 +73,7 @@ try {
   }
   // All public routes, with no invented values in the public product preview.
   const publicPages = [
-    ["/", "Le suivi commercial, sans bruit."],
+    ["/", "Gardez le fil de vos devis."],
     ["/login", "Connexion"],
     ["/signup", "Créer un compte"],
     ["/forgot-password", "Mot de passe oublié"],
@@ -98,7 +98,7 @@ try {
   await landing.getByRole("button", { name: "Ouvrir le menu" }).click()
   await landing
     .getByRole("navigation", { name: "Navigation mobile" })
-    .getByRole("link", { name: "Usage" })
+    .getByRole("link", { name: "Le suivi" })
     .click()
   assert.equal(
     await landing

@@ -3,7 +3,7 @@ export const STORY_DURATION = 24
 export const storyChapters = [
   {
     label: "Client",
-    title: "Le dossier client",
+    title: "Le dossier du client",
     detail: "Coordonnées et notes",
     start: 0,
   },
@@ -15,14 +15,14 @@ export const storyChapters = [
   },
   {
     label: "Relance",
-    title: "La relance à préparer",
-    detail: "Message à personnaliser",
+    title: "La prochaine relance",
+    detail: "Un message à adapter",
     start: 12,
   },
   {
     label: "Dossier",
-    title: "Le dossier complet",
-    detail: "Client, devis et historique",
+    title: "Le suivi du dossier",
+    detail: "Devis, notes et relances",
     start: 18,
   },
 ] as const
