@@ -3,7 +3,6 @@ import {
   useContext,
   useCallback,
   useEffect,
-  useRef,
   useState,
   type ReactNode,
 } from "react"
@@ -32,22 +31,26 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth()
   const [company, setCompany] = useState<Company | null>(null)
   const [role, setRole] = useState<MemberRole | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [resolution, setResolution] = useState<{
+    userId: string | null
+    loading: boolean
+  }>({ userId: null, loading: true })
   const [schemaMissing, setSchemaMissing] = useState(false)
-  const resolvedUser = useRef<string | null>(null)
 
   const load = useCallback(async () => {
     // Wait for the restored session before resolving company membership.
     if (authLoading) return
     if (!user) {
-      resolvedUser.current = null
       setCompany(null)
       setRole(null)
-      setLoading(false)
+      setResolution({ userId: null, loading: false })
       return
     }
     // Background refreshes keep the current page and its feedback mounted.
-    setLoading(resolvedUser.current !== user.id)
+    setResolution((current) => ({
+      ...current,
+      loading: current.userId !== user.id,
+    }))
     const { data, error } = await supabase
       .from("company_members")
       .select("role, companies:company_id (id, name, created_at, updated_at)")
@@ -66,8 +69,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     const companyRow = (data?.companies as unknown as Company | null) ?? null
     setCompany(companyRow)
     setRole((data?.role as MemberRole | undefined) ?? null)
-    resolvedUser.current = user.id
-    setLoading(false)
+    setResolution({ userId: user.id, loading: false })
   }, [user, authLoading])
 
   useEffect(() => {
@@ -80,7 +82,9 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         company,
         role,
         loading:
-          authLoading || loading || Boolean(user && resolvedUser.current !== user.id),
+          authLoading ||
+          resolution.loading ||
+          Boolean(user && resolution.userId !== user.id),
         schemaMissing,
         refresh: load,
       }}

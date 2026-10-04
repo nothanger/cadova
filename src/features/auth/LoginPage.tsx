@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { AuthShell } from "./AuthShell"
 import { signIn } from "./api"
 import { Button, Field, Input } from "@/components/ui"
@@ -7,7 +7,10 @@ import { humanizeError } from "@/lib/errors"
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState("")
+  const location = useLocation()
+  const [email, setEmail] = useState<string>(() =>
+    typeof location.state?.email === "string" ? location.state.email : "",
+  )
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [submitting, setSubmitting] = useState(false)

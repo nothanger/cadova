@@ -11,6 +11,7 @@ export function SignupPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const [accountExists, setAccountExists] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [confirm, setConfirm] = useState(false)
 
@@ -18,21 +19,24 @@ export function SignupPage() {
     e.preventDefault()
     if (submitting) return
     setError("")
+    setAccountExists(false)
     if (password.length < 6) {
       setError("Le mot de passe doit contenir au moins 6 caractères.")
       return
     }
     setSubmitting(true)
     try {
-      const { needsConfirmation } = await signUp(email.trim(), password)
-      if (needsConfirmation) {
+      const { status } = await signUp(email.trim(), password)
+      if (status === "account_exists") {
+        setAccountExists(true)
+      } else if (status === "confirmation_required") {
         setConfirm(true)
-        setSubmitting(false)
       } else {
         navigate("/onboarding", { replace: true })
       }
     } catch (err) {
       setError(humanizeError(err, "Inscription impossible."))
+    } finally {
       setSubmitting(false)
     }
   }
@@ -75,12 +79,26 @@ export function SignupPage() {
       }
     >
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        {error && (
+        {(error || accountExists) && (
           <p
             role="alert"
             className="rounded-[10px] bg-danger-soft px-3 py-2 text-sm text-danger"
           >
-            {error}
+            {accountExists ? (
+              <>
+                Un compte existe déjà avec cette adresse.{" "}
+                <Link
+                  to="/login"
+                  state={{ email: email.trim() }}
+                  className="font-medium underline underline-offset-2 hover:decoration-2"
+                >
+                  Se connecter ici
+                </Link>
+                .
+              </>
+            ) : (
+              error
+            )}
           </p>
         )}
         <Field label="Email" htmlFor="email" required>
@@ -89,8 +107,12 @@ export function SignupPage() {
             type="email"
             autoComplete="email"
             required
+            disabled={submitting}
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              setAccountExists(false)
+            }}
           />
         </Field>
         <Field
@@ -104,6 +126,7 @@ export function SignupPage() {
             type="password"
             autoComplete="new-password"
             required
+            disabled={submitting}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />

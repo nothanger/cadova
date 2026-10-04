@@ -17,6 +17,8 @@ Créer un `.env.local` ignoré à partir de `.env.example` et fournir `VITE_SUPA
 
 Le projet Supabase doit disposer des migrations métier déjà prévues dans `supabase/migrations`. Vérifier son historique avant d’appliquer quoi que ce soit. Le scheduler `0003_scheduler.sql` contient des placeholders et ne doit pas être exécuté tel quel. Les secrets email sont uniquement côté Supabase.
 
+L’inscription reconnaît les comptes existants signalés par Supabase, y compris les réponses de succès masquées avec des identités vides. Elle propose alors un lien de connexion avec l’email prérempli. Une adresse dont le compte attend encore la confirmation peut recevoir la même réponse qu’une nouvelle inscription : elle conserve le parcours de confirmation. Aucun accès administrateur ni changement de configuration Supabase n’est nécessaire.
+
 ## Vérification
 
 ```sh

@@ -1,5 +1,15 @@
 import type { PostgrestError } from "@supabase/supabase-js"
 
+export function isExistingAccountError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false
+  const { code, message } = err as { code?: unknown; message?: unknown }
+  return (
+    code === "user_already_exists" ||
+    code === "email_exists" ||
+    (typeof message === "string" && /user already registered/i.test(message))
+  )
+}
+
 /**
  * Turn a raw Supabase/Postgres error into a human, French message. The raw
  * error is still logged for developers; the user never sees "PGRST116".
@@ -28,7 +38,7 @@ export function humanizeError(
     if (/invalid login credentials/i.test(msg)) {
       return "Email ou mot de passe incorrect."
     }
-    if (/user already registered/i.test(msg)) {
+    if (isExistingAccountError(err)) {
       return "Un compte existe déjà avec cet email."
     }
     if (/email not confirmed/i.test(msg)) {

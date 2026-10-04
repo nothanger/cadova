@@ -288,6 +288,107 @@ try {
   checks += 3
   await auth.context().close()
 
+  async function submitSignup(page, email) {
+    await visit(page, "/signup", "Créer un compte")
+    await page.getByLabel("Email").fill(email)
+    await page.getByLabel(/^Mot de passe/).fill("valid-password")
+    await page.getByRole("button", { name: "Créer mon compte" }).click()
+  }
+
+  const existingEmail = "existing@example.test"
+  for (const [scenario, width] of [
+    ["user_already_exists", 320],
+    ["email_exists", 390],
+    ["legacy_duplicate", 390],
+    ["hidden_duplicate", 390],
+  ]) {
+    const duplicate = await pageFor({ signup: scenario }, width)
+    await submitSignup(duplicate, ` ${existingEmail} `)
+    const alert = duplicate
+      .getByRole("alert")
+      .filter({ hasText: "Un compte existe déjà avec cette adresse." })
+    await alert.waitFor()
+    const login = alert.getByRole("link", { name: /Se connecter ici/ })
+    assert.equal(await login.getAttribute("href"), "/login")
+    assert.equal(
+      await duplicate.getByRole("heading", { name: "Vérifiez votre email" }).count(),
+      0,
+      "Existing accounts must not receive a false confirmation screen",
+    )
+    const bounds = await alert.boundingBox()
+    assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= width)
+    assert.equal(
+      await duplicate.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth,
+      ),
+      false,
+      `Duplicate-account alert overflow at ${width}px`,
+    )
+    checks += 4
+    if (scenario === "user_already_exists" || scenario === "email_exists") {
+      await accessible(duplicate)
+      await duplicate.screenshot({
+        path: `${artifacts}signup-duplicate-${width}.png`,
+        fullPage: true,
+      })
+    }
+    if (scenario === "user_already_exists") {
+      await login.focus()
+      await duplicate.keyboard.press("Enter")
+      await duplicate.getByRole("heading", { name: "Connexion", exact: true }).waitFor()
+      assert.equal(new URL(duplicate.url()).pathname, "/login")
+      assert.equal(await duplicate.getByLabel("Email").inputValue(), existingEmail)
+      assert.equal(await duplicate.getByLabel(/^Mot de passe/).inputValue(), "")
+      checks += 3
+    }
+    if (scenario === "email_exists") {
+      await duplicate.getByLabel("Email").fill("new@example.test")
+      await alert.waitFor({ state: "detached" })
+      assert.equal(
+        await duplicate.getByRole("link", { name: /Se connecter ici/ }).count(),
+        0,
+      )
+      await duplicate.getByRole("button", { name: "Créer mon compte" }).click()
+      await duplicate.getByRole("heading", { name: "Vérifiez votre email" }).waitFor()
+      await duplicate.getByText("new@example.test", { exact: true }).waitFor()
+      checks += 2
+    }
+    await duplicate.context().close()
+  }
+
+  const missingIdentity = await pageFor({ signup: "identities_missing" })
+  await submitSignup(missingIdentity, "new@example.test")
+  await missingIdentity.getByRole("heading", { name: "Vérifiez votre email" }).waitFor()
+  assert.equal(await missingIdentity.getByRole("alert").count(), 0)
+  await missingIdentity.context().close()
+  checks++
+
+  const rateLimited = await pageFor({ signup: "rate_limit" })
+  await submitSignup(rateLimited, existingEmail)
+  const rateAlert = rateLimited.getByRole("alert")
+  await rateAlert.filter({ hasText: "Trop de tentatives." }).waitFor()
+  assert.equal(await rateAlert.getByRole("link").count(), 0)
+  assert.equal(
+    await rateLimited.getByRole("link", { name: /Se connecter ici/ }).count(),
+    0,
+  )
+  assert.equal(
+    await rateLimited.getByRole("heading", { name: "Vérifiez votre email" }).count(),
+    0,
+  )
+  await rateLimited.context().close()
+  checks += 3
+
+  const directSignup = await pageFor({ signup: "session", member: false })
+  await submitSignup(directSignup, "new@example.test")
+  await directSignup
+    .getByRole("heading", { name: "Votre espace entreprise", exact: true })
+    .waitFor()
+  assert.equal(new URL(directSignup.url()).pathname, "/onboarding")
+  assert.equal(await directSignup.getByRole("alert").count(), 0)
+  await directSignup.context().close()
+  checks += 2
+
   const empty = await pageFor({ session: true, empty: true })
   await visit(empty, "/app", "Tableau de bord")
   await empty.getByRole("heading", { name: "Rien à suivre pour l’instant" }).waitFor()

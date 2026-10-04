@@ -199,7 +199,50 @@ export const supabase = {
       listeners.forEach((callback) => callback("SIGNED_IN", session))
       return { error: null }
     },
-    signUp: async () => ({ data: { session: null }, error: null }),
+    signUp: async ({ email }) => {
+      const signupUser = { ...user, email }
+      const data = { session: null, user: null }
+      if (email === "existing@example.test") {
+        if (options.signup === "user_already_exists")
+          return {
+            data,
+            error: {
+              code: "user_already_exists",
+              message: "An account already uses this address",
+            },
+          }
+        if (options.signup === "email_exists")
+          return {
+            data,
+            error: { code: "email_exists", message: "Email address unavailable" },
+          }
+        if (options.signup === "legacy_duplicate")
+          return { data, error: { message: "User already registered" } }
+        if (options.signup === "hidden_duplicate")
+          return {
+            data: { session: null, user: { ...signupUser, identities: [] } },
+            error: null,
+          }
+      }
+      if (options.signup === "rate_limit")
+        return {
+          data,
+          error: {
+            code: "over_email_send_rate_limit",
+            message: "email rate limit exceeded",
+            status: 429,
+          },
+        }
+      if (options.signup === "identities_missing")
+        return { data: { session: null, user: signupUser }, error: null }
+      signupUser.identities = [{ id: "identity-test", provider: "email" }]
+      if (options.signup === "session") {
+        session = { user: signupUser }
+        listeners.forEach((callback) => callback("SIGNED_IN", session))
+        return { data: { session, user: signupUser }, error: null }
+      }
+      return { data: { session: null, user: signupUser }, error: null }
+    },
     signOut: async () => {
       session = null
       listeners.forEach((callback) => callback("SIGNED_OUT", null))

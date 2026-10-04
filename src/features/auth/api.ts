@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase"
+import { isExistingAccountError } from "@/lib/errors"
 
 /** Sign up with email + password. Supabase may require email confirmation. */
 export async function signUp(email: string, password: string) {
@@ -9,9 +10,24 @@ export async function signUp(email: string, password: string) {
       emailRedirectTo: window.location.origin,
     },
   })
-  if (error) throw error
-  // When confirmation is on, data.session is null until the user confirms.
-  return { needsConfirmation: !data.session }
+  if (error) {
+    if (isExistingAccountError(error)) return { status: "account_exists" } as const
+    throw error
+  }
+  // With confirmation enabled, Supabase can mask an existing account as a
+  // successful signup with no identities. Invited accounts can do the same.
+  if (
+    !data.session &&
+    data.user &&
+    Array.isArray(data.user.identities) &&
+    data.user.identities.length === 0
+  ) {
+    return { status: "account_exists" } as const
+  }
+  // New accounts and existing accounts awaiting confirmation share this flow.
+  return {
+    status: data.session ? "signed_in" : "confirmation_required",
+  } as const
 }
 
 export async function signIn(email: string, password: string) {
