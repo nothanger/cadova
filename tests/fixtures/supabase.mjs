@@ -79,15 +79,156 @@ const db = {
       id: "notification-test",
       user_id: user.id,
       company_id: company.id,
+      type: "quote_followup_due",
       related_quote_id: "quote-test",
+      support_thread_id: null,
+      support_message_id: null,
       title: "Relance de test",
       message: "Notification de test",
       read_at: null,
       created_at: today.toISOString(),
     },
   ],
+  support_threads: [],
+  support_messages: [],
 }
 window.__testStore = db
+
+const messagingCalls = []
+const messagingRequests = new Map()
+window.__messagingCalls = messagingCalls
+if (options.messaging && !options.messagingEmpty) {
+  db.support_threads.push(
+    { id: "thread-test", user_id: user.id },
+    { id: "thread-other", user_id: "user-owner" },
+    ...Array.from({ length: 26 }, (_, index) => ({
+      id: `thread-extra-${index + 1}`,
+      user_id: `user-extra-${index + 1}`,
+    })),
+  )
+  db.support_threads.forEach((thread, index) => {
+    thread.created_at = ago.toISOString()
+    thread.updated_at = new Date(today.getTime() - index * 60000).toISOString()
+  })
+  db.support_messages.push(
+    {
+      id: "message-user-test",
+      thread_id: "thread-test",
+      sender_id: user.id,
+      sender_role: "user",
+      body: "Question de test",
+      created_at: ago.toISOString(),
+      request_id: "request-user-test",
+    },
+    {
+      id: "message-admin-test",
+      thread_id: "thread-test",
+      sender_id: "user-admin-other",
+      sender_role: "admin",
+      body: "Réponse de l’équipe de test",
+      created_at: today.toISOString(),
+      request_id: "request-admin-test",
+    },
+    {
+      id: "message-user-other",
+      thread_id: "thread-other",
+      sender_id: "user-owner",
+      sender_role: "user",
+      body: "Question de l’autre compte",
+      created_at: today.toISOString(),
+      request_id: "request-user-other",
+    },
+  )
+  db.support_threads.slice(2).forEach((thread, index) => {
+    db.support_messages.push({
+      id: `message-extra-${index + 1}`,
+      thread_id: thread.id,
+      sender_id: thread.user_id,
+      sender_role: "user",
+      body: `Question supplémentaire ${index + 1}`,
+      created_at: thread.updated_at,
+      request_id: `request-extra-${index + 1}`,
+    })
+  })
+  db.notifications.push({
+    id: "notification-announcement",
+    user_id: user.id,
+    company_id: null,
+    type: "admin_announcement",
+    title: "Informations de test",
+    message: "Information conservée après lecture.",
+    related_quote_id: null,
+    support_thread_id: null,
+    support_message_id: null,
+    read_at: null,
+    created_at: new Date(today.getTime() + 1000).toISOString(),
+  })
+  db.notifications.push({
+    id: "notification-message",
+    user_id: user.id,
+    company_id: null,
+    type: options.admin ? "support_message" : "admin_message",
+    title: options.admin
+      ? "Nouveau message de owner-other@example.test"
+      : "Réponse de Cadova",
+    message: options.admin
+      ? "Question de l’autre compte"
+      : "Réponse de l’équipe de test",
+    related_quote_id: null,
+    support_thread_id: options.admin ? "thread-other" : "thread-test",
+    support_message_id: options.admin ? "message-user-other" : "message-admin-test",
+    read_at: null,
+    created_at: new Date(today.getTime() + 2000).toISOString(),
+  })
+  if (options.messagingPages) {
+    for (let index = 1; index <= 26; index++) {
+      const created = new Date(ago.getTime() - index * 60000).toISOString()
+      db.notifications.push({
+        id: `notification-history-${index}`,
+        user_id: user.id,
+        company_id: null,
+        type: "admin_announcement",
+        title: `Information archivée ${String(index).padStart(2, "0")}`,
+        message: `Information historique ${index}.`,
+        read_at: today.toISOString(),
+        created_at: created,
+        support_thread_id: null,
+        support_message_id: null,
+        related_quote_id: null,
+      })
+      db.support_messages.push({
+        id: `message-history-${index}`,
+        thread_id: "thread-test",
+        sender_id: user.id,
+        sender_role: "user",
+        body: `Ancien message ${String(index).padStart(2, "0")}`,
+        created_at: created,
+        request_id: `request-history-${index}`,
+      })
+    }
+  }
+}
+const messagingStorageKey = "cadova-test-messaging"
+if (options.messaging) {
+  const saved = window.sessionStorage.getItem(messagingStorageKey)
+  if (saved) {
+    const state = JSON.parse(saved)
+    db.support_threads = state.support_threads
+    db.support_messages = state.support_messages
+    db.notifications = state.notifications
+  }
+}
+function persistMessaging() {
+  if (options.messaging)
+    window.sessionStorage.setItem(
+      messagingStorageKey,
+      JSON.stringify({
+        support_threads: db.support_threads,
+        support_messages: db.support_messages,
+        notifications: db.notifications,
+      }),
+    )
+}
 
 const otherCompany = {
   id: "company-other",
@@ -199,6 +340,178 @@ function adminFailure(code, message, status = 400) {
   }
 }
 
+function messagingFailure(code, message) {
+  return { data: null, error: { code, message } }
+}
+
+function supportSummary(thread) {
+  const last = db.support_messages
+    .filter((message) => message.thread_id === thread.id)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+  return {
+    ...thread,
+    user_email:
+      thread.user_id === user.id
+        ? user.email
+        : (adminUsers.find((account) => account.id === thread.user_id)?.email ??
+          `${thread.user_id}@example.test`),
+    last_body: last?.body ?? null,
+    last_sender_role: last?.sender_role ?? null,
+    unread_count: db.notifications.filter(
+      (notification) =>
+        notification.user_id === user.id &&
+        notification.support_thread_id === thread.id &&
+        !notification.read_at,
+    ).length,
+  }
+}
+
+async function messagingRpc(name, args = {}) {
+  messagingCalls.push({ name, args })
+  if (!session) return messagingFailure("42501", "Connexion requise.")
+  if (options.messagingDelay && name.startsWith("send_"))
+    await new Promise((resolve) => setTimeout(resolve, options.messagingDelay))
+  if (options.messagingFailure === name)
+    return messagingFailure("XX000", "Test messaging connection failure")
+  if (name === "list_support_threads") {
+    const page = args.p_page ?? 1
+    const pageSize = args.p_page_size ?? 25
+    const threads = db.support_threads
+      .filter((thread) => options.admin || thread.user_id === user.id)
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+    return {
+      data: threads
+        .slice((page - 1) * pageSize, page * pageSize + 1)
+        .map(supportSummary),
+      error: null,
+    }
+  }
+  if (name === "mark_support_thread_read") {
+    const thread = db.support_threads.find((entry) => entry.id === args.p_thread_id)
+    if (!thread || (!options.admin && thread.user_id !== user.id))
+      return messagingFailure("42501", "Accès refusé.")
+    const notifications = db.notifications.filter(
+      (entry) =>
+        entry.user_id === user.id &&
+        entry.support_thread_id === thread.id &&
+        !entry.read_at,
+    )
+    notifications.forEach((entry) => {
+      entry.read_at = new Date().toISOString()
+    })
+    persistMessaging()
+    return { data: notifications.length, error: null }
+  }
+  if (name === "send_support_message") {
+    const body = args.p_body?.trim() ?? ""
+    if (!body || body.length > 4000)
+      return messagingFailure("22023", "Message invalide.")
+    let thread = args.p_thread_id
+      ? db.support_threads.find((entry) => entry.id === args.p_thread_id)
+      : db.support_threads.find((entry) => entry.user_id === user.id)
+    if (args.p_thread_id && !thread)
+      return messagingFailure("P0002", "Conversation introuvable.")
+    if (thread && !options.admin && thread.user_id !== user.id)
+      return messagingFailure("42501", "Accès refusé.")
+    const requestKey = `${name}:${user.id}:${args.p_request_id}`
+    const previous = messagingRequests.get(requestKey)
+    if (previous)
+      return previous.body === body && previous.threadId === (thread?.id ?? null)
+        ? { data: previous.result, error: null }
+        : messagingFailure("22023", "Identifiant de requête réutilisé.")
+    if (!thread) {
+      thread = {
+        id: "thread-new-user-test",
+        user_id: user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      db.support_threads.push(thread)
+    }
+    const message = {
+      id: `message-new-${db.support_messages.length}`,
+      thread_id: thread.id,
+      sender_id: user.id,
+      sender_role: options.admin ? "admin" : "user",
+      body,
+      created_at: new Date().toISOString(),
+      request_id: args.p_request_id,
+    }
+    db.support_messages.push(message)
+    thread.updated_at = message.created_at
+    const recipients = options.admin
+      ? [{ id: thread.user_id }]
+      : adminUsers.length
+        ? adminUsers.filter((account) => account.is_admin && account.id !== user.id)
+        : [{ id: "user-admin-other" }]
+    recipients.forEach((recipient) =>
+      db.notifications.push({
+        id: `notification-new-${db.notifications.length}`,
+        user_id: recipient.id,
+        company_id: null,
+        type: options.admin ? "admin_message" : "support_message",
+        title: options.admin ? "Réponse de Cadova" : `Nouveau message de ${user.email}`,
+        message: body,
+        support_thread_id: thread.id,
+        support_message_id: message.id,
+        related_quote_id: null,
+        read_at: null,
+        created_at: message.created_at,
+      }),
+    )
+    messagingRequests.set(requestKey, { body, threadId: thread.id, result: thread.id })
+    persistMessaging()
+    return { data: thread.id, error: null }
+  }
+  if (name === "send_admin_notification") {
+    if (!options.admin) return messagingFailure("42501", "Accès refusé.")
+    const title = args.p_title?.trim() ?? ""
+    const body = args.p_body?.trim() ?? ""
+    if (!title || title.length > 120 || !body || body.length > 4000)
+      return messagingFailure("22023", "Notification invalide.")
+    const recipients = adminUsers.filter(
+      (account) =>
+        (!args.p_recipient_id || account.id === args.p_recipient_id) &&
+        (!account.banned_until || account.banned_until <= new Date().toISOString()),
+    )
+    if (args.p_recipient_id && !recipients.length)
+      return messagingFailure("P0002", "Destinataire introuvable.")
+    const requestKey = `${name}:${user.id}:${args.p_request_id}`
+    const previous = messagingRequests.get(requestKey)
+    if (previous)
+      return previous.title === title &&
+        previous.body === body &&
+        previous.recipient === args.p_recipient_id
+        ? { data: previous.result, error: null }
+        : messagingFailure("22023", "Identifiant de requête réutilisé.")
+    recipients.forEach((recipient) =>
+      db.notifications.push({
+        id: `notification-new-${db.notifications.length}`,
+        user_id: recipient.id,
+        company_id: null,
+        type: "admin_announcement",
+        title,
+        message: body,
+        related_quote_id: null,
+        support_thread_id: null,
+        support_message_id: null,
+        read_at: null,
+        created_at: new Date().toISOString(),
+      }),
+    )
+    const result = { recipient_count: recipients.length }
+    messagingRequests.set(requestKey, {
+      title,
+      body,
+      recipient: args.p_recipient_id,
+      result,
+    })
+    persistMessaging()
+    return { data: result, error: null }
+  }
+  return messagingFailure("22023", "Action inconnue.")
+}
+
 class Query {
   constructor(table) {
     this.table = table
@@ -206,6 +519,9 @@ class Query {
     this.mode = "read"
     this.payload = null
     this.one = false
+    this.sorts = []
+    this.start = 0
+    this.end = Infinity
   }
   select() {
     return this
@@ -217,10 +533,29 @@ class Query {
   is(key, value) {
     return this.eq(key, value)
   }
-  order() {
+  in(key, values) {
+    this.filters.push((row) => values.includes(row[key]))
     return this
   }
-  limit() {
+  lt(key, value) {
+    this.filters.push((row) => row[key] < value)
+    return this
+  }
+  gt(key, value) {
+    this.filters.push((row) => row[key] > value)
+    return this
+  }
+  order(key, { ascending = true } = {}) {
+    this.sorts.push({ key, ascending })
+    return this
+  }
+  limit(count) {
+    this.end = this.start + count - 1
+    return this
+  }
+  range(start, end) {
+    this.start = start
+    this.end = end
     return this
   }
   single() {
@@ -246,9 +581,35 @@ class Query {
       .then(() => {
         if (options.fail && this.table === "quotes")
           return { data: null, error: { message: "Test connection failure" } }
+        if (options.messagingFailure === this.table)
+          return { data: null, error: { message: "Test messaging connection failure" } }
+        if (
+          options.messagingFailure === "read_notifications" &&
+          this.table === "notifications" &&
+          this.mode === "update"
+        )
+          return {
+            data: null,
+            error: { message: "Test notification connection failure" },
+          }
         let rows = db[this.table].filter((row) =>
           this.filters.every((check) => check(row)),
         )
+        if (this.table === "notifications")
+          rows = rows.filter((row) => session && row.user_id === user.id)
+        if (this.table === "support_threads")
+          rows = rows.filter(
+            (row) => session && (options.admin || row.user_id === user.id),
+          )
+        if (this.table === "support_messages")
+          rows = rows.filter(
+            (row) =>
+              session &&
+              (options.admin ||
+                db.support_threads.some(
+                  (thread) => thread.id === row.thread_id && thread.user_id === user.id,
+                )),
+          )
         if (this.mode === "insert") {
           const row = {
             id: `new-${db[this.table].length}`,
@@ -262,6 +623,17 @@ class Query {
         }
         if (this.mode === "update")
           rows.forEach((row) => Object.assign(row, this.payload))
+        if (this.mode !== "read") persistMessaging()
+        const count = rows.length
+        rows = [...rows]
+          .sort((a, b) => {
+            for (const { key, ascending } of this.sorts) {
+              if (a[key] < b[key]) return ascending ? -1 : 1
+              if (a[key] > b[key]) return ascending ? 1 : -1
+            }
+            return 0
+          })
+          .slice(this.start, this.end + 1)
         const joined = rows.map((row) => ({
           ...row,
           ...(this.table === "quotes"
@@ -275,7 +647,7 @@ class Query {
               }
             : {}),
         }))
-        return { data: this.one ? joined[0] || null : joined, error: null }
+        return { data: this.one ? joined[0] || null : joined, error: null, count }
       })
       .then(resolve, reject)
   }
@@ -284,6 +656,15 @@ export const isSupabaseConfigured = true
 export const supabase = {
   from: (table) => new Query(table),
   rpc: async (name, args) => {
+    if (
+      [
+        "send_support_message",
+        "list_support_threads",
+        "mark_support_thread_read",
+        "send_admin_notification",
+      ].includes(name)
+    )
+      return messagingRpc(name, args)
     if (name === "is_platform_admin")
       return { data: Boolean(session && options.admin), error: null }
     if (name === "create_company_with_owner") {
@@ -325,6 +706,15 @@ export const supabase = {
     }
     return { data: null, error: { message: "Unknown test RPC" } }
   },
+  channel: () => {
+    const channel = {
+      on: () => channel,
+      subscribe: () => channel,
+      unsubscribe: async () => ({ error: null }),
+    }
+    return channel
+  },
+  removeChannel: async () => "ok",
   functions: {
     invoke: async (name, { body }) => {
       if (name !== "platform-admin")

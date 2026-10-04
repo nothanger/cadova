@@ -87,6 +87,7 @@ try {
     "0004_reminder_prefs.sql",
     "0005_quote_workflow.sql",
     "0006_platform_admin.sql",
+    "0007_support_notifications.sql",
   ]) {
     sql(
       readFileSync(
@@ -96,6 +97,7 @@ try {
     )
   }
   sql(readFileSync(new URL("../tests/admin-rls.sql", import.meta.url), "utf8"))
+  sql(readFileSync(new URL("../tests/notifications-rls.sql", import.meta.url), "utf8"))
   sql(`
     insert into auth.users(id,email) values
       ('60000000-0000-4000-8000-000000000001','race-owner-a@example.test'),
@@ -163,8 +165,58 @@ try {
       end if;
     end $$;
   `)
+  const supportRetries = await Promise.all(
+    [1, 2].map(() =>
+      concurrentSql(`
+    begin;
+    set local role authenticated;
+    select set_config('request.jwt.claim.sub','60000000-0000-4000-8000-000000000003',true);
+    select public.send_support_message('Concurrent support',null,'91000000-0000-4000-8000-000000000001');
+    select pg_sleep(0.25);
+    commit;
+  `),
+    ),
+  )
+  if (supportRetries.some((result) => result.code !== 0)) {
+    throw new Error("Concurrent support retries did not both succeed")
+  }
+  sql(`
+    do $$ begin
+      if (select count(*) from public.support_messages where request_id='91000000-0000-4000-8000-000000000001') <> 1 then
+        raise exception 'Concurrent support retries duplicated a message';
+      end if;
+      if (select count(*) from public.notifications where type='support_message') <> 1 then
+        raise exception 'Concurrent support retries duplicated notifications';
+      end if;
+    end $$;
+  `)
+  const announcementRetries = await Promise.all(
+    [1, 2].map(() =>
+      concurrentSql(`
+    begin;
+    set local role authenticated;
+    select set_config('request.jwt.claim.sub','60000000-0000-4000-8000-000000000004',true);
+    select public.send_admin_notification('Concurrent announcement','Concurrent announcement body',null,'92000000-0000-4000-8000-000000000001');
+    select pg_sleep(0.25);
+    commit;
+  `),
+    ),
+  )
+  if (announcementRetries.some((result) => result.code !== 0)) {
+    throw new Error("Concurrent announcement retries did not both succeed")
+  }
+  sql(`
+    do $$ begin
+      if (select count(*) from public.admin_notification_dispatches where request_id='92000000-0000-4000-8000-000000000001') <> 1 then
+        raise exception 'Concurrent announcement retries duplicated dispatches';
+      end if;
+      if (select count(*) from public.notifications where type='admin_announcement') <> (select count(*) from auth.users where banned_until is null or banned_until<=now()) then
+        raise exception 'Concurrent announcement retries duplicated or omitted recipients';
+      end if;
+    end $$;
+  `)
   console.log(
-    "Administration : isolation RLS, transfert, suspension, journal et deux courses concurrentes validés.",
+    "Administration et messagerie : RLS, permissions, journal, 34 destinataires et quatre courses concurrentes validés.",
   )
 } finally {
   docker(["exec", container, "dropdb", "-U", "postgres", "--force", database])

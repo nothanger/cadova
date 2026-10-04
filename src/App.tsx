@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { AuthProvider } from "@/features/auth/AuthContext"
 import { CompanyProvider } from "@/features/company/CompanyContext"
 import { AdminProvider } from "@/features/admin/AdminContext"
+import { NotificationsProvider } from "@/features/notifications/NotificationsContext"
 import { RouteFocus } from "@/app/RouteFocus"
 import { AppRoutes } from "@/app/router"
 import { isSupabaseConfigured } from "@/lib/supabase"
@@ -60,7 +61,9 @@ export default function App() {
         <AuthProvider>
           <AdminProvider>
             <CompanyProvider>
-              <AppRoutes />
+              <NotificationsProvider>
+                <AppRoutes />
+              </NotificationsProvider>
             </CompanyProvider>
           </AdminProvider>
         </AuthProvider>

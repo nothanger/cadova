@@ -23,6 +23,7 @@ import { QuoteDetailPage } from "@/features/quotes/QuoteDetailPage"
 import { SettingsPage } from "@/features/settings/SettingsPage"
 import { LegalPage } from "@/features/legal/LegalPage"
 import { AdminPage } from "@/features/admin/AdminPage"
+import { NotificationsPage } from "@/features/notifications/NotificationsPage"
 
 export function AppRoutes() {
   return (
@@ -63,6 +64,7 @@ export function AppRoutes() {
 
       {/* Authenticated */}
       <Route element={<RequireAuth />}>
+        <Route path="/notifications" element={<NotificationsPage />} />
         <Route
           path="/admin"
           element={

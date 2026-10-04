@@ -9,6 +9,7 @@ import {
   X,
   Settings,
   ShieldCheck,
+  Bell,
 } from "lucide-react"
 import { CadovaLogo } from "@/components/CadovaLogo"
 import { useAuth } from "@/features/auth/AuthContext"
@@ -22,7 +23,10 @@ const followup = [
   { to: "/app/clients", label: "Clients", icon: Users },
   { to: "/app/quotes", label: "Devis", icon: FileText },
 ]
-const bottom = [{ to: "/app/settings", label: "Paramètres", icon: Settings }]
+const bottom = [
+  { to: "/notifications", label: "Notifications", icon: Bell },
+  { to: "/app/settings", label: "Paramètres", icon: Settings },
+]
 
 function NavItem({
   to,

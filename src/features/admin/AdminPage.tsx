@@ -26,12 +26,15 @@ import {
   Spinner,
   TableScroll,
   cx,
+  LinkButton,
 } from "@/components/ui"
 import { Dialog } from "@/components/ui/Dialog"
 import { useAuth } from "@/features/auth/AuthContext"
 import { useCompany } from "@/features/company/CompanyContext"
+import { NotificationBell } from "@/features/notifications/NotificationBell"
 import { formatDate } from "@/lib/dates"
 import { useAdmin } from "./AdminContext"
+import { AdminNotificationComposer } from "./AdminNotificationComposer"
 import {
   adminErrorMessage,
   deleteAdminUser,
@@ -527,9 +530,15 @@ export function AdminPage() {
           <Link to="/" aria-label="Cadova, accueil" className="shrink-0">
             <CadovaLogo className="h-8 w-auto sm:h-9" />
           </Link>
-          <Button variant="secondary" onClick={logout} loading={loggingOut}>
-            <LogOut size={16} aria-hidden="true" /> Se déconnecter
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <NotificationBell />
+            <LinkButton to="/notifications" variant="secondary">
+              Notifications
+            </LinkButton>
+            <Button variant="secondary" onClick={logout} loading={loggingOut}>
+              <LogOut size={16} aria-hidden="true" /> Se déconnecter
+            </Button>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10 lg:px-8">
@@ -563,6 +572,7 @@ export function AdminPage() {
               >
                 <Building2 size={16} aria-hidden="true" /> Entreprises
               </Button>
+              <AdminNotificationComposer />
             </div>
             {notice && (
               <p
@@ -704,6 +714,9 @@ export function AdminPage() {
                                     : "Jamais"}
                                 </td>
                                 <td className="px-5 py-4">
+                                  <div className="mb-2">
+                                    <AdminNotificationComposer recipient={account} />
+                                  </div>
                                   {protectedAccount ? (
                                     <p className="flex items-center gap-1.5 text-xs text-muted">
                                       <ShieldCheck size={14} aria-hidden="true" />{" "}

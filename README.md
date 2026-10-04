@@ -31,6 +31,14 @@ Pour installer l’administration sur un projet dont les migrations métier exis
 
 Le script déploie la fonction avec `verify_jwt=false` : le handler vérifie lui-même chaque jeton auprès de Supabase Auth avant d’accéder aux données. Cela accepte aussi les projets utilisant des clés de signature asymétriques. Conserver ce paramètre lors d’un redéploiement manuel et ne jamais retirer la vérification Auth du handler.
 
+## Notifications et messages
+
+La cloche et la page `/notifications` regroupent les rappels, les annonces de l’administration et les échanges privés avec l’admin. Chaque compte connecté peut poser une question, même avant de créer son entreprise. L’onglet Messages conserve la conversation ; marquer une notification comme lue ne supprime pas son contenu.
+
+L’admin consulte les conversations et y répond. « Envoyer une notification » permet de choisir un compte ou tous les comptes actifs, puis de vérifier le titre, le message et les destinataires avant confirmation. L’envoi global couvre les comptes au-delà de la page affichée. Ces notifications restent dans l’application.
+
+Appliquer `0007_support_notifications.sql` après `0006_platform_admin.sql`. Les RPC vérifient l’identité, le rôle et la destination côté serveur, enregistrent le message et ses notifications dans une transaction et reconnaissent les nouvelles tentatives d’un même envoi. Un utilisateur ne peut lire que ses échanges et notifications ; seul l’état de lecture des notifications est modifiable depuis le client. Les annonces de l’administration sont journalisées côté serveur. Les tests de `pnpm test:admin:db` couvrent aussi ces permissions et les envois.
+
 ## Vérification
 
 ```sh
