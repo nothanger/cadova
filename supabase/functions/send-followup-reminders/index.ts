@@ -91,6 +91,18 @@ Deno.serve(async (req) => {
     const dueQuotes = quotes as unknown as QuoteRow[] ?? []
     if (dueQuotes.length === 0) continue // Pas d'email si rien à relancer
 
+    // The service role bypasses RLS: check the current Auth state before any
+    // notification or email, including when the user still holds an old JWT.
+    const { data: authUser, error: authErr } =
+      await db.auth.admin.getUserById(user_id)
+    if (authErr || !authUser?.user?.email) {
+      console.error(`[reminders] cannot get email for user ${user_id}`)
+      continue
+    }
+    const bannedUntil = authUser.user.banned_until
+    if (bannedUntil && new Date(bannedUntil).getTime() > Date.now()) continue
+    const userEmail = authUser.user.email
+
     const totalCents = dueQuotes.reduce((s, q) => s + q.amount_cents, 0)
     const totalFormatted = formatEur(totalCents)
     const count = dueQuotes.length
@@ -114,16 +126,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // 4. Récupérer l'email de l'utilisateur via auth.users (service role requis)
-    const { data: authUser, error: authErr } =
-      await db.auth.admin.getUserById(user_id)
-    if (authErr || !authUser?.user?.email) {
-      console.error(`[reminders] cannot get email for user ${user_id}`)
-      continue
-    }
-    const userEmail = authUser.user.email
-
-    // 5. Envoyer l'email via Resend
+    // 4. Envoyer l'email via Resend
     if (!resendKey) {
       console.warn("[reminders] RESEND_API_KEY not set — skipping email send")
       results.push(`skipped:${user_id}`)
