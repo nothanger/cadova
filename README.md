@@ -19,16 +19,39 @@ Le projet Supabase doit disposer des migrations métier déjà prévues dans `su
 
 L’inscription reconnaît les comptes existants signalés par Supabase, y compris les réponses de succès masquées avec des identités vides. Elle propose alors un lien de connexion avec l’email prérempli. Une adresse dont le compte attend encore la confirmation peut recevoir la même réponse qu’une nouvelle inscription : elle conserve le parcours de confirmation. Aucun accès administrateur ni changement de configuration Supabase n’est nécessaire.
 
+## Administration
+
+La route `/admin` permet de consulter les comptes et les entreprises, suspendre ou réactiver un compte, supprimer un compte après confirmation de son email et transférer une entreprise à un autre propriétaire. Ouvrir une entreprise donne accès à ses clients, devis et paramètres dans l’interface existante. Les comptes ordinaires restent limités à leur entreprise.
+
+Les droits reposent sur `public.platform_admins`, modifiable uniquement côté serveur. Aucun rôle provenant du navigateur ou des métadonnées d’inscription n’accorde un accès administrateur. La fonction Edge `platform-admin` vérifie la session et le rôle à chaque requête ; la clé serveur reste dans Supabase. Les mutations sont journalisées. Une suspension bloque aussi les anciennes sessions dans les règles RLS.
+
+Les comptes administrateurs sont protégés contre la suppression et la suspension dans cette interface. Avant de supprimer le dernier propriétaire d’une entreprise, transférer la propriété pour conserver ses données. Un transfert garde les anciens propriétaires comme membres. Les préférences et notifications personnelles restent propres à chaque compte.
+
+Pour installer l’administration sur un projet dont les migrations métier existent déjà, `scripts/provision-admin.py --inspect` vérifie le projet sans écrire. `--deploy` installe uniquement la migration et la fonction. `--provision` applique `0006_platform_admin.sql`, déploie la fonction Edge, crée un **nouveau** compte confirmé par l’API Auth et vérifie sa connexion et ses droits. Il refuse de remplacer un compte existant et retire uniquement le nouveau compte si sa vérification échoue. Fournir `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF` et `SUPABASE_ADMIN_EMAIL` via le gestionnaire de secrets du terminal. `SUPABASE_ADMIN_PASSWORD` peut fournir un mot de passe d’au moins 20 caractères déjà enregistré dans un gestionnaire de mots de passe. Les identifiants sont affichés uniquement après vérification ; conserver cette sortie en lieu sûr. Ne jamais enregistrer ces secrets dans Git ou dans des variables `VITE_*`.
+
+Le script déploie la fonction avec `verify_jwt=false` : le handler vérifie lui-même chaque jeton auprès de Supabase Auth avant d’accéder aux données. Cela accepte aussi les projets utilisant des clés de signature asymétriques. Conserver ce paramètre lors d’un redéploiement manuel et ne jamais retirer la vérification Auth du handler.
+
 ## Vérification
 
 ```sh
 pnpm typecheck
+pnpm typecheck:admin
 pnpm lint
 pnpm test
 pnpm build
 pnpm test:ui
 pnpm test:scene
 ```
+
+`pnpm test` couvre aussi les permissions et les refus de l’API d’administration. `pnpm test:admin:db` vérifie les règles RLS et les courses entre suppression, transfert et création d’entreprise dans une base PostgreSQL locale jetable. Il nécessite un conteneur nommé `cadova-admin-db` (modifiable avec `ADMIN_TEST_CONTAINER`) ; il n’utilise aucun projet Supabase distant :
+
+```sh
+docker run -d --name cadova-admin-db --network none -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17.6
+pnpm test:admin:db
+docker rm -f cadova-admin-db
+```
+
+Attendre que PostgreSQL soit prêt avant de lancer ce test. L’entrée de la fonction Edge se vérifie également avec `pnpm dlx deno@2.5.6 check supabase/functions/platform-admin/index.ts`.
 
 `test:ui` démarre et arrête son propre serveur Vite sur le port 8446 et utilise Chromium installé sur la machine. `CHROMIUM_PATH` permet d’indiquer son exécutable (par défaut `/usr/bin/chromium`). Le test couvre les routes publiques et privées, quatre largeurs d’écran, l’accessibilité axe et les interactions principales. Les données Supabase y sont **simulées uniquement dans le navigateur de test** ; elles ne sont ni intégrées à l’application, ni envoyées à un projet réel. Les captures sont enregistrées dans `.cache/ui`, ignoré par Git. Ces vérifications ne remplacent pas une recette avec le projet Supabase réel.
 

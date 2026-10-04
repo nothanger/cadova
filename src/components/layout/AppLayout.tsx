@@ -8,12 +8,14 @@ import {
   Menu,
   X,
   Settings,
+  ShieldCheck,
 } from "lucide-react"
 import { CadovaLogo } from "@/components/CadovaLogo"
 import { useAuth } from "@/features/auth/AuthContext"
 import { useCompany } from "@/features/company/CompanyContext"
 import { cx } from "@/components/ui"
 import { NotificationBell } from "@/features/notifications/NotificationBell"
+import { useAdmin } from "@/features/admin/AdminContext"
 
 const nav = [{ to: "/app", label: "Tableau de bord", icon: LayoutDashboard, end: true }]
 const followup = [
@@ -57,6 +59,7 @@ function NavItem({
 
 export function AppLayout() {
   const { user, signOut } = useAuth()
+  const { isAdmin } = useAdmin()
   const { company } = useCompany()
   const [open, setOpen] = useState(false)
   const toggleRef = useRef<HTMLButtonElement>(null)
@@ -166,6 +169,14 @@ export function AppLayout() {
           ))}
 
           <div className="mt-auto pt-4">
+            {isAdmin && (
+              <NavItem
+                to="/admin"
+                label="Administration"
+                icon={ShieldCheck}
+                onNavigate={close}
+              />
+            )}
             {bottom.map((item) => (
               <NavItem key={item.to} {...item} onNavigate={close} />
             ))}
@@ -203,6 +214,14 @@ export function AppLayout() {
         className="min-w-0 flex-1 px-5 pb-16 pt-24 md:px-8 md:pt-9 lg:px-10"
       >
         <div className="mx-auto w-full max-w-[1120px]">
+          {isAdmin && (
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary-soft px-4 py-3 text-sm">
+              <p className="text-ink">Vous gérez l’entreprise {company?.name}.</p>
+              <Link to="/admin" className="font-medium text-primary underline">
+                Changer d’entreprise
+              </Link>
+            </div>
+          )}
           <Outlet />
         </div>
       </main>

@@ -4,6 +4,7 @@ import {
   RequireAuth,
   RequireCompany,
   RequireNoCompany,
+  RequireAdmin,
 } from "./guards"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { LandingPage } from "@/features/landing/LandingPage"
@@ -21,6 +22,7 @@ import { QuoteFormPage } from "@/features/quotes/QuoteFormPage"
 import { QuoteDetailPage } from "@/features/quotes/QuoteDetailPage"
 import { SettingsPage } from "@/features/settings/SettingsPage"
 import { LegalPage } from "@/features/legal/LegalPage"
+import { AdminPage } from "@/features/admin/AdminPage"
 
 export function AppRoutes() {
   return (
@@ -61,6 +63,14 @@ export function AppRoutes() {
 
       {/* Authenticated */}
       <Route element={<RequireAuth />}>
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <AdminPage />
+            </RequireAdmin>
+          }
+        />
         <Route
           path="/onboarding"
           element={

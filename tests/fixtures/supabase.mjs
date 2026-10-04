@@ -88,6 +88,117 @@ const db = {
   ],
 }
 window.__testStore = db
+
+const otherCompany = {
+  id: "company-other",
+  name: "Autre entreprise",
+  created_at: ago.toISOString(),
+  updated_at: today.toISOString(),
+}
+const adminUsers = options.admin
+  ? [
+      { ...user, is_admin: true },
+      { id: "user-admin-other", email: "second-admin@example.test", is_admin: true },
+      { id: "user-owner", email: "owner-other@example.test" },
+      { id: "user-suspended", email: "suspended@example.test", suspended: true },
+      { id: "user-delete", email: "delete-me@example.test" },
+      { id: "user-transfer", email: "future-owner@example.test" },
+      ...Array.from({ length: 26 }, (_, index) => ({
+        id: `user-extra-${index + 1}`,
+        email: `extra-${String(index + 1).padStart(2, "0")}@example.test`,
+      })),
+    ].map(({ suspended, ...account }) => ({
+      ...account,
+      is_admin: Boolean(account.is_admin),
+      created_at: ago.toISOString(),
+      last_sign_in_at: today.toISOString(),
+      email_confirmed_at: ago.toISOString(),
+      banned_until: suspended
+        ? new Date(today.getTime() + 86400000).toISOString()
+        : null,
+      companies: [],
+    }))
+  : []
+const adminCompanies = options.admin
+  ? [
+      company,
+      otherCompany,
+      ...Array.from({ length: 30 }, (_, index) => ({
+        id: `company-extra-${index + 1}`,
+        name: `Entreprise supplémentaire ${String(index + 1).padStart(2, "0")}`,
+        created_at: ago.toISOString(),
+        updated_at: today.toISOString(),
+      })),
+    ].map((entry) => ({ ...entry, owners: [] }))
+  : []
+if (options.admin) {
+  db.companies.push(otherCompany, ...adminCompanies.slice(2))
+  db.company_members.push({
+    company_id: otherCompany.id,
+    user_id: "user-owner",
+    role: "owner",
+    companies: otherCompany,
+  })
+  db.clients.push({
+    id: "client-other",
+    company_id: otherCompany.id,
+    name: "Client autre entreprise",
+    email: "client-other@example.test",
+    phone: null,
+    notes: "Dossier de l’autre entreprise",
+    created_at: today.toISOString(),
+    updated_at: today.toISOString(),
+  })
+  db.quotes.push({
+    id: "quote-other",
+    company_id: otherCompany.id,
+    client_id: "client-other",
+    reference: "OTHER-001",
+    amount_cents: 45600,
+    status: "sent",
+    sent_at: iso(ago),
+    created_at: today.toISOString(),
+    updated_at: today.toISOString(),
+    next_followup_at: null,
+  })
+}
+
+function syncAdminMemberships() {
+  adminUsers.forEach((account) => {
+    account.companies = db.company_members
+      .filter((member) => member.user_id === account.id)
+      .map((member) => ({
+        id: member.company_id,
+        name: db.companies.find((entry) => entry.id === member.company_id)?.name,
+        role: member.role,
+      }))
+  })
+  adminCompanies.forEach((entry) => {
+    entry.owners = db.company_members
+      .filter((member) => member.company_id === entry.id && member.role === "owner")
+      .map((member) => ({
+        id: member.user_id,
+        email:
+          adminUsers.find((account) => account.id === member.user_id)?.email ?? null,
+      }))
+  })
+}
+syncAdminMemberships()
+window.__adminTestStore = { users: adminUsers, companies: adminCompanies }
+
+function adminFailure(code, message, status = 400) {
+  return {
+    data: null,
+    error: {
+      message: "Edge Function returned a non-2xx status code",
+      context: new window.Response(JSON.stringify({ error: { code, message } }), {
+        status,
+        headers: { "Content-Type": "application/json" },
+      }),
+    },
+  }
+}
+
 class Query {
   constructor(table) {
     this.table = table
@@ -172,14 +283,120 @@ class Query {
 export const isSupabaseConfigured = true
 export const supabase = {
   from: (table) => new Query(table),
-  rpc: async () => {
-    db.company_members.push({
-      company_id: company.id,
-      user_id: user.id,
-      role: "owner",
-      companies: company,
-    })
-    return { data: company.id, error: null }
+  rpc: async (name, args) => {
+    if (name === "is_platform_admin")
+      return { data: Boolean(session && options.admin), error: null }
+    if (name === "create_company_with_owner") {
+      company.name = args.company_name
+      db.company_members.push({
+        company_id: company.id,
+        user_id: user.id,
+        role: "owner",
+        companies: company,
+      })
+      syncAdminMemberships()
+      return { data: company.id, error: null }
+    }
+    if (name === "admin_transfer_company_owner") {
+      if (!session || !options.admin)
+        return { data: null, error: { code: "42501", message: "Accès refusé." } }
+      const entry = db.companies.find((item) => item.id === args.target_company_id)
+      const nextOwner = adminUsers.find((account) => account.id === args.new_owner_id)
+      if (!entry || !nextOwner)
+        return { data: null, error: { code: "P0001", message: "Compte introuvable." } }
+      db.company_members
+        .filter((member) => member.company_id === entry.id && member.role === "owner")
+        .forEach((member) => {
+          member.role = "member"
+        })
+      const member = db.company_members.find(
+        (item) => item.company_id === entry.id && item.user_id === nextOwner.id,
+      )
+      if (member) member.role = "owner"
+      else
+        db.company_members.push({
+          company_id: entry.id,
+          user_id: nextOwner.id,
+          role: "owner",
+          companies: entry,
+        })
+      syncAdminMemberships()
+      return { data: null, error: null }
+    }
+    return { data: null, error: { message: "Unknown test RPC" } }
+  },
+  functions: {
+    invoke: async (name, { body }) => {
+      if (name !== "platform-admin")
+        return adminFailure("INVALID_REQUEST", "Action inconnue.")
+      if (!session) return adminFailure("UNAUTHORIZED", "Connexion requise.", 401)
+      if (!options.admin) return adminFailure("FORBIDDEN", "Accès refusé.", 403)
+      if (options.adminFailure === body.action)
+        return adminFailure(
+          "BACKEND_ERROR",
+          "Le serveur de test n’a pas pu effectuer cette action.",
+          500,
+        )
+      if (body.action === "list_users" || body.action === "list_companies") {
+        const page = body.page ?? 1
+        const perPage = body.perPage ?? 25
+        const entries = body.action === "list_users" ? adminUsers : adminCompanies
+        const start = (page - 1) * perPage
+        return {
+          data: {
+            [body.action === "list_users" ? "users" : "companies"]: entries.slice(
+              start,
+              start + perPage,
+            ),
+            page,
+            hasMore: start + perPage < entries.length,
+          },
+          error: null,
+        }
+      }
+      const target = adminUsers.find((account) => account.id === body.userId)
+      if (!target) return adminFailure("USER_NOT_FOUND", "Compte introuvable.", 404)
+      if (target.id === user.id)
+        return adminFailure("SELF_ACTION", "Votre compte est protégé.", 409)
+      if (target.is_admin)
+        return adminFailure(
+          "PROTECTED_ADMIN",
+          "Ce compte administrateur est protégé.",
+          409,
+        )
+      if (body.action === "delete_user") {
+        if (body.confirmationEmail?.trim().toLowerCase() !== target.email.toLowerCase())
+          return adminFailure(
+            "EMAIL_MISMATCH",
+            "L’adresse de confirmation ne correspond pas.",
+          )
+        const onlyOwner = db.company_members.some(
+          (member) =>
+            member.user_id === target.id &&
+            member.role === "owner" &&
+            db.company_members.filter(
+              (item) => item.company_id === member.company_id && item.role === "owner",
+            ).length === 1,
+        )
+        if (onlyOwner)
+          return adminFailure(
+            "LAST_OWNER",
+            "Transférez d’abord la propriété de l’entreprise.",
+            409,
+          )
+        adminUsers.splice(adminUsers.indexOf(target), 1)
+        db.company_members = db.company_members.filter(
+          (member) => member.user_id !== target.id,
+        )
+        syncAdminMemberships()
+      } else if (body.action === "suspend_user" || body.action === "resume_user") {
+        target.banned_until =
+          body.action === "suspend_user"
+            ? new Date(today.getTime() + 86400000).toISOString()
+            : null
+      } else return adminFailure("INVALID_REQUEST", "Action inconnue.")
+      return { data: { ok: true, userId: target.id }, error: null }
+    },
   },
   auth: {
     getSession: async () => ({ data: { session }, error: null }),

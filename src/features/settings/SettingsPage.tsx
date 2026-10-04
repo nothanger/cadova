@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader"
 import { Button, Card, Field, Input, Select, Spinner } from "@/components/ui"
 import { useAuth } from "@/features/auth/AuthContext"
 import { useCompany } from "@/features/company/CompanyContext"
+import { useAdmin } from "@/features/admin/AdminContext"
 import {
   getEmailPreference,
   setEmailPreference,
@@ -32,6 +33,7 @@ const HOUR_OPTIONS = Array.from({ length: 13 }, (_, i) => {
 
 export function SettingsPage() {
   const { user } = useAuth()
+  const { isAdmin } = useAdmin()
   const { company, role, refresh: refreshCompany } = useCompany()
 
   /* ── email toggle ── */
@@ -64,6 +66,11 @@ export function SettingsPage() {
 
   useEffect(() => {
     if (!user || !company) return
+    if (isAdmin) {
+      setEmailLoading(false)
+      setPrefsLoading(false)
+      return
+    }
 
     getEmailPreference(user.id, company.id)
       .then(setEmailEnabled)
@@ -78,7 +85,7 @@ export function SettingsPage() {
         if (isNotificationsMigrationMissing(err)) setPrefsMigrationMissing(true)
       })
       .finally(() => setPrefsLoading(false))
-  }, [user, company])
+  }, [user, company, isAdmin])
 
   async function toggleEmail() {
     if (!user || !company || emailSaving) return
@@ -146,7 +153,14 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Paramètres" subtitle="Préférences de votre compte Cadova." />
+      <PageHeader
+        title="Paramètres"
+        subtitle={
+          isAdmin
+            ? "Paramètres de l’entreprise."
+            : "Préférences de votre compte Cadova."
+        }
+      />
 
       {loading ? (
         <Spinner />
@@ -167,154 +181,164 @@ export function SettingsPage() {
           )}
 
           {/* ── Email toggle ── */}
-          <Card className="p-5 sm:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
-                  <Mail size={18} />
+          {!isAdmin && (
+            <>
+              <Card className="p-5 sm:p-7">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+                      <Mail size={18} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-ink">
+                        Résumé quotidien par email
+                      </p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-muted">
+                        Recevez chaque matin un email listant vos devis à relancer.
+                        Aucun email n'est envoyé si vous n'avez rien à relancer ce
+                        jour-là.
+                      </p>
+                      {emailError && (
+                        <p className="mt-1 text-xs text-danger">{emailError}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    role="switch"
+                    aria-checked={emailEnabled}
+                    aria-label="Activer les rappels par email"
+                    onClick={toggleEmail}
+                    disabled={emailSaving || migrationMissing}
+                    className={[
+                      "relative mt-0.5 h-8 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50",
+                      emailEnabled ? "bg-primary" : "bg-line-strong",
+                    ].join(" ")}
+                  >
+                    <span
+                      className={[
+                        "absolute left-0 top-1 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
+                        emailEnabled ? "translate-x-[20px]" : "translate-x-[4px]",
+                      ].join(" ")}
+                    />
+                  </button>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-ink">
-                    Résumé quotidien par email
-                  </p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-muted">
-                    Recevez chaque matin un email listant vos devis à relancer. Aucun
-                    email n'est envoyé si vous n'avez rien à relancer ce jour-là.
-                  </p>
-                  {emailError && (
-                    <p className="mt-1 text-xs text-danger">{emailError}</p>
+              </Card>
+
+              {/* ── Reminder prefs ── */}
+              <Card className="p-5 sm:p-7">
+                <div className="flex items-start gap-3 mb-5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
+                    <Bell size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-ink">
+                      Préférences de relance
+                    </p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-muted">
+                      Choisissez le délai de relance du tableau de bord et enregistrez
+                      vos préférences email.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {/* Délai */}
+                  <div>
+                    <label
+                      htmlFor="followup-delay"
+                      className="mb-1.5 block text-sm font-medium text-ink-soft"
+                    >
+                      Délai avant relance
+                    </label>
+                    <Select
+                      id="followup-delay"
+                      value={prefs.followupDelayDays}
+                      onChange={(e) =>
+                        setPrefs((p) => ({
+                          ...p,
+                          followupDelayDays: Number(e.target.value),
+                        }))
+                      }
+                      disabled={prefsSaving || prefsMigrationMissing}
+                    >
+                      {DELAY_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </Select>
+                    <p className="mt-1 text-xs text-muted">
+                      Un devis envoyé il y a au moins{" "}
+                      <strong>{prefs.followupDelayDays} j</strong> apparaît dans « À
+                      relancer ».
+                    </p>
+                  </div>
+
+                  {/* Heure d'envoi */}
+                  <div>
+                    <label
+                      htmlFor="reminder-hour"
+                      className="mb-1.5 block text-sm font-medium text-ink-soft"
+                    >
+                      Heure d'envoi de l'email{" "}
+                      <span className="font-normal text-muted">(heure de Paris)</span>
+                    </label>
+                    <Select
+                      id="reminder-hour"
+                      value={prefs.reminderHour}
+                      onChange={(e) =>
+                        setPrefs((p) => ({
+                          ...p,
+                          reminderHour: Number(e.target.value),
+                        }))
+                      }
+                      disabled={prefsSaving || prefsMigrationMissing}
+                    >
+                      {HOUR_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </Select>
+                    <p className="mt-1 text-xs text-muted">
+                      Heure souhaitée pour le résumé quotidien :{" "}
+                      <strong>
+                        {prefs.reminderHour.toString().padStart(2, "0")}h00
+                      </strong>{" "}
+                      heure de Paris.
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs leading-5 text-muted">
+                  L’heure d’envoi dépend aussi de la configuration du service de
+                  rappels.
+                </p>
+
+                {prefsError && <p className="mt-3 text-xs text-danger">{prefsError}</p>}
+
+                <div className="mt-4 flex items-center gap-3">
+                  <Button
+                    onClick={savePrefs}
+                    loading={prefsSaving}
+                    disabled={prefsMigrationMissing}
+                    className="gap-1.5"
+                  >
+                    <Save size={15} />
+                    Enregistrer
+                  </Button>
+                  {prefsSaved && (
+                    <span role="status" className="text-xs font-medium text-success">
+                      Préférences enregistrées
+                    </span>
                   )}
                 </div>
-              </div>
+              </Card>
 
-              <button
-                role="switch"
-                aria-checked={emailEnabled}
-                aria-label="Activer les rappels par email"
-                onClick={toggleEmail}
-                disabled={emailSaving || migrationMissing}
-                className={[
-                  "relative mt-0.5 h-8 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50",
-                  emailEnabled ? "bg-primary" : "bg-line-strong",
-                ].join(" ")}
-              >
-                <span
-                  className={[
-                    "absolute left-0 top-1 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
-                    emailEnabled ? "translate-x-[20px]" : "translate-x-[4px]",
-                  ].join(" ")}
-                />
-              </button>
-            </div>
-          </Card>
-
-          {/* ── Reminder prefs ── */}
-          <Card className="p-5 sm:p-7">
-            <div className="flex items-start gap-3 mb-5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
-                <Bell size={18} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-ink">Préférences de relance</p>
-                <p className="mt-0.5 text-xs leading-relaxed text-muted">
-                  Choisissez le délai de relance du tableau de bord et enregistrez vos
-                  préférences email.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              {/* Délai */}
-              <div>
-                <label
-                  htmlFor="followup-delay"
-                  className="mb-1.5 block text-sm font-medium text-ink-soft"
-                >
-                  Délai avant relance
-                </label>
-                <Select
-                  id="followup-delay"
-                  value={prefs.followupDelayDays}
-                  onChange={(e) =>
-                    setPrefs((p) => ({
-                      ...p,
-                      followupDelayDays: Number(e.target.value),
-                    }))
-                  }
-                  disabled={prefsSaving || prefsMigrationMissing}
-                >
-                  {DELAY_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </Select>
-                <p className="mt-1 text-xs text-muted">
-                  Un devis envoyé il y a au moins{" "}
-                  <strong>{prefs.followupDelayDays} j</strong> apparaît dans « À
-                  relancer ».
-                </p>
-              </div>
-
-              {/* Heure d'envoi */}
-              <div>
-                <label
-                  htmlFor="reminder-hour"
-                  className="mb-1.5 block text-sm font-medium text-ink-soft"
-                >
-                  Heure d'envoi de l'email{" "}
-                  <span className="font-normal text-muted">(heure de Paris)</span>
-                </label>
-                <Select
-                  id="reminder-hour"
-                  value={prefs.reminderHour}
-                  onChange={(e) =>
-                    setPrefs((p) => ({
-                      ...p,
-                      reminderHour: Number(e.target.value),
-                    }))
-                  }
-                  disabled={prefsSaving || prefsMigrationMissing}
-                >
-                  {HOUR_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </Select>
-                <p className="mt-1 text-xs text-muted">
-                  Heure souhaitée pour le résumé quotidien :{" "}
-                  <strong>{prefs.reminderHour.toString().padStart(2, "0")}h00</strong>{" "}
-                  heure de Paris.
-                </p>
-              </div>
-            </div>
-
-            <p className="mt-3 text-xs leading-5 text-muted">
-              L’heure d’envoi dépend aussi de la configuration du service de rappels.
-            </p>
-
-            {prefsError && <p className="mt-3 text-xs text-danger">{prefsError}</p>}
-
-            <div className="mt-4 flex items-center gap-3">
-              <Button
-                onClick={savePrefs}
-                loading={prefsSaving}
-                disabled={prefsMigrationMissing}
-                className="gap-1.5"
-              >
-                <Save size={15} />
-                Enregistrer
-              </Button>
-              {prefsSaved && (
-                <span role="status" className="text-xs font-medium text-success">
-                  Préférences enregistrées
-                </span>
-              )}
-            </div>
-          </Card>
-
-          {/* ── Entreprise ── */}
+              {/* ── Entreprise ── */}
+            </>
+          )}
           {role === "owner" && (
             <Card className="p-5 sm:p-7">
               <div className="flex items-start gap-3 mb-5">

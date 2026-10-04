@@ -8,9 +8,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "typecheck:admin": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/platform-admin/handler.ts tests/admin-api.test.ts",
     "lint": "eslint . --max-warnings 0",
     "test": "tsx --test tests/*.test.ts",
     "test:ui": "node tests/ui-smoke.mjs",
+    "test:admin:db": "node scripts/test-admin-db.mjs",
     "test:scene": "node tests/scene-smoke.mjs",
     "assets:social": "node scripts/generate-social-card.mjs"
   },

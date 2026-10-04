@@ -412,6 +412,341 @@ try {
   await failed.getByRole("button", { name: "Réessayer" }).waitFor()
   await failed.context().close()
   checks += 3
+
+  const anonymousAdmin = await pageFor()
+  await visit(anonymousAdmin, "/admin", "Connexion")
+  assert.equal(new URL(anonymousAdmin.url()).pathname, "/login")
+  await anonymousAdmin.context().close()
+  const regularAdmin = await pageFor({ session: true })
+  await visit(regularAdmin, "/admin", "Accès réservé")
+  assert.equal(
+    await regularAdmin.getByText("delete-me@example.test", { exact: true }).count(),
+    0,
+  )
+  await regularAdmin.getByRole("link", { name: "Retour à mon espace" }).click()
+  await regularAdmin
+    .getByRole("heading", { name: "Tableau de bord", exact: true })
+    .waitFor()
+  await regularAdmin.context().close()
+  checks += 2
+
+  for (const width of [320, 390, 1280]) {
+    const responsiveAdmin = await pageFor(
+      { session: true, admin: true, member: false },
+      width,
+    )
+    await visit(responsiveAdmin, "/admin", "Administration")
+    await responsiveAdmin
+      .getByRole("button", { name: "Supprimer delete-me@example.test", exact: true })
+      .waitFor()
+    await accessible(responsiveAdmin)
+    await responsiveAdmin.screenshot({
+      path: `${artifacts}admin-accounts-${width}.png`,
+      fullPage: true,
+    })
+    await responsiveAdmin
+      .getByRole("button", { name: "Entreprises", exact: true })
+      .click()
+    await responsiveAdmin
+      .getByRole("button", {
+        name: "Ouvrir l’entreprise Autre entreprise",
+        exact: true,
+      })
+      .waitFor()
+    assert.equal(
+      await responsiveAdmin.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth,
+      ),
+      false,
+    )
+    await accessible(responsiveAdmin)
+    await responsiveAdmin.screenshot({
+      path: `${artifacts}admin-companies-${width}.png`,
+      fullPage: true,
+    })
+    await responsiveAdmin.getByRole("button", { name: "Comptes", exact: true }).click()
+    await responsiveAdmin
+      .getByRole("button", { name: "Supprimer delete-me@example.test", exact: true })
+      .click()
+    const dialog = responsiveAdmin.getByRole("dialog", { name: "Supprimer le compte" })
+    await dialog.waitFor()
+    const rect = await dialog.boundingBox()
+    assert.ok(rect.x >= 0 && rect.x + rect.width <= width)
+    await accessible(responsiveAdmin)
+    await dialog.screenshot({ path: `${artifacts}admin-delete-${width}.png` })
+    await responsiveAdmin.keyboard.press("Escape")
+    assert.equal(await dialog.count(), 0)
+    await responsiveAdmin.context().close()
+    checks += 3
+  }
+
+  const admin = await pageFor({ admin: true, member: false }, 1280)
+  await visit(admin, "/login", "Connexion")
+  await admin.getByLabel("Email").fill("test@example.test")
+  await admin.getByLabel(/^Mot de passe/).fill("valid-password")
+  await admin.getByRole("button", { name: "Se connecter", exact: true }).click()
+  await admin.getByRole("heading", { name: "Administration", exact: true }).waitFor()
+  assert.equal(new URL(admin.url()).pathname, "/admin")
+  assert.equal(
+    await admin
+      .getByRole("heading", { name: "Votre espace entreprise", exact: true })
+      .count(),
+    0,
+  )
+  await admin
+    .getByRole("button", { name: "Supprimer delete-me@example.test", exact: true })
+    .waitFor()
+  for (const email of ["test@example.test", "second-admin@example.test"]) {
+    const row = admin.getByRole("row").filter({ hasText: email })
+    await row.getByText("Compte protégé", { exact: true }).waitFor()
+    for (const action of ["Supprimer", "Suspendre", "Réactiver"]) {
+      assert.equal(
+        await row
+          .getByRole("button", { name: `${action} ${email}`, exact: true })
+          .evaluateAll((buttons) => buttons.some((button) => !button.disabled)),
+        false,
+        `Protected account ${email} must not offer ${action}`,
+      )
+    }
+    checks++
+  }
+  const accountPagination = admin.getByRole("navigation", {
+    name: "Pagination des comptes",
+  })
+  assert.ok(
+    await accountPagination
+      .getByRole("button", { name: "Page précédente" })
+      .isDisabled(),
+  )
+  await accountPagination.getByRole("button", { name: "Page suivante" }).click()
+  await admin.getByText("extra-26@example.test", { exact: true }).waitFor()
+  assert.equal(
+    await admin
+      .getByRole("button", { name: "Supprimer delete-me@example.test", exact: true })
+      .count(),
+    0,
+  )
+  assert.ok(
+    await accountPagination.getByRole("button", { name: "Page suivante" }).isDisabled(),
+  )
+  await accountPagination.getByRole("button", { name: "Page précédente" }).click()
+  await admin
+    .getByRole("button", { name: "Supprimer delete-me@example.test", exact: true })
+    .waitFor()
+  checks += 4
+
+  for (const [action, title, nextAction] of [
+    ["Réactiver", "Réactiver le compte", "Suspendre"],
+    ["Suspendre", "Suspendre le compte", "Réactiver"],
+  ]) {
+    await admin
+      .getByRole("button", { name: `${action} suspended@example.test`, exact: true })
+      .click()
+    const dialog = admin.getByRole("dialog", { name: title })
+    await dialog.getByRole("button", { name: title, exact: true }).click()
+    await dialog.waitFor({ state: "detached" })
+    await admin
+      .getByRole("button", {
+        name: `${nextAction} suspended@example.test`,
+        exact: true,
+      })
+      .waitFor()
+    checks++
+  }
+
+  const deleteAccount = admin.getByRole("button", {
+    name: "Supprimer delete-me@example.test",
+    exact: true,
+  })
+  await deleteAccount.focus()
+  await admin.keyboard.press("Enter")
+  const deleteDialog = admin.getByRole("dialog", { name: "Supprimer le compte" })
+  const deleteConfirm = deleteDialog.getByRole("button", {
+    name: "Supprimer définitivement",
+    exact: true,
+  })
+  await deleteDialog.waitFor()
+  assert.ok(await deleteConfirm.isDisabled())
+  await deleteDialog.getByLabel("Adresse email du compte").fill("wrong@example.test")
+  assert.ok(await deleteConfirm.isDisabled())
+  await admin.keyboard.press("Escape")
+  assert.equal(await deleteDialog.count(), 0)
+  assert.equal(
+    await deleteAccount.evaluate((button) => button === document.activeElement),
+    true,
+  )
+  assert.equal(await admin.evaluate(() => window.__adminTestStore.users.length), 32)
+  await deleteAccount.click()
+  await deleteDialog
+    .getByLabel("Adresse email du compte")
+    .fill("delete-me@example.test")
+  assert.ok(await deleteConfirm.isEnabled())
+  await deleteConfirm.focus()
+  await admin.keyboard.press("Enter")
+  await deleteDialog.waitFor({ state: "detached" })
+  await admin
+    .getByRole("status")
+    .filter({ hasText: "Le compte delete-me@example.test a été supprimé." })
+    .waitFor()
+  assert.equal(
+    await admin
+      .getByRole("button", { name: "Supprimer delete-me@example.test", exact: true })
+      .count(),
+    0,
+  )
+  assert.equal(
+    await admin.evaluate(() =>
+      window.__adminTestStore.users.some((account) => account.id === "user-delete"),
+    ),
+    false,
+  )
+  checks += 8
+
+  await admin
+    .getByRole("button", { name: "Supprimer owner-other@example.test", exact: true })
+    .click()
+  const ownerDelete = admin.getByRole("dialog", { name: "Supprimer le compte" })
+  await ownerDelete
+    .getByLabel("Adresse email du compte")
+    .fill("owner-other@example.test")
+  await ownerDelete.getByRole("button", { name: "Supprimer définitivement" }).click()
+  await ownerDelete
+    .getByRole("alert")
+    .filter({ hasText: "Transférez d’abord la propriété de l’entreprise." })
+    .waitFor()
+  assert.ok(await ownerDelete.isVisible())
+  await ownerDelete.getByRole("button", { name: "Annuler", exact: true }).click()
+  assert.equal(
+    await admin.evaluate(() =>
+      window.__adminTestStore.users.some((account) => account.id === "user-owner"),
+    ),
+    true,
+  )
+  checks += 2
+
+  await admin.getByRole("button", { name: "Entreprises", exact: true }).click()
+  const companyPagination = admin.getByRole("navigation", {
+    name: "Pagination des entreprises",
+  })
+  await companyPagination.getByRole("button", { name: "Page suivante" }).click()
+  await admin.getByText("Entreprise supplémentaire 30", { exact: true }).waitFor()
+  assert.ok(
+    await companyPagination.getByRole("button", { name: "Page suivante" }).isDisabled(),
+  )
+  await companyPagination.getByRole("button", { name: "Page précédente" }).click()
+  await admin
+    .getByRole("button", {
+      name: "Transférer la propriété de Autre entreprise",
+      exact: true,
+    })
+    .click()
+  const transfer = admin.getByRole("dialog", { name: "Transférer la propriété" })
+  const transferConfirm = transfer.getByRole("button", {
+    name: "Transférer la propriété",
+    exact: true,
+  })
+  assert.ok(await transferConfirm.isDisabled())
+  await transfer
+    .getByRole("radio", { name: "future-owner@example.test", exact: true })
+    .check()
+  assert.ok(await transferConfirm.isDisabled())
+  await transfer
+    .getByRole("checkbox", {
+      name: "Je confirme ce transfert de propriété.",
+      exact: true,
+    })
+    .check()
+  await transferConfirm.click()
+  await transfer.waitFor({ state: "detached" })
+  await admin
+    .getByRole("row")
+    .filter({ hasText: "Autre entreprise" })
+    .getByText("future-owner@example.test", { exact: true })
+    .waitFor()
+  assert.equal(
+    await admin.evaluate(
+      () =>
+        window.__testStore.company_members.find(
+          (member) =>
+            member.company_id === "company-other" && member.user_id === "user-owner",
+        ).role,
+    ),
+    "member",
+  )
+  assert.equal(
+    await admin.evaluate(
+      () =>
+        window.__adminTestStore.companies.find((entry) => entry.id === "company-other")
+          .owners[0].id,
+    ),
+    "user-transfer",
+  )
+  checks += 5
+
+  await admin
+    .getByRole("button", { name: "Ouvrir l’entreprise Autre entreprise", exact: true })
+    .click()
+  await admin.getByRole("heading", { name: "Tableau de bord", exact: true }).waitFor()
+  await admin.getByRole("link", { name: "Clients", exact: true }).click()
+  await admin.getByRole("heading", { name: "Clients", exact: true }).waitFor()
+  await admin
+    .getByRole("link", { name: "Client autre entreprise", exact: true })
+    .waitFor()
+  assert.equal(
+    await admin.getByRole("link", { name: "Client de test", exact: true }).count(),
+    0,
+  )
+  await admin.getByRole("link", { name: "Devis", exact: true }).click()
+  await admin.getByRole("heading", { name: "Devis", exact: true }).waitFor()
+  await admin.getByRole("link", { name: "OTHER-001", exact: true }).waitFor()
+  assert.equal(
+    await admin.getByRole("link", { name: "TEST-001", exact: true }).count(),
+    0,
+  )
+  await admin.getByRole("link", { name: "Changer d’entreprise", exact: true }).click()
+  await admin.getByRole("heading", { name: "Administration", exact: true }).waitFor()
+  assert.equal(new URL(admin.url()).pathname, "/admin")
+  await admin.context().close()
+  checks += 4
+
+  const failingAdmin = await pageFor({
+    session: true,
+    admin: true,
+    member: false,
+    adminFailure: "delete_user",
+  })
+  await visit(failingAdmin, "/admin", "Administration")
+  await failingAdmin
+    .getByRole("button", { name: "Supprimer delete-me@example.test", exact: true })
+    .click()
+  const failedDelete = failingAdmin.getByRole("dialog", { name: "Supprimer le compte" })
+  await failedDelete
+    .getByLabel("Adresse email du compte")
+    .fill("delete-me@example.test")
+  await failedDelete
+    .getByRole("button", { name: "Supprimer définitivement", exact: true })
+    .click()
+  await failedDelete
+    .getByRole("alert")
+    .filter({ hasText: "Le serveur de test n’a pas pu effectuer cette action." })
+    .waitFor()
+  assert.ok(await failedDelete.isVisible())
+  assert.ok(
+    await failedDelete
+      .getByRole("button", { name: "Supprimer définitivement", exact: true })
+      .isEnabled(),
+  )
+  assert.equal(
+    await failingAdmin.evaluate(() =>
+      window.__adminTestStore.users.some((account) => account.id === "user-delete"),
+    ),
+    true,
+  )
+  await failedDelete.screenshot({ path: `${artifacts}admin-delete-error.png` })
+  await failedDelete.getByRole("button", { name: "Annuler", exact: true }).click()
+  await failingAdmin.context().close()
+  checks += 3
+
   const assets = await pageFor()
   for (const path of ["/favicon.svg", "/favicon.png", "/social-card.png"])
     assert.equal((await assets.request.get(`${base}${path}`)).status(), 200)

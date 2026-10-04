@@ -3,12 +3,15 @@ import {
   useContext,
   useCallback,
   useEffect,
+  useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react"
 import { supabase } from "@/lib/supabase"
 import { isSchemaMissingError } from "@/lib/setup"
 import { useAuth } from "@/features/auth/AuthContext"
+import { useAdmin } from "@/features/admin/AdminContext"
 import type { Company, MemberRole } from "@/types"
 
 interface CompanyContextValue {
@@ -19,44 +22,79 @@ interface CompanyContextValue {
   schemaMissing: boolean
   /** Re-read membership (e.g. right after onboarding or after setup). */
   refresh: () => Promise<void>
+  selectCompany: (companyId: string) => Promise<void>
 }
 
 const CompanyContext = createContext<CompanyContextValue | undefined>(undefined)
 
 /**
- * Resolves the current user's company (MVP: at most one). RLS guarantees this
- * query only ever returns the caller's own membership.
+ * Resolves a normal user's membership or a platform administrator's selected
+ * company. RLS enforces both scopes using the server-managed administrator role.
  */
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth()
+  const { isAdmin, loading: adminLoading } = useAdmin()
+  const [selection, setSelection] = useState<{
+    userId: string
+    companyId: string
+  } | null>(null)
+  const selectedCompanyId = useMemo(() => {
+    if (!isAdmin || !user) return null
+    if (selection?.userId === user.id) return selection.companyId
+    try {
+      return sessionStorage.getItem(`cadova.admin-company.${user.id}`)
+    } catch {
+      return null
+    }
+  }, [isAdmin, user, selection])
+  const scope = user
+    ? `${user.id}:${isAdmin ? (selectedCompanyId ?? "admin") : "member"}`
+    : null
+  const requestId = useRef(0)
   const [company, setCompany] = useState<Company | null>(null)
   const [role, setRole] = useState<MemberRole | null>(null)
   const [resolution, setResolution] = useState<{
-    userId: string | null
+    scope: string | null
     loading: boolean
-  }>({ userId: null, loading: true })
+  }>({ scope: null, loading: true })
   const [schemaMissing, setSchemaMissing] = useState(false)
 
   const load = useCallback(async () => {
     // Wait for the restored session before resolving company membership.
-    if (authLoading) return
+    if (authLoading || adminLoading) return
+    const request = ++requestId.current
     if (!user) {
       setCompany(null)
       setRole(null)
-      setResolution({ userId: null, loading: false })
+      setResolution({ scope: null, loading: false })
+      return
+    }
+    if (isAdmin && !selectedCompanyId) {
+      setCompany(null)
+      setRole(null)
+      setSchemaMissing(false)
+      setResolution({ scope, loading: false })
       return
     }
     // Background refreshes keep the current page and its feedback mounted.
     setResolution((current) => ({
       ...current,
-      loading: current.userId !== user.id,
+      loading: current.scope !== scope,
     }))
-    const { data, error } = await supabase
-      .from("company_members")
-      .select("role, companies:company_id (id, name, created_at, updated_at)")
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle()
+    const { data, error } = isAdmin
+      ? await supabase
+          .from("companies")
+          .select("id, name, created_at, updated_at")
+          .eq("id", selectedCompanyId!)
+          .maybeSingle()
+      : await supabase
+          .from("company_members")
+          .select("role, companies:company_id (id, name, created_at, updated_at)")
+          .eq("user_id", user.id)
+          .limit(1)
+          .maybeSingle()
+
+    if (request !== requestId.current) return
 
     if (error) {
       console.error("[Cadova] failed to load company", error)
@@ -66,11 +104,37 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       setSchemaMissing(false)
     }
 
-    const companyRow = (data?.companies as unknown as Company | null) ?? null
+    const membership = data as { companies?: Company; role?: MemberRole } | null
+    const companyRow = isAdmin
+      ? (data as Company | null)
+      : (membership?.companies ?? null)
     setCompany(companyRow)
-    setRole((data?.role as MemberRole | undefined) ?? null)
-    setResolution({ userId: user.id, loading: false })
-  }, [user, authLoading])
+    setRole(companyRow && isAdmin ? "owner" : (membership?.role ?? null))
+    setResolution({ scope, loading: false })
+  }, [user, authLoading, adminLoading, isAdmin, selectedCompanyId, scope])
+
+  const selectCompany = useCallback(
+    async (companyId: string) => {
+      if (!isAdmin || !user) throw new Error("Accès administrateur requis.")
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, name, created_at, updated_at")
+        .eq("id", companyId)
+        .single()
+      if (error) throw error
+      setSelection({ userId: user.id, companyId })
+      setCompany(data as Company)
+      setRole("owner")
+      setSchemaMissing(false)
+      setResolution({ scope: `${user.id}:${companyId}`, loading: false })
+      try {
+        sessionStorage.setItem(`cadova.admin-company.${user.id}`, companyId)
+      } catch {
+        // Selection remains available for this session when storage is blocked.
+      }
+    },
+    [isAdmin, user],
+  )
 
   useEffect(() => {
     load()
@@ -83,10 +147,12 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         role,
         loading:
           authLoading ||
+          adminLoading ||
           resolution.loading ||
-          Boolean(user && resolution.userId !== user.id),
+          resolution.scope !== scope,
         schemaMissing,
         refresh: load,
+        selectCompany,
       }}
     >
       {children}
