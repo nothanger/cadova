@@ -258,7 +258,7 @@ try {
   }
 
   async function captureChapters(page, canvas, width, elapsed = 0) {
-    for (const [index, time] of [3000, 9000, 15000, 23000].entries()) {
+    for (const [index, time] of [3000, 6800, 10300, 15200].entries()) {
       await page.clock.fastForward(time - elapsed)
       elapsed = time
       await assertChapter(page, index)
@@ -356,7 +356,7 @@ try {
     (await difference(selectedPaused, await snapshot(canvas))) > 0.002,
     "Resume should continue the scene",
   )
-  await page.clock.fastForward(27000)
+  await page.clock.fastForward(16000)
   await page
     .getByRole("button", { name: "Rejouer l’animation" })
     .waitFor({ timeout: 15000 })
@@ -402,6 +402,14 @@ try {
 
   const story = await pageFor(1440, "no-preference")
   await captureChapters(story.page, story.canvas, 1440)
+  await story.page.clock.fastForward(300)
+  assert.ok(
+    await story.page.getByRole("button", { name: "Rejouer l’animation" }).isVisible(),
+    "Continuous playback should finish within 15.5 seconds",
+  )
+  checks++
+  await story.page.getByRole("button", { name: "Rejouer l’animation" }).click()
+  await story.page.clock.runFor(32)
   await story.page
     .getByRole("navigation", { name: "Parcours du dossier" })
     .getByRole("button", { name: "Devis", exact: true })
@@ -415,9 +423,9 @@ try {
     "Selecting a chapter during playback must preserve playback",
   )
   await story.page.clock.runFor(32)
-  await story.page.clock.fastForward(5000)
+  await story.page.clock.fastForward(1000)
   await assertChapter(story.page, 2)
-  await story.page.clock.fastForward(27000)
+  await story.page.clock.fastForward(16000)
   await story.page.getByRole("button", { name: "Rejouer l’animation" }).waitFor()
   await story.page.context().close()
 

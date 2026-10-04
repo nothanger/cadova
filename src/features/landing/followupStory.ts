@@ -1,4 +1,5 @@
-export const STORY_DURATION = 24
+// Keep the movement durations; each reading pause lasts about one second.
+export const STORY_DURATION = 15.4
 
 export const storyChapters = [
   {
@@ -11,22 +12,25 @@ export const storyChapters = [
     label: "Devis",
     title: "Le devis envoyé",
     detail: "En attente de réponse",
-    start: 6,
+    start: 4,
   },
   {
     label: "Relance",
     title: "La prochaine relance",
     detail: "Un message à adapter",
-    start: 12,
+    start: 7.5,
   },
   {
     label: "Dossier",
     title: "Le suivi du dossier",
     detail: "Devis, notes et relances",
-    start: 18,
+    start: 11,
   },
 ] as const
 
 export function chapterAt(time: number) {
-  return Math.min(storyChapters.length - 1, Math.floor(time / 6))
+  return storyChapters.reduce(
+    (current, chapter, index) => (time >= chapter.start ? index : current),
+    0,
+  )
 }

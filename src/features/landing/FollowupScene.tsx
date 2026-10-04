@@ -239,10 +239,13 @@ export function FollowupScene() {
     let previousTime = 0
     let lastChapter = -1
     const pointer = new THREE.Vector2()
+    const conclusionStart = storyChapters[3].start
+    const returnStart = conclusionStart + 2.4
 
     function updateLinks() {
       links.forEach(({ line, material, path, positions }, index) => {
-        material.opacity = ease((elapsed - (index + 1) * 6 - 1.3) / 1.2) * 0.38
+        material.opacity =
+          ease((elapsed - storyChapters[index + 1].start - 1.3) / 1.2) * 0.38
         const first = cards[index].group
         const second = cards[index + 1].group
         path.v0.set(
@@ -274,24 +277,28 @@ export function FollowupScene() {
         setActiveChapter(current)
       }
       const introduction = ease(elapsed / 2.2)
-      const conclusion = ease((elapsed - 18) / 2.2)
+      const conclusion = ease((elapsed - conclusionStart) / 2.2)
       logo.position.set(-0.5 - introduction * 0.62 + conclusion * 0.14, 0.05, -0.25)
       logo.rotation.set(0.08, -0.6 + introduction * 0.36 + conclusion * 0.08, -0.025)
       logo.scale.setScalar(0.96 - introduction * 0.22 + conclusion * 0.26)
 
       cards.forEach(({ group, path, railMaterial, index, settled }) => {
-        const arrival = ease((elapsed - index * 6 - 0.2) / 1.6)
+        const arrival = ease((elapsed - storyChapters[index].start - 0.2) / 1.6)
         group.visible = arrival > 0
         path.getPoint(arrival, group.position)
         let scale = 0.72 + arrival * 0.5
-        const departure = ease((elapsed - (index + 1) * 6) / 1.6)
+        const departure = ease((elapsed - storyChapters[index + 1].start) / 1.6)
         if (index < 2) {
           departureTarget.set(1.62, index === 0 ? 1.48 : 0.6, 0.08)
           group.position.lerp(departureTarget, departure)
           scale = THREE.MathUtils.lerp(scale, index === 0 ? 0.62 : 0.5, departure)
         }
         if (index === 0) {
-          scale = THREE.MathUtils.lerp(scale, 0.5, ease((elapsed - 12) / 1.6))
+          scale = THREE.MathUtils.lerp(
+            scale,
+            0.5,
+            ease((elapsed - storyChapters[2].start) / 1.6),
+          )
         }
         group.position.lerp(settled, conclusion)
         scale = THREE.MathUtils.lerp(scale, 0.72, conclusion)
@@ -320,7 +327,7 @@ export function FollowupScene() {
         dot.position.copy(rest).lerp(marker, outbound)
         dot.position.z += Math.sin(outbound * Math.PI) * 0.35
       } else if (current < 3) {
-        const progress = ease((elapsed - current * 6 - 0.4) / 2)
+        const progress = ease((elapsed - storyChapters[current].start - 0.4) / 2)
         links[current - 1].path.getPoint(progress, dot.position)
         dot.position.z += 0.1
       } else {
@@ -330,7 +337,7 @@ export function FollowupScene() {
           relance.position.y,
           relance.position.z + 0.3,
         )
-        dot.position.copy(transitionEnd).lerp(rest, ease((elapsed - 20.8) / 1.8))
+        dot.position.copy(transitionEnd).lerp(rest, ease((elapsed - returnStart) / 1.8))
       }
       dot.scale.setScalar(
         THREE.MathUtils.lerp(
@@ -339,7 +346,7 @@ export function FollowupScene() {
           current === 0
             ? 1 - ease((elapsed - 1.4) / 1.6)
             : current === 3
-              ? ease((elapsed - 20.8) / 1.8)
+              ? ease((elapsed - returnStart) / 1.8)
               : 0,
         ),
       )
@@ -458,7 +465,7 @@ export function FollowupScene() {
     }
 
     seekRef.current = (chapter) => {
-      elapsed = chapter === 3 ? 23 : storyChapters[chapter].start + 3.2
+      elapsed = chapter === 3 ? DURATION - 0.2 : storyChapters[chapter].start + 3.2
       if (reducedMotion.matches) running = false
       setFinished(false)
       setPlaying(running)
