@@ -101,6 +101,8 @@ Attendre que PostgreSQL soit prêt avant de lancer ce test. L’entrée de la fo
 
 L’aperçu de partage se régénère avec `pnpm assets:social`, également via Chromium. Il réutilise le logo et les couleurs de Cadova, sans chiffres ni données fictives.
 
+Les icônes se régénèrent avec `pnpm assets:icons`. Le contour du logo est partagé avec la scène 3D. Les favicons SVG/PNG/ICO, l’icône iPhone de 180 px et les icônes d’application de 192/512 px ont un fond opaque et des marges dédiées. La version `maskable` reste dans le cercle de sécurité Android. Le manifest conserve les routes existantes et ouvre `/app`. iOS peut conserver une ancienne icône déjà installée : retirer puis ajouter à nouveau le raccourci après publication.
+
 `test:scene` vérifie spécifiquement le logo 3D : rendu visible et cadrage sur quatre largeurs, les quatre chapitres du parcours, leur lisibilité sur mobile, la navigation clavier, la pause, la reprise, le rejeu, la réduction du mouvement et le repli sans WebGL. Il démarre son serveur sur le port 8448 et utilise la même simulation Supabase ; `TEST_BASE_URL` permet de réutiliser un serveur existant.
 
 `test:documents` vérifie l’import d’un PDF et d’une photo, la correction des informations, le parcours « Déjà envoyé », la vérification avant envoi et les principaux états du document sur mobile. Le backend y est simulé ; la lecture des fichiers utilise les bibliothèques réelles. Les tests unitaires couvrent les extractions prudentes et le worker d’envoi. `test:admin:db` couvre aussi les permissions, les transactions d’import, les réservations d’envoi et le nettoyage. Vérifier l’entrée Edge avec `pnpm dlx deno@2.5.6 check supabase/functions/send-quote-document/index.ts`.

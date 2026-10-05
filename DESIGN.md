@@ -19,6 +19,8 @@ Police système pour éviter un téléchargement tiers et assurer la lisibilité
 - États vides factuels avec une prochaine action utile. Erreurs explicites et réessayables. Aucun emoji.
 - Icônes Lucide, trait homogène, toujours accompagnées d’un nom accessible pour les commandes seules.
 
+Pour les icônes du site et de l’application installée, utiliser le symbole seul : C bleu nuit et point indigo sur fond papier opaque. Conserver ses proportions dans un carré. Le symbole occupe 76 % de la hauteur d’un favicon, 70 % sur iPhone et pour l’application, 64 % pour la version Android `maskable`. Les systèmes appliquent eux-mêmes les coins arrondis des icônes installées ; ne pas les dessiner dans les PNG.
+
 ## Navigation et interaction
 
 Même vocabulaire sur toutes les pages : Tableau de bord, Clients, Devis, Paramètres. Menu mobile refermable au clavier ; focus visible ; modales avec focus contenu et restauré. Les champs associent labels, aides et erreurs.

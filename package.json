@@ -16,6 +16,7 @@
     "test:admin:db": "node scripts/test-admin-db.mjs",
     "test:scene": "node tests/scene-smoke.mjs",
     "assets:social": "node scripts/generate-social-card.mjs",
+    "assets:icons": "tsx scripts/generate-icons.ts",
     "assets:documents": "node scripts/build-document-assets.mjs",
     "predev": "pnpm assets:documents",
     "prebuild": "pnpm assets:documents",
