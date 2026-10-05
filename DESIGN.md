@@ -39,4 +39,10 @@ Le dépôt indique cadova.fr dans CNAME ; vérifier sa propriété, DNS, HTTPS e
 
 Faire compléter et valider les documents juridiques : identité de l’éditeur, adresse, immatriculation, directeur de publication, contacts actifs, hébergeur du site et des données, région d’hébergement, sous-traitants, transferts, durées de conservation et modalités de suppression. Confirmer l’offre commerciale avant de prévoir des CGV ; aucun paiement n’est présent dans ce dépôt.
 
-Les préférences de relance existent, mais la fonction email utilise actuellement un délai fixe et le cron une heure fixe. Ne pas promettre que ces préférences règlent le scheduler tant que le backend ne les applique pas. Cette limite est indépendante du design.
+## Import et envoi des devis
+
+L’import accepte un PDF ou une photo lisible. La reconnaissance s’effectue dans le navigateur ; les champs incertains restent à vérifier. Le montant présenté est TTC. Une correspondance client doit reposer sur des coordonnées précises, jamais seulement sur un nom similaire. Le document original reste visible pour permettre la vérification.
+
+Créer un devis produit un brouillon. « Déjà envoyé » demande une date et ouvre le suivi sans envoyer de message. L’envoi dans Cadova présente le destinataire, l’objet, le message et le PDF avant confirmation. Le statut « Envoyé » correspond à l’acceptation du message par le service email ; ne pas prétendre qu’il a été lu. Un état incertain doit rester explicite et bloquer une nouvelle tentative susceptible de créer un doublon.
+
+Les relances automatiques s’activent explicitement pour chaque devis envoyé, après vérification de leur calendrier et de leur contenu. Une réponse enregistrée, une acceptation, un refus ou l’expiration du devis arrête les prochains envois.

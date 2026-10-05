@@ -221,8 +221,8 @@ try {
   await visit(app, "/app/quotes/new", "Nouveau devis")
   await app.getByLabel(/^Client/).selectOption("client-test")
   await app.getByLabel("Référence").fill("TEST-CREATE")
-  await app.getByLabel("Montant (€)").fill("123,45")
-  await app.getByRole("button", { name: "Créer le devis" }).click()
+  await app.getByLabel("Montant TTC (€)").fill("123,45")
+  await app.getByRole("button", { name: "Enregistrer le brouillon" }).click()
   await app.getByRole("heading", { name: "TEST-CREATE" }).waitFor()
   assert.equal(
     await app.evaluate(
@@ -393,7 +393,8 @@ try {
   await visit(empty, "/app", "Tableau de bord")
   await empty.getByRole("heading", { name: "Rien à suivre pour l’instant" }).waitFor()
   await visit(empty, "/app/quotes/new", "Nouveau devis")
-  await empty.getByRole("button", { name: "Créer un client" }).waitFor()
+  await empty.getByLabel("Nom / raison sociale").waitFor()
+  await empty.getByRole("button", { name: "Enregistrer le brouillon" }).waitFor()
   await empty.context().close()
   const onboarding = await pageFor({ session: true, member: false })
   await visit(onboarding, "/app", "Votre espace entreprise")

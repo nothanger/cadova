@@ -15,14 +15,23 @@
     "test:ui": "node tests/ui-smoke.mjs",
     "test:admin:db": "node scripts/test-admin-db.mjs",
     "test:scene": "node tests/scene-smoke.mjs",
-    "assets:social": "node scripts/generate-social-card.mjs"
+    "assets:social": "node scripts/generate-social-card.mjs",
+    "assets:documents": "node scripts/build-document-assets.mjs",
+    "predev": "pnpm assets:documents",
+    "prebuild": "pnpm assets:documents",
+    "test:documents": "node tests/document-workflow.mjs",
+    "typecheck:documents": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/send-quote-document/handler.ts tests/quote-document-send.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",
+    "@tesseract.js-data/fra": "1.0.0",
     "lucide-react": "^1.37.0",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.4.299",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.18.3",
+    "tesseract.js": "6.0.1",
     "three": "^0.186.1"
   },
   "devDependencies": {

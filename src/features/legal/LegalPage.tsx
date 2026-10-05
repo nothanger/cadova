@@ -22,7 +22,7 @@ const legalPages: Record<
       {
         title: "Données enregistrées",
         content:
-          "Le service utilise votre adresse email pour votre compte, le nom de votre entreprise, les coordonnées et notes de vos clients, ainsi que les références, montants, statuts, dates et historiques de vos devis.",
+          "Le service utilise votre adresse email pour votre compte, le nom de votre entreprise, les coordonnées et notes de vos clients, ainsi que les références, montants, statuts, dates et historiques de vos devis. Les PDF et photos importés servent à préparer le dossier du devis ; le document conservé est un PDF privé.",
       },
       {
         title: "Utilisation des données",
@@ -32,7 +32,7 @@ const legalPages: Record<
       {
         title: "Accès et prestataires",
         content:
-          "Les données métier sont rattachées à une entreprise. Supabase gère les comptes et la base de données. Les relances automatiques, lorsqu’elles sont activées, transmettent à Resend l’adresse du destinataire et le contenu de l’email. La liste des prestataires effectivement activés, les lieux d’hébergement et les garanties de transfert restent à confirmer.",
+          "Les données métier sont rattachées à une entreprise. Supabase gère les comptes, la base de données et le stockage privé des PDF. La lecture des documents se fait dans votre navigateur. Lorsque vous envoyez un devis, Resend reçoit l’adresse du destinataire, le message et le PDF joint. Les relances automatiques transmettent l’adresse et le message de relance. La liste des prestataires effectivement activés, les lieux d’hébergement et les garanties de transfert restent à confirmer.",
       },
       {
         title: "Conservation et suppression",
@@ -69,7 +69,7 @@ const legalPages: Record<
       {
         title: "Votre compte",
         content:
-          "Vous devez être autorisé à utiliser les données de l’entreprise et des clients que vous enregistrez. Gardez vos identifiants confidentiels et vérifiez les informations saisies.",
+          "Vous devez être autorisé à utiliser les données de l’entreprise et des clients que vous enregistrez. Gardez vos identifiants confidentiels. Vérifiez les informations extraites des documents, le destinataire et la pièce jointe avant d’envoyer un devis. La reconnaissance peut omettre ou mal lire certains champs.",
       },
       {
         title: "Utilisation",

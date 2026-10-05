@@ -3,6 +3,9 @@ dist/
 build/
 .cache/
 .vite/
+/public/document-reader/
+__pycache__/
+*.py[cod]
 
 .env*
 !.env.example

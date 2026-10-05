@@ -38,6 +38,7 @@ import { formatDate, todayISO } from "@/lib/dates"
 import { daysWaiting, isQuoteDueForFollowUp } from "@/lib/followup"
 import { useAuth } from "@/features/auth/AuthContext"
 import { AutomationPanel } from "./AutomationPanel"
+import { QuoteDocumentPanel } from "./QuoteDocumentPanel"
 import type { QuoteEvent, QuoteStatus, QuoteWithClient } from "@/types"
 
 type Template = "first" | "second" | "expiry"
@@ -302,6 +303,9 @@ export function QuoteDetailPage() {
                 </dd>
               </div>
               <Detail label="Date d’envoi" value={formatDate(quote.sent_at)} />
+              {quote.expires_at && (
+                <Detail label="Valable jusqu’au" value={formatDate(quote.expires_at)} />
+              )}
               <div>
                 <dt className="text-xs uppercase tracking-wider text-muted">Client</dt>
                 <dd className="mt-1">
@@ -325,6 +329,7 @@ export function QuoteDetailPage() {
               </div>
             </dl>
           </Card>
+          <QuoteDocumentPanel key={scope} quote={quote} onChanged={refreshDetails} />
           <AutomationPanel quote={quote} onChanged={refreshDetails} />
           <Card className="p-6">
             <div className="flex items-center justify-between">
@@ -357,19 +362,20 @@ export function QuoteDetailPage() {
               {events.map((e) => (
                 <Timeline key={e.id} event={e} />
               ))}
-              {quote.sent_at && (
-                <Timeline
-                  event={{
-                    id: "sent",
-                    company_id: quote.company_id,
-                    quote_id: quote.id,
-                    event_type: "sent",
-                    content: null,
-                    occurred_at: quote.sent_at,
-                    created_by: null,
-                  }}
-                />
-              )}
+              {quote.sent_at &&
+                !events.some((event) => event.event_type === "sent") && (
+                  <Timeline
+                    event={{
+                      id: "sent",
+                      company_id: quote.company_id,
+                      quote_id: quote.id,
+                      event_type: "sent",
+                      content: null,
+                      occurred_at: quote.sent_at,
+                      created_by: null,
+                    }}
+                  />
+                )}
             </div>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Input

@@ -72,6 +72,14 @@ try {
       if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
       if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin bypassrls; end if;
     end $$;
+    -- Small local Storage schema: exercise actual bucket/object RLS without
+    -- network storage or any production credentials.
+    create schema storage;
+    create table storage.buckets (id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+    create table storage.objects (id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text,metadata jsonb,created_at timestamptz not null default clock_timestamp(),unique(bucket_id,name));
+    alter table storage.objects enable row level security;
+    grant usage on schema storage to anon,authenticated,service_role;
+    grant select,insert,update,delete on storage.objects to anon,authenticated,service_role;
     create schema auth;
     create table auth.users (id uuid primary key, email text, banned_until timestamptz);
     create function auth.uid() returns uuid language sql stable as $$
@@ -92,6 +100,7 @@ try {
     "0008_admin_company_management.sql",
     "0009_quote_email_automation.sql",
     "0010_quote_followup_scheduler_auth.sql",
+    "0011_quote_documents.sql",
   ]) {
     sql(
       readFileSync(
@@ -100,6 +109,9 @@ try {
       ),
     )
   }
+  sql(
+    readFileSync(new URL("../tests/quote-documents-rls.sql", import.meta.url), "utf8"),
+  )
   sql(readFileSync(new URL("../tests/admin-rls.sql", import.meta.url), "utf8"))
   sql(readFileSync(new URL("../tests/notifications-rls.sql", import.meta.url), "utf8"))
   sql(
@@ -109,7 +121,10 @@ try {
     readFileSync(new URL("../tests/quote-automation-rls.sql", import.meta.url), "utf8"),
   )
   sql(
-    readFileSync(new URL("../tests/quote-followup-scheduler-auth.sql", import.meta.url), "utf8"),
+    readFileSync(
+      new URL("../tests/quote-followup-scheduler-auth.sql", import.meta.url),
+      "utf8",
+    ),
   )
   sql(`
     insert into auth.users(id,email) values
@@ -382,7 +397,8 @@ try {
   if (
     duplicateClaims.some((result) => result.code !== 0) ||
     duplicateClaims.reduce(
-      (count, result) => count + Number(result.output.match(/CLAIMED=(\d+)/)?.[1] ?? -10),
+      (count, result) =>
+        count + Number(result.output.match(/CLAIMED=(\d+)/)?.[1] ?? -10),
       0,
     ) !== 1
   ) {
@@ -410,13 +426,202 @@ try {
   )
   if (
     proofRetries.some((result) => result.code !== 0) ||
-    proofRetries.filter((result) => result.output.includes("CONSUMED=true")).length !== 1 ||
-    proofRetries.filter((result) => result.output.includes("CONSUMED=false")).length !== 1
+    proofRetries.filter((result) => result.output.includes("CONSUMED=true")).length !==
+      1 ||
+    proofRetries.filter((result) => result.output.includes("CONSUMED=false")).length !==
+      1
   ) {
     throw new Error("Concurrent scheduler proof replay was not rejected")
   }
+  // Document import, send and sweep use real independent PostgreSQL sessions.
+  // These races cover behavior that isolated unit mocks cannot exercise.
+  const documentCompany = "74000000-0000-4000-8000-000000000001"
+  const documentActor = "60000000-0000-4000-8000-000000000004"
+  const documentIds = [1, 2, 3].map(
+    (n) => `85000000-0000-4000-8000-${String(n).padStart(12, "0")}`,
+  )
+  const documentQuotes = [1, 2, 3].map(
+    (n) => `94000000-0000-4000-8000-${String(n).padStart(12, "0")}`,
+  )
+  const documentPath = (index) =>
+    `${documentCompany}/${documentActor}/${documentIds[index]}.pdf`
+  const documentMetadata = (index) =>
+    JSON.stringify({
+      id: documentIds[index],
+      storage_path: documentPath(index),
+      file_name: "devis.pdf",
+      size_bytes: 9,
+    })
+  const authenticatedDocumentSql = `set local role authenticated; select set_config('request.jwt.claim.sub','${documentActor}',true);`
+  sql(`
+    insert into public.companies(id,name) values('${documentCompany}','Document races');
+    insert into storage.objects(bucket_id,name,metadata) values
+      ('quote-documents','${documentPath(0)}','{"mimetype":"application/pdf","size":9}'),
+      ('quote-documents','${documentPath(1)}','{"mimetype":"application/pdf","size":9}'),
+      ('quote-documents','${documentPath(2)}','{"mimetype":"application/pdf","size":9}');
+  `)
+  const importRequest = (index) =>
+    `select public.save_imported_quote('${documentQuotes[index]}','${documentCompany}',null,'{"name":"Document race client ${index}"}','DOC-RACE-${index}',1000,null,false,null,null,'${documentMetadata(index)}');`
+  const importRetries = await Promise.all(
+    [1, 2].map(() =>
+      concurrentSql(`
+    begin; ${authenticatedDocumentSql} ${importRequest(0)} select pg_sleep(0.25); commit;
+  `),
+    ),
+  )
+  if (importRetries.some((result) => result.code !== 0))
+    throw new Error("Concurrent identical document imports did not both recover")
+  sql(`
+    do $$ begin
+      if (select count(*) from public.clients where company_id='${documentCompany}')<>1
+        or (select count(*) from public.quotes where company_id='${documentCompany}')<>1
+        or (select count(*) from public.quote_documents where company_id='${documentCompany}')<>1 then
+        raise exception 'Concurrent document imports duplicated business records';
+      end if;
+    end $$;
+    begin; ${authenticatedDocumentSql}
+    select public.set_company_email_settings('${documentCompany}','reply@example.test'); commit;
+  `)
+  const sendRequest = `select public.request_quote_initial_send('${documentQuotes[0]}','client@example.test','Votre devis','Bonjour, voici votre devis.');`
+  const sendRetries = await Promise.all(
+    [1, 2].map(() =>
+      concurrentSql(`
+    begin; ${authenticatedDocumentSql} ${sendRequest} select pg_sleep(0.25); commit;
+  `),
+    ),
+  )
+  if (sendRetries.some((result) => result.code !== 0))
+    throw new Error("Concurrent initial-send requests did not both recover")
+  sql(`do $$ begin
+    if (select count(*) from public.quote_initial_send_jobs where quote_id='${documentQuotes[0]}')<>1 then
+      raise exception 'Concurrent initial-send requests duplicated jobs';
+    end if;
+  end $$;`)
+  const initialClaims = await Promise.all(
+    [1, 2].map(() =>
+      concurrentSql(`
+    begin; set local role service_role;
+    select 'CLAIMED='||(public.claim_quote_initial_send(id,'${documentActor}')->>'allowed')
+      from public.quote_initial_send_jobs where quote_id='${documentQuotes[0]}';
+    select pg_sleep(0.25); commit;
+  `),
+    ),
+  )
+  if (
+    initialClaims.some((result) => result.code !== 0) ||
+    initialClaims.filter((result) => result.output.includes("CLAIMED=true")).length !==
+      1 ||
+    initialClaims.filter((result) => result.output.includes("CLAIMED=false")).length !==
+      1
+  ) {
+    throw new Error("Concurrent initial-send workers shared the same lease")
+  }
+  // Binding holds the Storage object row: the sweeper must skip it until the
+  // attachment commits, then observe that it is live and keep it.
+  sql(
+    `update storage.objects set created_at=clock_timestamp()-interval '25 hours' where name='${documentPath(1)}';`,
+  )
+  let releaseBindingReady
+  const bindingReady = new Promise((resolve) => {
+    releaseBindingReady = resolve
+  })
+  const binding = concurrentSql(
+    `
+    begin; ${authenticatedDocumentSql} ${importRequest(1)}
+    select 'DOCUMENT_BOUND_LOCKED'; select pg_sleep(1); commit;
+  `,
+    (output) => {
+      if (output.includes("DOCUMENT_BOUND_LOCKED")) releaseBindingReady()
+    },
+  )
+  binding.then(releaseBindingReady, releaseBindingReady)
+  await bindingReady
+  const sweepDuringBinding = await concurrentSql(`
+    set role service_role;
+    select 'TARGET_CLAIMED='||count(*) from public.claim_quote_document_cleanup()
+      where storage_path='${documentPath(1)}';
+  `)
+  const bindingResult = await binding
+  if (
+    bindingResult.code !== 0 ||
+    sweepDuringBinding.code !== 0 ||
+    !sweepDuringBinding.output.includes("TARGET_CLAIMED=0")
+  ) {
+    throw new Error(
+      "A sweeper claimed a PDF while its binding transaction held the object",
+    )
+  }
+  sql(`do $$ begin
+    if not exists(select 1 from public.quote_documents where storage_path='${documentPath(1)}')
+      or exists(select 1 from public.quote_document_cleanup where storage_path='${documentPath(1)}') then
+      raise exception 'Binding and sweeping lost a live document';
+    end if;
+  end $$;`)
+  // In the reverse order, the sweeper's tombstone must permanently prevent
+  // binding, including after its lease is released and physical deletion starts.
+  sql(
+    `update storage.objects set created_at=clock_timestamp()-interval '25 hours' where name='${documentPath(2)}';`,
+  )
+  let releaseSweepReady
+  const sweepReady = new Promise((resolve) => {
+    releaseSweepReady = resolve
+  })
+  const sweep = concurrentSql(
+    `
+    begin; set local role service_role; select * from public.claim_quote_document_cleanup();
+    select 'DOCUMENT_SWEEP_LOCKED'; select pg_sleep(1); commit;
+  `,
+    (output) => {
+      if (output.includes("DOCUMENT_SWEEP_LOCKED")) releaseSweepReady()
+    },
+  )
+  sweep.then(releaseSweepReady, releaseSweepReady)
+  await sweepReady
+  const bindingDuringSweep = await concurrentSql(`
+    begin; ${authenticatedDocumentSql}
+    do $$ begin
+      begin perform public.save_imported_quote('${documentQuotes[2]}','${documentCompany}',null,'{"name":"Must roll back race"}','SWEEP-RACE',1000,null,false,null,null,'${documentMetadata(2)}');
+        raise exception 'Tombstoned object was bound';
+      exception when check_violation then raise notice 'TOMBSTONE_REJECTED'; end;
+    end $$; commit;
+  `)
+  const sweepResult = await sweep
+  if (
+    sweepResult.code !== 0 ||
+    bindingDuringSweep.code !== 0 ||
+    !bindingDuringSweep.output.includes("TOMBSTONE_REJECTED")
+  ) {
+    throw new Error(
+      "A binding transaction revived an object already reserved for deletion",
+    )
+  }
+  sql(`do $$ begin
+    if exists(select 1 from public.quote_documents where storage_path='${documentPath(2)}')
+      or exists(select 1 from public.clients where name='Must roll back race') then
+      raise exception 'Tombstone race left a document or orphan client';
+    end if;
+  end $$;`)
+  const cleanupProofEpoch = Math.floor(Date.now() / 1000)
+  const cleanupProofRetries = await Promise.all(
+    [1, 2].map(() =>
+      concurrentSql(`
+    begin; set local role service_role;
+    select 'CONSUMED='||public.consume_quote_document_cleanup_nonce('da000000-0000-4000-8000-000000000011',${cleanupProofEpoch});
+    select pg_sleep(0.25); commit;
+  `),
+    ),
+  )
+  if (
+    cleanupProofRetries.some((result) => result.code !== 0) ||
+    cleanupProofRetries.filter((result) => result.output.includes("CONSUMED=true"))
+      .length !== 1 ||
+    cleanupProofRetries.filter((result) => result.output.includes("CONSUMED=false"))
+      .length !== 1
+  ) {
+    throw new Error("Concurrent cleanup proof replay was not rejected")
+  }
   console.log(
-    "Administration, messagerie et relances : RLS, calendrier, arrêts, reprises, snapshots, preuves uniques et neuf courses concurrentes validés. Aucun email envoyé.",
+    "Administration, messagerie, relances et documents : six suites SQL et quinze courses concurrentes validées (imports, envois, leases, nettoyage, preuves uniques). Aucun email envoyé.",
   )
 } finally {
   docker(["exec", container, "dropdb", "-U", "postgres", "--force", database])

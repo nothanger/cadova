@@ -7,6 +7,7 @@ export interface QuoteInput {
   amount_cents: number
   status: QuoteStatus
   sent_at: string | null
+  expires_at?: string | null
   notes?: string | null
 }
 
@@ -142,6 +143,7 @@ function normalize(input: QuoteInput) {
     amount_cents: input.amount_cents,
     status: input.status,
     sent_at: input.sent_at, // draft may be null; the form enforces a date when sent
+    ...(input.expires_at !== undefined ? { expires_at: input.expires_at || null } : {}),
     notes: input.notes?.trim() ? input.notes.trim() : null,
   }
 }

@@ -41,16 +41,45 @@ L’admin consulte les conversations et y répond. « Envoyer une notification �
 
 Appliquer `0007_support_notifications.sql` après `0006_platform_admin.sql`. Les RPC vérifient l’identité, le rôle et la destination côté serveur, enregistrent le message et ses notifications dans une transaction et reconnaissent les nouvelles tentatives d’un même envoi. Un utilisateur ne peut lire que ses échanges et notifications ; seul l’état de lecture des notifications est modifiable depuis le client. Les annonces de l’administration sont journalisées côté serveur. Les tests de `pnpm test:admin:db` couvrent aussi ces permissions et les envois.
 
+## Importer et envoyer un devis
+
+Dans **Nouveau devis**, importer le PDF original ou prendre une photo. Cadova propose la référence, le montant TTC et les coordonnées du client lorsqu’ils sont reconnaissables. Vérifier et corriger ces champs, choisir un client existant ou en créer un, puis enregistrer le brouillon. Les informations ambiguës restent à compléter : la lecture du document ne vaut pas validation du devis.
+
+Le bouton **Déjà envoyé** demande la date d’envoi et ajoute directement le devis au suivi. Il ne déclenche aucun email. Les devis saisis manuellement conservent le même parcours et peuvent recevoir un PDF depuis leur page de détail.
+
+Pour envoyer un brouillon, ouvrir **Document et envoi**, vérifier l’adresse du client, l’objet et le message, puis confirmer l’aperçu. Cadova joint le PDF importé ; une photo est convertie en PDF. Les réponses vont à l’adresse définie dans les paramètres de l’entreprise. Le devis passe en **Envoyé** uniquement après acceptation par le service email ; l’historique et les notifications enregistrent ce résultat. Les relances automatiques nécessitent ensuite une activation explicite sur le devis.
+
+La lecture PDF et la reconnaissance française se font dans le navigateur, sans service OCR externe. Le premier scan peut télécharger les ressources de lecture depuis le site. Les fichiers sont limités à 10 Mo et les PDF à 10 pages. Les photos JPEG, PNG et WebP sont acceptées ; exporter les photos HEIC en JPEG. Une photo nette, prise face au document, facilite la lecture. Les modèles et ressources sont générés par `pnpm assets:documents`, automatiquement avant `pnpm dev` et `pnpm build` ; `public/document-reader/` ne doit pas être enregistré dans Git.
+
+Le PDF enregistré est conservé dans le bucket privé `quote-documents`. Les accès passent par la session et les règles de l’entreprise. Le contenu exact d’un email tenté, pièce jointe comprise, reste réservé au worker. Un résultat incertain peut être repris avec la même clé et le même contenu, au maximum cinq tentatives dans les 23 heures ; ensuite une vérification manuelle est nécessaire. L’interface ne renvoie pas un email lors d’une simple actualisation. L’acceptation par Resend ne prouve pas la réception ni la lecture par le client.
+
+### Installation de l’import et de l’envoi
+
+La migration `0011_quote_documents.sql` suit l’installation des relances jusqu’à `0010`. Le script utilise `SUPABASE_ACCESS_TOKEN` et `SUPABASE_PROJECT_REF` fournis dans un terminal sécurisé :
+
+```sh
+python3 scripts/deploy-quote-documents.py --inspect
+python3 scripts/deploy-quote-documents.py --deploy
+```
+
+`--inspect` vérifie la présence des tables, RPC, fonction et noms de secrets sans écrire. `--deploy` applique la migration dans une transaction si elle n’existe pas, vérifie le stockage privé et les permissions, déploie `send-quote-document` avec `verify_jwt=false` et contrôle le refus des appels sans session. Le handler valide chaque utilisateur avec Supabase Auth et transmet son véritable JWT à la RPC qui autorise l’envoi. Aucun compte ni email de test n’est créé par le déploiement.
+
+Les envois utilisent les secrets Resend et l’activation `QUOTE_FOLLOWUP_EMAIL_ENABLED` déjà décrits pour les relances. Le nettoyage horaire `cadova-quote-documents-cleanup` réutilise le secret de scheduler existant dans Vault et `QUOTE_FOLLOWUP_SCHEDULER_SECRET`. Sa preuve HMAC est propre à l’action de nettoyage, valable cinq minutes et utilisable une fois ; la clé permanente ne transite pas dans `pg_net`. Les fichiers de devis supprimés sont retirés par ce worker. Les téléversements abandonnés deviennent éligibles après 24 heures. Le navigateur ne peut ni remplacer un fichier existant dans Storage, ni supprimer physiquement un document lié au devis.
+
+Le test réel se lance séparément avec `python3 scripts/test-quote-document-e2e.py --send-to votre-adresse@example.com`, après avoir fourni les deux variables Supabase du terminal et choisi une adresse autorisée. Il envoie un seul email clairement marqué comme test, vérifie le PDF original, l’historique, les droits et l’absence de double envoi, puis retire uniquement ses données et son compte temporaires. Ce test ne fait pas partie de `pnpm test`.
+
 ## Vérification
 
 ```sh
 pnpm typecheck
 pnpm typecheck:admin
 pnpm typecheck:followups
+pnpm typecheck:documents
 pnpm lint
 pnpm test
 pnpm build
 pnpm test:ui
+pnpm test:documents
 pnpm test:scene
 ```
 
@@ -70,6 +99,8 @@ L’aperçu de partage se régénère avec `pnpm assets:social`, également via 
 
 `test:scene` vérifie spécifiquement le logo 3D : rendu visible et cadrage sur quatre largeurs, les quatre chapitres du parcours, leur lisibilité sur mobile, la navigation clavier, la pause, la reprise, le rejeu, la réduction du mouvement et le repli sans WebGL. Il démarre son serveur sur le port 8448 et utilise la même simulation Supabase ; `TEST_BASE_URL` permet de réutiliser un serveur existant.
 
+`test:documents` vérifie l’import d’un PDF et d’une photo, la correction des informations, le parcours « Déjà envoyé », la vérification avant envoi et les principaux états du document sur mobile. Le backend y est simulé ; la lecture des fichiers utilise les bibliothèques réelles. Les tests unitaires couvrent les extractions prudentes et le worker d’envoi. `test:admin:db` couvre aussi les permissions, les transactions d’import, les réservations d’envoi et le nettoyage. Vérifier l’entrée Edge avec `pnpm dlx deno@2.5.6 check supabase/functions/send-quote-document/index.ts`.
+
 ## Production
 
 Le domaine prévu dans `CNAME` est `cadova.fr`. `vercel.json` permet l’ouverture directe des routes React, notamment `/login` et `/admin`, sur Vercel. Vérifier DNS, HTTPS, chemins des fichiers publics et le fallback des routes SPA si l’hébergeur change. Configurer les redirections d’authentification Supabase et l’URL publique des emails. Les pages légales indiquent les informations encore manquantes ; elles doivent être complétées et validées avant publication.
@@ -78,7 +109,7 @@ Dans Supabase Auth, `site_url` est `https://www.cadova.fr`, le domaine canonique
 
 ## Relances automatiques des devis
 
-Dans **Paramètres → Email de réponse**, le propriétaire renseigne l’adresse à laquelle les clients répondront. Il peut aussi mettre en pause tous les envois de son entreprise. La pause ne modifie pas les calendriers individuels.
+Dans **Paramètres → Email de réponse**, le propriétaire renseigne l’adresse à laquelle les clients répondront. Il peut aussi mettre en pause les relances automatiques de son entreprise. La pause ne modifie pas les calendriers individuels.
 
 Dans le détail d’un devis envoyé, **Relances automatiques** permet de modifier le sujet et le message, vérifier l’aperçu et choisir les deux délais. Les valeurs initiales sont J+5 et J+12 après la date d’envoi, à 9 h à Paris. Les variables acceptées sont `{{client_name}}`, `{{quote_reference}}`, `{{company_name}}` et `{{amount_formatted}}` ; les espaces autour du nom sont acceptés. L’activation est explicite et limitée à ce devis ; elle nécessite un email client, une adresse de réponse et un service email prêt. Aucun devis existant n’est activé par l’installation.
 

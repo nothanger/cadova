@@ -82,6 +82,8 @@ const db = {
         },
       ],
   quote_events: [],
+  quote_documents: [],
+  quote_initial_send_jobs: [],
   notifications: [
     {
       id: "notification-test",
@@ -1143,6 +1145,10 @@ class Query {
     this.filters.push((row) => row[key] === value)
     return this
   }
+  neq(key, value) {
+    this.filters.push((row) => row[key] !== value)
+    return this
+  }
   is(key, value) {
     return this.eq(key, value)
   }
@@ -1240,6 +1246,8 @@ class Query {
             "company_email_settings",
             "quote_followup_automations",
             "quote_followup_jobs",
+            "quote_documents",
+            "quote_initial_send_jobs",
           ].includes(this.table)
         )
           rows = rows.filter((row) => hasCompany(row.company_id))
@@ -1333,69 +1341,125 @@ class Query {
 export const isSupabaseConfigured = true
 export const supabase = {
   from: (table) => new Query(table),
-  rpc: async (name, args) => {
-    if (
-      [
-        "get_quote_followup_automation",
-        "save_quote_followup_automation",
-        "set_quote_followup_automation_paused",
-        "record_quote_response",
-        "read_quote_followup_service_status",
-        "set_company_email_settings",
-      ].includes(name)
-    )
-      return automationRpc(name, args)
-    if (["admin_create_company", "admin_delete_company"].includes(name))
-      return companyRpc(name, args)
-    if (
-      [
-        "send_support_message",
-        "list_support_threads",
-        "mark_support_thread_read",
-        "send_admin_notification",
-      ].includes(name)
-    )
-      return messagingRpc(name, args)
-    if (name === "is_platform_admin")
-      return { data: Boolean(session && options.admin), error: null }
-    if (name === "create_company_with_owner") {
-      company.name = args.company_name
-      db.company_members.push({
-        company_id: company.id,
-        user_id: user.id,
-        role: "owner",
-        companies: company,
-      })
-      syncAdminMemberships()
-      return { data: company.id, error: null }
-    }
-    if (name === "admin_transfer_company_owner") {
-      if (!session || !options.admin)
-        return { data: null, error: { code: "42501", message: "Accès refusé." } }
-      const entry = db.companies.find((item) => item.id === args.target_company_id)
-      const nextOwner = adminUsers.find((account) => account.id === args.new_owner_id)
-      if (!entry || !nextOwner)
-        return { data: null, error: { code: "P0001", message: "Compte introuvable." } }
-      db.company_members
-        .filter((member) => member.company_id === entry.id && member.role === "owner")
-        .forEach((member) => {
-          member.role = "member"
-        })
-      const member = db.company_members.find(
-        (item) => item.company_id === entry.id && item.user_id === nextOwner.id,
+  rpc: (name, args) => {
+    const request = (async () => {
+      if (name === "save_imported_quote") {
+        if (!session || args.p_company_id !== company.id)
+          return { data: null, error: { code: "42501", message: "Accès refusé." } }
+        if (
+          db.quotes.some(
+            (quote) =>
+              quote.company_id === args.p_company_id &&
+              quote.reference.toLowerCase() === args.p_reference.toLowerCase(),
+          )
+        )
+          return {
+            data: null,
+            error: { code: "23505", message: "Cette référence existe déjà." },
+          }
+        let client = db.clients.find(
+          (entry) =>
+            entry.id === args.p_client_id && entry.company_id === args.p_company_id,
+        )
+        if (!client && args.p_new_client?.name?.trim()) {
+          client = {
+            id: globalThis.crypto.randomUUID(),
+            company_id: company.id,
+            ...args.p_new_client,
+            notes: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }
+          db.clients.push(client)
+        }
+        if (!client)
+          return { data: null, error: { code: "22023", message: "Client requis." } }
+        const quote = {
+          id: args.p_quote_id,
+          company_id: company.id,
+          client_id: client.id,
+          reference: args.p_reference,
+          amount_cents: args.p_amount_cents,
+          notes: args.p_notes,
+          status: args.p_already_sent ? "sent" : "draft",
+          sent_at: args.p_already_sent ? args.p_sent_at : null,
+          expires_at: args.p_expires_at,
+          next_followup_at: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+        db.quotes.push(quote)
+        persistAutomation()
+        return { data: { ...quote }, error: null }
+      }
+      if (
+        [
+          "get_quote_followup_automation",
+          "save_quote_followup_automation",
+          "set_quote_followup_automation_paused",
+          "record_quote_response",
+          "read_quote_followup_service_status",
+          "set_company_email_settings",
+        ].includes(name)
       )
-      if (member) member.role = "owner"
-      else
+        return automationRpc(name, args)
+      if (["admin_create_company", "admin_delete_company"].includes(name))
+        return companyRpc(name, args)
+      if (
+        [
+          "send_support_message",
+          "list_support_threads",
+          "mark_support_thread_read",
+          "send_admin_notification",
+        ].includes(name)
+      )
+        return messagingRpc(name, args)
+      if (name === "is_platform_admin")
+        return { data: Boolean(session && options.admin), error: null }
+      if (name === "create_company_with_owner") {
+        company.name = args.company_name
         db.company_members.push({
-          company_id: entry.id,
-          user_id: nextOwner.id,
+          company_id: company.id,
+          user_id: user.id,
           role: "owner",
-          companies: entry,
+          companies: company,
         })
-      syncAdminMemberships()
-      return { data: null, error: null }
-    }
-    return { data: null, error: { message: "Unknown test RPC" } }
+        syncAdminMemberships()
+        return { data: company.id, error: null }
+      }
+      if (name === "admin_transfer_company_owner") {
+        if (!session || !options.admin)
+          return { data: null, error: { code: "42501", message: "Accès refusé." } }
+        const entry = db.companies.find((item) => item.id === args.target_company_id)
+        const nextOwner = adminUsers.find((account) => account.id === args.new_owner_id)
+        if (!entry || !nextOwner)
+          return {
+            data: null,
+            error: { code: "P0001", message: "Compte introuvable." },
+          }
+        db.company_members
+          .filter((member) => member.company_id === entry.id && member.role === "owner")
+          .forEach((member) => {
+            member.role = "member"
+          })
+        const member = db.company_members.find(
+          (item) => item.company_id === entry.id && item.user_id === nextOwner.id,
+        )
+        if (member) member.role = "owner"
+        else
+          db.company_members.push({
+            company_id: entry.id,
+            user_id: nextOwner.id,
+            role: "owner",
+            companies: entry,
+          })
+        syncAdminMemberships()
+        return { data: null, error: null }
+      }
+      return { data: null, error: { message: "Unknown test RPC" } }
+    })()
+    request.abortSignal = () => request
+    return request
   },
   channel: () => {
     const channel = {
