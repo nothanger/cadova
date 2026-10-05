@@ -20,7 +20,11 @@
     "predev": "pnpm assets:documents",
     "prebuild": "pnpm assets:documents",
     "test:documents": "node tests/document-workflow.mjs",
-    "typecheck:documents": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/send-quote-document/handler.ts tests/quote-document-send.test.ts"
+    "typecheck:documents": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/send-quote-document/handler.ts tests/quote-document-send.test.ts",
+    "test:portal": "node tests/portal-workflow.mjs",
+    "test:workspace": "node tests/workspace-actions.mjs",
+    "typecheck:portal": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/quote-client-portal/handler.ts tests/quote-client-portal.test.ts",
+    "typecheck:email-events": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/resend-events/handler.ts tests/quote-email-events.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",

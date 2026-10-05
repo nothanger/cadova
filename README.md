@@ -75,11 +75,15 @@ pnpm typecheck
 pnpm typecheck:admin
 pnpm typecheck:followups
 pnpm typecheck:documents
+pnpm typecheck:portal
+pnpm typecheck:email-events
 pnpm lint
 pnpm test
 pnpm build
 pnpm test:ui
 pnpm test:documents
+pnpm test:portal
+pnpm test:workspace
 pnpm test:scene
 ```
 
@@ -113,7 +117,7 @@ Dans **Paramètres → Email de réponse**, le propriétaire renseigne l’adres
 
 Dans le détail d’un devis envoyé, **Relances automatiques** permet de modifier le sujet et le message, vérifier l’aperçu et choisir les deux délais. Les valeurs initiales sont J+5 et J+12 après la date d’envoi, à 9 h à Paris. Les variables acceptées sont `{{client_name}}`, `{{quote_reference}}`, `{{company_name}}` et `{{amount_formatted}}` ; les espaces autour du nom sont acceptés. L’activation est explicite et limitée à ce devis ; elle nécessite un email client, une adresse de réponse et un service email prêt. Aucun devis existant n’est activé par l’installation.
 
-Les envois s’arrêtent si le devis est accepté, refusé ou expiré, si l’activation est retirée ou si une réponse est enregistrée dans Cadova. Utiliser **Enregistrer une réponse** pour cela ; une simple note ne bloque pas le calendrier. Cadova ne lit pas les réponses dans la boîte email. Une pause peut être reprise. Le délai entre les deux étapes est conservé même si le premier envoi arrive en retard.
+Les envois s’arrêtent si le devis est accepté, refusé ou expiré, si l’activation est retirée ou si une réponse est enregistrée dans Cadova. Une question sur le suivi client suspend aussi les relances. Utiliser **Enregistrer une réponse** pour les réponses reçues hors de Cadova ; une simple note ne bloque pas le calendrier. Lorsque la réception Resend décrite ci-dessous est activée, les réponses à l’adresse de suivi sont ajoutées automatiquement au dossier. Cadova ne se connecte pas à la boîte personnelle de l’entreprise. Une pause peut être reprise. Le délai entre les deux étapes est conservé même si le premier envoi arrive en retard.
 
 L’historique distingue l’acceptation par le service email, les erreurs et les envois dont le résultat reste incertain. L’acceptation par Resend ne prouve ni la réception ni la lecture par le client. Les résultats apparaissent aussi dans les notifications du compte ayant activé la séquence.
 
@@ -149,3 +153,30 @@ pnpm dlx deno@2.5.6 check supabase/functions/send-quote-followups/index.ts
 ```
 
 La fonction historique `send-followup-reminders`, qui produit un récapitulatif interne, est distincte des emails aux clients. Son ancien scheduler à placeholders reste inutilisable tel quel. Elle demeure désactivée tant que sa propre configuration et sa clé dédiée ne sont pas fournies ; l’installation des relances clients ne l’active pas. Ses préférences et son calendrier historique doivent faire l’objet d’une vérification séparée avant activation.
+
+## Suivi client et suivi des emails
+
+Les nouveaux emails de devis et de relance comportent un lien **Consulter mon devis**. Le destinataire peut télécharger le PDF, poser une question et confirmer une acceptation ou un refus. Ce parcours enregistre une décision ; il ne fournit pas une signature électronique. Le détail du devis permet aussi de créer un lien manuel, de le remplacer et de révoquer tous les accès. Les messages et décisions apparaissent dans le dossier et les notifications de l’entreprise.
+
+Le lien est une autorisation d’accès : le transmettre uniquement au destinataire prévu. Son jeton reste dans le fragment de l’URL, n’est pas enregistré dans le navigateur et seule son empreinte est stockée en base. Le portail ne publie ni notes internes ni coordonnées du client. Les PDF restent dans le stockage privé et sont servis après contrôle du lien. Les nouvelles tentatives d’un email déjà tenté conservent exactement son ancien contenu.
+
+Installer les migrations `0012` à `0014` après les migrations de documents et de relances :
+
+```sh
+python3 scripts/deploy-client-followup.py --inspect
+python3 scripts/deploy-client-followup.py --deploy
+```
+
+Le script utilise les deux variables Supabase du terminal sécurisé. Il vérifie l’empreinte des migrations déjà installées, déploie le portail, le webhook et les deux workers avec leurs dépendances partagées, puis contrôle les refus d’accès. Il ne crée aucun compte et n’envoie aucun email. Pour une installation neuve, exécuter ce script après les déploiements de documents et de relances, avant d’activer les envois. `CADOVA_PUBLIC_URL` peut préciser l’origine Cadova ; la valeur par défaut est `https://www.cadova.fr`.
+
+La livraison confirmée nécessite un webhook **Resend → Webhooks** vers `https://<project-ref>.supabase.co/functions/v1/resend-events`, avec les événements `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.bounced`, `email.failed` et `email.complained`. Enregistrer son secret de signature dans **Supabase → Edge Functions → Secrets → RESEND_WEBHOOK_SECRET**. Les callbacks non signés sont refusés. Les doublons et événements arrivant dans le désordre ne recréent ni message ni notification. Un retour définitif en erreur suspend les relances ; « accepté par le service » reste distinct de « livré ». Aucun suivi de lecture n’est affiché.
+
+Pour recevoir les réponses dans le dossier :
+
+1. Vérifier un sous-domaine de réception dans Resend, avec ses véritables enregistrements DNS. Préférer un sous-domaine dédié pour conserver les MX de la messagerie existante.
+2. Autoriser aussi l’événement `email.received` sur le webhook et fournir une clé Resend autorisée à lire les emails reçus. La création automatique de domaines et webhooks nécessite une clé **Full access**.
+3. Définir `RESEND_RECEIVE_DOMAIN` et, une fois la réception vérifiée, `QUOTE_REPLY_EMAIL_ENABLED=true` dans les secrets Supabase. Redéployer les fonctions avec le script ci-dessus.
+
+Les nouveaux envois utilisent alors une adresse de réponse propre au dossier. Une réponse provenant du destinataire connu est ajoutée au suivi et suspend les relances. Les emails déjà tentés conservent leur ancienne adresse de réponse. Sans cette configuration, les réponses continuent d’arriver à l’adresse d’entreprise et doivent être enregistrées manuellement ; le portail fonctionne indépendamment.
+
+`test:portal` couvre le parcours client et la gestion des liens sans requête vers un projet réel. `test:workspace` couvre les actions quotidiennes et le démarrage guidé. Les tests SQL locaux vérifient aussi l’isolation des entreprises, les signatures/reprises d’événements et les décisions concurrentes. Les données de test ne sont pas déployées.

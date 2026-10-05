@@ -9,10 +9,20 @@ export type ExtractedQuoteFields = {
   expiresAt?: string
 }
 
+export type QuoteImportField = keyof ExtractedQuoteFields
+export type QuoteFieldReview = {
+  state: "identified" | "missing" | "ambiguous" | "uncertain"
+  reason: string
+  /** Actual passages read from the document, never generated explanations. */
+  sources: string[]
+}
+export type QuoteImportReview = Record<QuoteImportField, QuoteFieldReview>
+
 export type PreparedQuoteDocument = {
   pdf: File
   preview: Blob
   fields: ExtractedQuoteFields
+  review: QuoteImportReview
   warnings: string[]
 }
 

@@ -73,6 +73,10 @@ export class DocumentApiError extends Error {
 }
 
 const sendErrors: Record<string, string> = {
+  client_link_unavailable:
+    "Le lien de suivi client est momentanément indisponible. Réessayez dans quelques instants.",
+  send_snapshot_missing:
+    "Les informations de cet envoi ne peuvent pas être vérifiées. Contactez l’administrateur avant de réessayer.",
   send_in_progress: "Un envoi de ce devis est déjà en cours. Actualisez son état.",
   reply_address_missing:
     "Ajoutez une adresse de réponse dans les paramètres de l’entreprise.",

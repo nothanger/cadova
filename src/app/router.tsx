@@ -24,12 +24,14 @@ import { SettingsPage } from "@/features/settings/SettingsPage"
 import { LegalPage } from "@/features/legal/LegalPage"
 import { AdminPage } from "@/features/admin/AdminPage"
 import { NotificationsPage } from "@/features/notifications/NotificationsPage"
+import { QuotePortalPage } from "@/features/quote-portal/QuotePortalPage"
 
 export function AppRoutes() {
   return (
     <Routes>
       {/* Public landing */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/devis/suivi" element={<QuotePortalPage />} />
       <Route path="/privacy" element={<LegalPage kind="privacy" />} />
       <Route path="/terms" element={<LegalPage kind="terms" />} />
       <Route path="/legal-notice" element={<LegalPage kind="legal-notice" />} />

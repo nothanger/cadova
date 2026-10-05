@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { createHmac } from "node:crypto"
 import test from "node:test"
+import { portalTextSuffix } from "../supabase/functions/_shared/quote-email-links.ts"
 import {
   buildFollowupEmail,
   createQuoteFollowupHandler,
@@ -33,6 +34,7 @@ const job: ClaimedFollowupJob = {
   first_attempt_at: null,
   provider_message_id: null,
 }
+const portalUrl = `https://www.cadova.fr/devis/suivi#token=${"b".repeat(43)}`
 
 class Backend implements QuoteFollowupBackend {
   calls: string[] = []
@@ -43,6 +45,9 @@ class Backend implements QuoteFollowupBackend {
   consumedProofs: { nonce: string; issuedAt: number }[] = []
   payload: ProviderEmailPayload | null = null
   firstAttempt = new Date(instant).toISOString()
+  linkUrl = portalUrl
+  replyRoute = `q-${"b".repeat(48)}@replies.cadova.fr`
+  replyDomains: (string | undefined)[] = []
   prepared: PreparedFollowupSend = {
     allowed: true,
     recipient_email: "client@example.test",
@@ -79,9 +84,24 @@ class Backend implements QuoteFollowupBackend {
     this.mark("prepare")
     return {
       ...this.prepared,
+      provider_payload: this.payload ? structuredClone(this.payload) : null,
       first_attempt_at: this.payload
         ? this.firstAttempt
         : this.prepared.first_attempt_at,
+    }
+  }
+  async prepareLinks(
+    claim: ClaimedFollowupJob,
+    publicUrl: string,
+    replyDomain?: string,
+  ) {
+    this.mark("links")
+    assert.equal(claim.lease_token, job.lease_token)
+    assert.equal(publicUrl, "https://www.cadova.fr")
+    this.replyDomains.push(replyDomain)
+    return {
+      portalUrl: this.linkUrl,
+      ...(replyDomain ? { replyTo: this.replyRoute } : {}),
     }
   }
   async persistPayload(_job: ClaimedFollowupJob, payload: ProviderEmailPayload) {
@@ -420,6 +440,7 @@ test("envoi valide : snapshot avant HTTP, Reply-To entreprise, clé stable, hist
     "health:true:true:ready",
     "claim:5:180",
     "prepare",
+    "links",
     "persist",
     "accept",
     "complete",
@@ -436,7 +457,8 @@ test("envoi valide : snapshot avant HTTP, Reply-To entreprise, clé stable, hist
   assert.equal(payload.to, "client@example.test")
   assert.equal(payload.reply_to, "contact@example.test")
   assert.equal(payload.from, config.resendFrom)
-  assert.equal(payload.text, backend.prepared.body)
+  assert.equal(payload.text, backend.prepared.body + portalTextSuffix(portalUrl))
+  assert.ok(payload.html.includes(`href="${portalUrl}"`))
   assert.ok(payload.html.includes("<br>"))
   assert.ok(!JSON.stringify(data).includes("client@example.test"))
 })
@@ -668,4 +690,56 @@ test("validation réutilisable du sender et de l’URL publique empêche les inj
     "https://cadova.fr/?quote=<script>",
   ])
     assert.equal(publicHttpsUrl(value), null)
+})
+
+test("relance refuse un portail indisponible ou externe avant persistance et HTTP", async () => {
+  for (const variant of ["unavailable", "external"]) {
+    const backend = new Backend()
+    if (variant === "unavailable") backend.failAt = "links"
+    else backend.linkUrl = portalUrl.replace("www.cadova.fr", "evil.test")
+    const sender = provider()
+    await invoke(backend, config, sender.fetcher)
+    assert.equal(sender.requests.length, 0)
+    assert.equal(backend.payload, null)
+    assert.deepEqual(backend.failures, [
+      { code: "client_link_unavailable", ambiguous: false },
+    ])
+  }
+})
+
+test("relance opt-in réception conserve le même contenu et ne recrée pas de lien à la reprise", async () => {
+  const backend = new Backend()
+  const first = provider(500, { name: "server_error" })
+  await invoke(
+    backend,
+    { ...config, replyEmailEnabled: true, receiveDomain: "replies.cadova.fr" },
+    first.fetcher,
+  )
+  assert.equal(JSON.parse(first.requests[0].body).reply_to, backend.replyRoute)
+  backend.jobs[0].attempts = 2
+  backend.failAt = "links"
+  const retry = provider()
+  await invoke(
+    backend,
+    { ...config, replyEmailEnabled: false },
+    retry.fetcher,
+    {},
+    { now: instant + 60000 },
+  )
+  assert.equal(first.requests[0].body, retry.requests[0].body)
+  assert.equal(backend.calls.filter((call) => call === "links").length, 1)
+  assert.equal(backend.calls.filter((call) => call === "persist").length, 1)
+})
+
+test("une origine publique non fiable désactive le worker sans prendre de jobs", async () => {
+  const backend = new Backend()
+  const sender = provider()
+  const { data } = await invoke(
+    backend,
+    { ...config, publicUrl: "https://evil.test" },
+    sender.fetcher,
+  )
+  assert.equal(data.service.configured, false)
+  assert.equal(sender.requests.length, 0)
+  assert.ok(!backend.calls.some((call) => call.startsWith("claim:")))
 })

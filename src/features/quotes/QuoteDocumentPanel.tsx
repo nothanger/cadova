@@ -445,6 +445,10 @@ export function QuoteDocumentPanel({
               : "Le PDF sera envoyé à cette adresse. Le devis passera en « Envoyé » lorsque le service email aura accepté le message."}{" "}
             Les relances automatiques s’activent séparément dans le suivi du devis.
           </p>
+          <p className="mt-3 rounded-lg border border-primary/20 bg-primary-soft/40 p-3 text-sm leading-6 text-ink-soft">
+            L’email inclura aussi un lien privé : le client pourra consulter le devis,
+            poser une question ou vous transmettre sa décision sans créer de compte.
+          </p>
           <div className="mt-6 flex flex-wrap justify-end gap-2">
             <Button
               variant="secondary"

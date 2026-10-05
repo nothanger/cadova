@@ -9,6 +9,7 @@ import {
   type DocumentSendBackend,
 } from "./handler.ts"
 import { maxPdfBytes, readLimitedBytes, validStoragePath } from "./validation.ts"
+import { prepareQuoteEmailLinks } from "../_shared/quote-email-links.ts"
 
 const url = Deno.env.get("SUPABASE_URL")
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
@@ -85,6 +86,8 @@ const backend: DocumentSendBackend = {
       p_actor_id: actorId,
       p_lease_seconds: seconds,
     }),
+  prepareLinks: (claim, publicUrl, replyDomain) =>
+    prepareQuoteEmailLinks(rpc, serviceKey, "initial", claim, publicUrl, replyDomain),
   async download(path) {
     if (!validStoragePath(path)) throw new Error("Invalid document path")
     const controller = new AbortController()
@@ -190,5 +193,8 @@ Deno.serve(
     resendFrom: Deno.env.get("RESEND_FROM"),
     emailEnabled: Deno.env.get("QUOTE_FOLLOWUP_EMAIL_ENABLED") === "true",
     allowedOrigins: Array.from(allowedOrigins),
+    publicUrl: Deno.env.get("CADOVA_PUBLIC_URL"),
+    replyEmailEnabled: Deno.env.get("QUOTE_REPLY_EMAIL_ENABLED") === "true",
+    receiveDomain: Deno.env.get("RESEND_RECEIVE_DOMAIN"),
   }),
 )

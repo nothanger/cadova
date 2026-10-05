@@ -64,6 +64,9 @@ export interface QuoteEvent {
   created_by: string | null
   automation_job_id?: string | null
   initial_send_job_id?: string | null
+  portal_message_id?: string | null
+  email_delivery_id?: string | null
+  email_reply_id?: string | null
   delivery_status?: "sent" | "failed" | "delivery_unknown" | null
 }
 

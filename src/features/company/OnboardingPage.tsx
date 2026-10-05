@@ -48,8 +48,18 @@ export function OnboardingPage() {
             Votre espace entreprise
           </h1>
           <p className="mt-2 text-sm text-muted">
-            Créez l’espace de votre entreprise pour commencer à suivre vos devis.
+            Commencez par le nom de votre entreprise. Vous pourrez ensuite importer un
+            devis et choisir comment le suivre.
           </p>
+          <ol
+            aria-label="Premières étapes"
+            className="mt-5 grid gap-2 border-l-2 border-line pl-4 text-sm text-muted"
+          >
+            <li className="font-medium text-ink">Créer votre espace</li>
+            <li>Renseigner votre adresse de réponse</li>
+            <li>Importer ou saisir votre premier devis</li>
+            <li>Choisir un rappel ou les relances automatiques</li>
+          </ol>
           <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
             {error && (
               <p

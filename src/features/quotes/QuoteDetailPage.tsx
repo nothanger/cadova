@@ -39,6 +39,8 @@ import { daysWaiting, isQuoteDueForFollowUp } from "@/lib/followup"
 import { useAuth } from "@/features/auth/AuthContext"
 import { AutomationPanel } from "./AutomationPanel"
 import { QuoteDocumentPanel } from "./QuoteDocumentPanel"
+import { QuoteClientPortalPanel } from "./QuoteClientPortalPanel"
+import { QuoteEmailTrackingPanel } from "./QuoteEmailTrackingPanel"
 import type { QuoteEvent, QuoteStatus, QuoteWithClient } from "@/types"
 
 type Template = "first" | "second" | "expiry"
@@ -330,7 +332,9 @@ export function QuoteDetailPage() {
             </dl>
           </Card>
           <QuoteDocumentPanel key={scope} quote={quote} onChanged={refreshDetails} />
+          <QuoteClientPortalPanel key={`portal:${scope}`} quote={quote} onChanged={refreshDetails} />
           <AutomationPanel quote={quote} onChanged={refreshDetails} />
+          <QuoteEmailTrackingPanel key={`email:${scope}`} quote={quote} />
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>

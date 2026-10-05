@@ -155,6 +155,7 @@ export async function prepareQuoteDocument(
     options.onProgress?.({ progress: Math.max(0, Math.min(1, value)), label })
   let ocrProgressStart = 0.2
   let ocrProgressSpan = 0.65
+  const lowConfidenceText: string[] = []
 
   const recognize = async (canvas: HTMLCanvasElement): Promise<string> => {
     throwIfAborted(signal)
@@ -172,10 +173,12 @@ export async function prepareQuoteDocument(
       signal,
     )
     const result = await worker.recognize(image)
-    if (result.confidence < 60)
+    if (result.confidence < 60) {
+      lowConfidenceText.push(result.text)
       warnings.push(
         "La photo ou le scan manque de netteté. Vérifiez attentivement les informations proposées.",
       )
+    }
     return result.text
   }
 
@@ -348,12 +351,13 @@ export async function prepareQuoteDocument(
       }
     }
     throwIfAborted(signal)
-    const extracted = extractQuoteFields(text)
+    const extracted = extractQuoteFields(text, { lowConfidenceText })
     progress(1, "Document prêt à vérifier.")
     return {
       pdf,
       preview,
       fields: extracted.fields,
+      review: extracted.review,
       warnings: [...new Set([...warnings, ...extracted.warnings])],
     }
   } catch (error) {

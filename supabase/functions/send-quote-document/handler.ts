@@ -15,6 +15,16 @@ import {
   validStoragePath,
   verifyCleanupProof,
 } from "./validation.ts"
+import {
+  portalHtml,
+  portalTextSuffix,
+  quotePublicUrl,
+  receiveDomain,
+  validFrozenQuoteText,
+  validFrozenReply,
+  validQuotePortalUrl,
+  type QuoteEmailLinks,
+} from "../_shared/quote-email-links.ts"
 
 export interface DocumentSendInput {
   quoteId: string
@@ -72,6 +82,11 @@ export interface DocumentSendBackend {
   requestSend(token: string, input: DocumentSendInput): Promise<DocumentJob>
   claim(jobId: string, actorId: string, leaseSeconds: number): Promise<DocumentClaim>
   download(path: string): Promise<{ bytes: Uint8Array; mimeType: string }>
+  prepareLinks(
+    claim: DocumentClaim,
+    publicUrl: string,
+    replyDomain?: string,
+  ): Promise<QuoteEmailLinks>
   persist(
     claim: DocumentClaim,
     payload: DocumentProviderPayload,
@@ -91,6 +106,9 @@ export interface DocumentSendConfig {
   resendApiKey?: string
   resendFrom?: string
   emailEnabled: boolean
+  publicUrl?: string
+  replyEmailEnabled?: boolean
+  receiveDomain?: string
   allowedOrigins?: string[]
 }
 interface Dependencies {
@@ -180,7 +198,7 @@ function validPayload(payload: DocumentProviderPayload) {
     !/[\x00-\x1f\x7f]/.test(payload.subject) &&
     typeof payload.text === "string" &&
     payload.text.trim().length > 0 &&
-    payload.text.length <= 4000 &&
+    payload.text.length <= 5000 &&
     !/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(payload.text) &&
     typeof payload.html === "string" &&
     payload.html.length <= 30000 &&
@@ -382,7 +400,8 @@ export function createQuoteDocumentHandler(
       !config.resendApiKey ||
       config.resendApiKey.length < 8 ||
       /\s/.test(config.resendApiKey) ||
-      !isSender(config.resendFrom)
+      !isSender(config.resendFrom) ||
+      !quotePublicUrl(config.publicUrl)
     )
       return json({ errorCode: "email_configuration_missing" }, 503)
     let job: DocumentJob
@@ -490,6 +509,7 @@ export function createQuoteDocumentHandler(
     let payload = claim.provider_payload
     let firstAttempt = claim.first_attempt_at
     if (!payload) {
+      if (firstAttempt) return failure("send_snapshot_missing", true)
       if (
         !isEmail(claim.recipient_email) ||
         !isEmail(claim.reply_to) ||
@@ -516,13 +536,31 @@ export function createQuoteDocumentHandler(
       )
         return failure("invalid_document", false)
       const hash = await sha256(document.bytes)
-      const html = `<!doctype html><html lang="fr"><body><p>${escapeHtml(claim.company_name)}</p><div>${escapeHtml(claim.body).replace(/\r\n?/g, "\n").replace(/\n/g, "<br>")}</div></body></html>`
+      let links: QuoteEmailLinks
+      try {
+        links = await backend.prepareLinks(
+          claim,
+          quotePublicUrl(config.publicUrl)!,
+          config.replyEmailEnabled
+            ? (receiveDomain(config.receiveDomain) ?? undefined)
+            : undefined,
+        )
+      } catch {
+        return failure("client_link_unavailable", false)
+      }
+      if (
+        !validQuotePortalUrl(links?.portalUrl) ||
+        (links.replyTo !== undefined &&
+          (!isEmail(links.replyTo) || !validFrozenReply(links.replyTo, claim.reply_to)))
+      )
+        return failure("client_link_unavailable", false)
+      const html = `<!doctype html><html lang="fr"><body style="font-family:Arial,sans-serif;color:#0b1020;padding:24px"><main style="max-width:600px;margin:auto"><p>${escapeHtml(claim.company_name)}</p><div>${escapeHtml(claim.body).replace(/\r\n?/g, "\n").replace(/\n/g, "<br>")}</div>${portalHtml(links.portalUrl, escapeHtml)}</main></body></html>`
       const candidate: DocumentProviderPayload = {
         from: config.resendFrom,
         to: claim.recipient_email,
-        reply_to: claim.reply_to,
+        reply_to: links.replyTo ?? claim.reply_to,
         subject: claim.subject,
-        text: claim.body,
+        text: claim.body + portalTextSuffix(links.portalUrl),
         html,
         attachments: [
           {
@@ -545,9 +583,9 @@ export function createQuoteDocumentHandler(
     if (
       !validPayload(payload) ||
       payload.to !== claim.recipient_email ||
-      payload.reply_to !== claim.reply_to ||
+      !validFrozenReply(payload.reply_to, claim.reply_to!) ||
       payload.subject !== claim.subject ||
-      payload.text !== claim.body ||
+      !validFrozenQuoteText(claim.body!, payload.text, payload.html) ||
       payload.attachments[0].filename !== claim.file_name
     )
       return failure("invalid_document", Boolean(firstAttempt))

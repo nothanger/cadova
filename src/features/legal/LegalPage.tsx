@@ -22,7 +22,7 @@ const legalPages: Record<
       {
         title: "Données enregistrées",
         content:
-          "Le service utilise votre adresse email pour votre compte, le nom de votre entreprise, les coordonnées et notes de vos clients, ainsi que les références, montants, statuts, dates et historiques de vos devis. Les PDF et photos importés servent à préparer le dossier du devis ; le document conservé est un PDF privé.",
+          "Le service utilise votre adresse email pour votre compte, le nom de votre entreprise, les coordonnées et notes de vos clients, ainsi que les références, montants, statuts, dates et historiques de vos devis. Les PDF et photos importés servent à préparer le dossier du devis ; le document conservé est un PDF privé. Le suivi conserve les messages échangés avec le client, ses décisions et les états de livraison des emails disponibles.",
       },
       {
         title: "Utilisation des données",
@@ -32,7 +32,12 @@ const legalPages: Record<
       {
         title: "Accès et prestataires",
         content:
-          "Les données métier sont rattachées à une entreprise. Supabase gère les comptes, la base de données et le stockage privé des PDF. La lecture des documents se fait dans votre navigateur. Lorsque vous envoyez un devis, Resend reçoit l’adresse du destinataire, le message et le PDF joint. Les relances automatiques transmettent l’adresse et le message de relance. La liste des prestataires effectivement activés, les lieux d’hébergement et les garanties de transfert restent à confirmer.",
+          "Les données métier sont rattachées à une entreprise. Supabase gère les comptes, la base de données et le stockage privé des PDF. La lecture des documents se fait dans votre navigateur. Lorsque vous envoyez un devis, Resend reçoit l’adresse du destinataire, le message et le PDF joint. Les relances automatiques transmettent l’adresse et le message de relance. Si la réception des réponses est activée, Resend transmet leur contenu au dossier. La liste des prestataires effectivement activés, les lieux d’hébergement et les garanties de transfert restent à confirmer.",
+      },
+      {
+        title: "Lien de suivi du devis",
+        content:
+          "Une personne disposant du lien de suivi peut consulter le devis et son PDF, lire la conversation, poser une question et enregistrer une décision. L’entreprise doit transmettre ce lien uniquement au destinataire prévu ; elle peut révoquer les accès depuis le dossier. Les notes internes et les coordonnées du client ne sont pas exposées sur cette page.",
       },
       {
         title: "Conservation et suppression",
@@ -64,7 +69,7 @@ const legalPages: Record<
       {
         title: "Le service",
         content:
-          "Cadova permet de conserver les coordonnées des clients, suivre les devis et préparer des relances dans votre messagerie. Les relances automatiques sont activées séparément pour chaque devis, après vérification du calendrier et du message. Elles nécessitent un service email configuré. Une réponse enregistrée dans Cadova, un devis accepté, refusé ou expiré arrête les prochains envois. Cadova ne lit pas votre boîte email : les réponses reçues doivent être enregistrées dans le dossier.",
+          "Cadova permet de conserver les coordonnées des clients, importer et envoyer des devis, puis organiser les relances. Les relances automatiques sont activées séparément pour chaque devis, après vérification du calendrier et du message. Elles nécessitent un service email configuré. Une réponse enregistrée dans Cadova, une question sur le suivi client ou un devis accepté, refusé ou expiré arrête les prochains envois. Les réponses par email sont ajoutées au dossier lorsque leur réception est activée ; les autres réponses doivent être enregistrées manuellement. Une acceptation sur le suivi client enregistre une décision et ne constitue pas une signature électronique fournie par Cadova.",
       },
       {
         title: "Votre compte",

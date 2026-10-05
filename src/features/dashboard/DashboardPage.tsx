@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Link } from "react-router-dom"
 import { AlertTriangle, Clock, CheckCircle2, ArrowRight } from "lucide-react"
 import { PageHeader } from "@/components/layout/PageHeader"
@@ -20,36 +20,55 @@ import { humanizeError } from "@/lib/errors"
 import { formatCents } from "@/lib/money"
 import { formatDate } from "@/lib/dates"
 import { daysWaiting } from "@/lib/followup"
+import { GettingStarted } from "@/features/company/GettingStarted"
+import { WorkspacePanel } from "./WorkspacePanel"
 
 export function DashboardPage() {
   const { user } = useAuth()
-  const { company } = useCompany()
-  const [data, setData] = useState<DashboardData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
+  const { company, role } = useCompany()
+  const scope = company && user ? `${user.id}:${company.id}` : ""
+  const scopeRef = useRef(scope)
+  scopeRef.current = scope
+  const requestId = useRef(0)
+  const [result, setResult] = useState<{
+    scope: string
+    data: DashboardData | null
+    loading: boolean
+    error: string
+  }>({ scope: "", data: null, loading: true, error: "" })
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!company || !user) return
-    setLoading(true)
-    setError("")
+    const request = ++requestId.current
+    setResult({ scope, data: null, loading: true, error: "" })
     try {
       const prefs = await getReminderPrefs(user.id, company.id).catch(() => ({
         followupDelayDays: 3,
         reminderHour: 8,
       }))
-      setData(await getDashboardData(company.id, prefs.followupDelayDays))
+      const data = await getDashboardData(company.id, prefs.followupDelayDays)
+      if (request === requestId.current && scopeRef.current === scope)
+        setResult({ scope, data, loading: false, error: "" })
     } catch (err) {
-      setError(humanizeError(err, "Impossible de charger le tableau de bord."))
-    } finally {
-      setLoading(false)
+      if (request === requestId.current && scopeRef.current === scope)
+        setResult({
+          scope,
+          data: null,
+          loading: false,
+          error: humanizeError(err, "Impossible de charger le tableau de bord."),
+        })
     }
-  }
+  }, [company?.id, user?.id, scope])
 
   useEffect(() => {
     load()
-  }, [company?.id, user?.id])
+    return () => {
+      requestId.current++
+    }
+  }, [load])
 
-  if (loading) return <Spinner />
+  if (result.loading || result.scope !== scope) return <Spinner />
+  const { data, error } = result
   if (error || !data) return <ErrorState message={error} onRetry={load} />
 
   const noQuotes = data.latest.length === 0
@@ -61,10 +80,21 @@ export function DashboardPage() {
         subtitle={company ? `Le suivi des devis de ${company.name}.` : ""}
       />
 
+      {user && company && (
+        <GettingStarted
+          key={scope}
+          userId={user.id}
+          companyId={company.id}
+          canEditCompany={role === "owner"}
+          data={data}
+        />
+      )}
+      <WorkspacePanel key={`actions:${scope}`} data={data} onRetry={load} />
+
       {noQuotes ? (
         <EmptyState
           title="Rien à suivre pour l’instant"
-          description="Créez un client puis un devis pour voir apparaître vos indicateurs de suivi."
+          description="Importez votre premier devis ou saisissez-le. Si vous l’avez déjà envoyé, indiquez sa date pour démarrer le suivi."
           action={<LinkButton to="/app/quotes/new">Créer un devis</LinkButton>}
         />
       ) : (
@@ -74,8 +104,12 @@ export function DashboardPage() {
               tone="warning"
               icon={<AlertTriangle size={18} />}
               label="À relancer"
-              count={data.followUp.count}
-              amount={formatCents(data.followUp.amountCents)}
+              count={data.followUp.complete ? data.followUp.count : null}
+              amount={
+                data.followUp.complete
+                  ? formatCents(data.followUp.amountCents)
+                  : "Vérifications indisponibles"
+              }
             />
             <Stat
               tone="primary"
@@ -126,7 +160,11 @@ export function DashboardPage() {
                 Voir tous les devis
               </Link>
             </div>
-            {data.priority.length === 0 ? (
+            {!data.followUp.complete ? (
+              <Card className="p-6 text-sm text-muted">
+                Les relances à préparer ne peuvent pas être confirmées pour le moment.
+              </Card>
+            ) : data.priority.length === 0 ? (
               <Card className="p-6 text-sm text-muted">
                 Aucun devis à relancer pour le moment.
               </Card>
@@ -275,7 +313,7 @@ function Stat({
   tone: "warning" | "primary" | "success"
   icon: ReactNode
   label: string
-  count: number
+  count: number | null
   amount: string
 }) {
   const toneClass = {
@@ -294,7 +332,7 @@ function Stat({
         <span className="text-sm font-medium text-ink-soft">{label}</span>
       </div>
       <p className="mt-4 tabular-nums text-3xl font-semibold tracking-tight text-ink">
-        {count}
+        {count ?? "—"}
       </p>
       <p className="mt-2 tabular-nums text-sm text-muted">{amount}</p>
     </Card>

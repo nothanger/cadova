@@ -18,6 +18,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from edge_bundle import FUNCTION_ROOT, function_sources
 
 
 class DeploymentError(Exception):
@@ -140,14 +141,14 @@ def deploy(mode):
         query("select vault.create_secret(" + sql_literal(scheduler_secret) + "," + sql_literal(vault_name) + ",'Private quote followup scheduler credential');")
 
     boundary = "cadova-" + secrets.token_hex(20)
-    metadata = {"name": "send-quote-followups", "entrypoint_path": "index.ts", "verify_jwt": False}
+    metadata = {"name": "send-quote-followups", "entrypoint_path": "send-quote-followups/index.ts", "verify_jwt": False}
     chunks = [
         f'--{boundary}\r\nContent-Disposition: form-data; name="metadata"\r\n\r\n'.encode(),
         json.dumps(metadata).encode(), b"\r\n",
     ]
-    for source in sorted((root / "supabase/functions/send-quote-followups").glob("*.ts")):
+    for source in sorted(function_sources("send-quote-followups")):
         chunks.extend([
-            f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{source.name}"\r\nContent-Type: application/octet-stream\r\n\r\n'.encode(),
+            f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{source.relative_to(FUNCTION_ROOT).as_posix()}"\r\nContent-Type: application/octet-stream\r\n\r\n'.encode(),
             source.read_bytes(), b"\r\n",
         ])
     chunks.append(f"--{boundary}--\r\n".encode())

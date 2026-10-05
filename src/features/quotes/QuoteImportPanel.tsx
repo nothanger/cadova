@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { Camera, FileText, Upload, X } from "lucide-react"
 import { Button, Card } from "@/components/ui"
 import type { prepareQuoteDocument } from "./import/documentReader"
+import type { QuoteFieldReview } from "./import/types"
 
 export type PreparedQuoteDocument = Awaited<ReturnType<typeof prepareQuoteDocument>>
 
@@ -9,16 +10,22 @@ export function QuoteImportPanel({
   disabled,
   onPrepared,
   onBusyChange,
+  comparison,
+  onReturnToField,
 }: {
   disabled: boolean
   onPrepared: (document: PreparedQuoteDocument | null) => void
   onBusyChange: (busy: boolean) => void
+  comparison?: { label: string; review: QuoteFieldReview }
+  onReturnToField?: () => void
 }) {
   const fileInput = useRef<HTMLInputElement>(null)
   const cameraInput = useRef<HTMLInputElement>(null)
   const currentRead = useRef<AbortController | null>(null)
   const [document, setDocument] = useState<PreparedQuoteDocument | null>(null)
   const [previewUrl, setPreviewUrl] = useState("")
+  const [pdfUrl, setPdfUrl] = useState("")
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState({
     progress: 0,
@@ -31,12 +38,23 @@ export function QuoteImportPanel({
   useEffect(() => {
     if (!document) {
       setPreviewUrl("")
+      setPdfUrl("")
       return
     }
     const url = URL.createObjectURL(document.preview)
+    const fullPdf = URL.createObjectURL(document.pdf)
     setPreviewUrl(url)
-    return () => URL.revokeObjectURL(url)
+    setPdfUrl(fullPdf)
+    setPreviewOpen(window.matchMedia("(min-width: 1280px)").matches)
+    return () => {
+      URL.revokeObjectURL(url)
+      URL.revokeObjectURL(fullPdf)
+    }
   }, [document])
+
+  useEffect(() => {
+    if (comparison) setPreviewOpen(true)
+  }, [comparison])
 
   function cancelRead() {
     currentRead.current?.abort()
@@ -85,7 +103,9 @@ export function QuoteImportPanel({
   }
 
   return (
-    <Card className="min-w-0 p-5 sm:p-6">
+    <Card
+      className={`min-w-0 p-5 sm:p-6 ${document ? "xl:sticky xl:top-24 xl:order-2 xl:self-start" : ""}`}
+    >
       <div className="flex items-start gap-3">
         <span className="rounded-lg bg-primary-soft p-2 text-primary">
           <FileText size={20} aria-hidden="true" />
@@ -206,12 +226,52 @@ export function QuoteImportPanel({
               ))}
             </ul>
           )}
+          {comparison && (
+            <div
+              id="quote-document-comparison"
+              className="scroll-mt-24 rounded-lg border border-primary/25 bg-primary-soft p-3"
+              aria-live="polite"
+            >
+              <p className="text-sm font-semibold text-ink">
+                {comparison.label} : passage à comparer
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Texte extrait du document. Comparez aussi avec l’original.
+              </p>
+              {comparison.review.sources.map((source, index) => (
+                <blockquote
+                  key={index}
+                  className="mt-3 whitespace-pre-wrap break-words border-l-2 border-primary/40 pl-3 text-sm leading-6 text-ink-soft"
+                >
+                  {source}
+                </blockquote>
+              ))}
+              <Button
+                type="button"
+                variant="ghost"
+                className="mt-2"
+                onClick={onReturnToField}
+              >
+                Retour au champ
+              </Button>
+            </div>
+          )}
           {previewUrl && (
-            <details className="rounded-lg border border-line">
+            <details
+              className="rounded-lg border border-line"
+              open={previewOpen}
+              onToggle={(event) => setPreviewOpen(event.currentTarget.open)}
+            >
               <summary className="min-h-11 cursor-pointer px-3 py-3 text-sm font-medium text-ink">
                 Voir le document
               </summary>
-              <div className="max-h-[32rem] overflow-y-auto border-t border-line bg-background p-3">
+              <div
+                className="max-h-[32rem] overflow-y-auto border-t border-line bg-background p-3 focus-visible:outline-2 focus-visible:outline-primary"
+                role="region"
+                aria-label="Aperçu du document importé"
+                tabIndex={0}
+              >
+                <p className="mb-2 text-xs text-muted">Aperçu de la première page</p>
                 <img
                   src={previewUrl}
                   alt="Aperçu de la première page du devis importé"
@@ -219,6 +279,16 @@ export function QuoteImportPanel({
                 />
               </div>
             </details>
+          )}
+          {pdfUrl && (
+            <a
+              href={pdfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-10 items-center text-sm font-medium text-primary underline underline-offset-2"
+            >
+              Ouvrir le PDF complet
+            </a>
           )}
         </div>
       )}

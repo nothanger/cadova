@@ -101,6 +101,9 @@ try {
     "0009_quote_email_automation.sql",
     "0010_quote_followup_scheduler_auth.sql",
     "0011_quote_documents.sql",
+    "0012_quote_client_portal.sql",
+    "0013_quote_email_events.sql",
+    "0014_quote_send_tracking.sql",
   ]) {
     sql(
       readFileSync(
@@ -111,6 +114,21 @@ try {
   }
   sql(
     readFileSync(new URL("../tests/quote-documents-rls.sql", import.meta.url), "utf8"),
+  )
+  sql(
+    readFileSync(
+      new URL("../tests/quote-client-portal-rls.sql", import.meta.url),
+      "utf8",
+    ),
+  )
+  sql(
+    readFileSync(
+      new URL("../tests/quote-email-events-rls.sql", import.meta.url),
+      "utf8",
+    ),
+  )
+  sql(
+    readFileSync(new URL("../tests/quote-send-tracking.sql", import.meta.url), "utf8"),
   )
   sql(readFileSync(new URL("../tests/admin-rls.sql", import.meta.url), "utf8"))
   sql(readFileSync(new URL("../tests/notifications-rls.sql", import.meta.url), "utf8"))
@@ -620,8 +638,45 @@ try {
   ) {
     throw new Error("Concurrent cleanup proof replay was not rejected")
   }
+  sql(`
+    insert into auth.users(id,email) values('b1000000-0000-4000-8000-000000000001','portal-race@example.test');
+    insert into public.companies(id,name) values('b2000000-0000-4000-8000-000000000001','Portal race company');
+    insert into public.company_members(company_id,user_id,role) values('b2000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001','owner');
+    insert into public.clients(id,company_id,name) values('b3000000-0000-4000-8000-000000000001','b2000000-0000-4000-8000-000000000001','Race client');
+    insert into public.quotes(id,company_id,client_id,reference,amount_cents,status,sent_at)
+      select ('b4000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'b2000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000001','RACE-'||n,1000,'sent',current_date-1 from generate_series(1,2)n;
+    insert into public.quote_client_links(company_id,quote_id,token_hash,expires_at)
+      select 'b2000000-0000-4000-8000-000000000001',('b4000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,repeat(n::text,64),clock_timestamp()+interval '1 day' from generate_series(1,2)n;
+  `)
+  const decisions = await Promise.all(
+    ["accepted", "refused"].map((kind, index) =>
+      concurrentSql(
+        `begin;set local role service_role;select public.use_quote_client_link(repeat('1',64),'respond','${kind}',null,'b6000000-0000-4000-8000-00000000000${index + 1}',true);select pg_sleep(0.15);commit;`,
+      ),
+    ),
+  )
+  if (
+    decisions.some((result) => result.code !== 0) ||
+    decisions.filter((result) => result.output.includes("decision_not_allowed"))
+      .length !== 1
+  )
+    throw new Error("Concurrent decisions did not serialize")
+  const questions = await Promise.all(
+    [1, 2].map(() =>
+      concurrentSql(
+        `begin;set local role service_role;select public.use_quote_client_link(repeat('2',64),'respond','question','Same question','b6000000-0000-4000-8000-000000000003',true);select pg_sleep(0.15);commit;`,
+      ),
+    ),
+  )
+  if (questions.some((result) => result.code !== 0))
+    throw new Error("Concurrent duplicate question failed")
+  sql(`do $$begin
+    if (select count(*) from public.quote_client_messages where company_id='b2000000-0000-4000-8000-000000000001')<>2 then raise exception 'Concurrent requests duplicated message';end if;
+    if (select count(*) from public.quote_events where company_id='b2000000-0000-4000-8000-000000000001' and portal_message_id is not null)<>2 then raise exception 'Concurrent requests duplicated event';end if;
+    if (select count(*) from public.notifications where company_id='b2000000-0000-4000-8000-000000000001' and portal_message_id is not null)<>2 then raise exception 'Concurrent requests duplicated notification';end if;
+  end$$;`)
   console.log(
-    "Administration, messagerie, relances et documents : six suites SQL et quinze courses concurrentes validées (imports, envois, leases, nettoyage, preuves uniques). Aucun email envoyé.",
+    "Administration, messagerie, relances, documents, portail et livraison : neuf suites SQL et dix-sept courses concurrentes validées. Aucun email envoyé.",
   )
 } finally {
   docker(["exec", container, "dropdb", "-U", "postgres", "--force", database])

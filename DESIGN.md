@@ -27,7 +27,7 @@ Transitions de couleur et de bordure uniquement. Respecter prefers-reduced-motio
 
 ## Contenus et confiance
 
-La landing suit le parcours d'un devis : retrouver le dossier client, repérer ce qui attend une réponse, préparer le prochain message. S'adresser au lecteur avec « vous », utiliser les mots client, devis, notes, message et relance. Chaque bloc doit apporter une information distincte. Décrire les actions disponibles et préciser ce qui reste manuel : personnaliser le texte, l'envoyer depuis sa messagerie, enregistrer la relance. Éviter les qualificatifs d'ambiance (« net », « propre », « sans bruit »), les comparaisons défensives et les promesses de résultat. Les boutons nomment l'étape qui suit ; les métadonnées et l'aperçu de partage reprennent ce même vocabulaire.
+La landing suit le parcours d'un devis : retrouver le dossier client, repérer ce qui attend une réponse, préparer le prochain message. S'adresser au lecteur avec « vous », utiliser les mots client, devis, notes, message et relance. Chaque bloc doit apporter une information distincte. Décrire les actions disponibles et leur activation : vérifier l'import, confirmer l'envoi et choisir un calendrier de relances. Préciser les actions manuelles lorsque le service email n'est pas configuré. Éviter les qualificatifs d'ambiance (« net », « propre », « sans bruit »), les comparaisons défensives et les promesses de résultat. Les boutons nomment l'étape qui suit ; les métadonnées et l'aperçu de partage reprennent ce même vocabulaire.
 
 Aucun client, montant, compteur ou témoignage fictif sur le site public, même dans un aperçu. Les indicateurs privés proviennent uniquement des données de l’entreprise. Ethan Noto est le nom communiqué pour l’éditeur ; les autres informations juridiques restent à confirmer. L’accueil montre la structure du produit sans données inventées. Aucun engagement « gratuit » sans offre confirmée.
 
@@ -46,3 +46,13 @@ L’import accepte un PDF ou une photo lisible. La reconnaissance s’effectue d
 Créer un devis produit un brouillon. « Déjà envoyé » demande une date et ouvre le suivi sans envoyer de message. L’envoi dans Cadova présente le destinataire, l’objet, le message et le PDF avant confirmation. Le statut « Envoyé » correspond à l’acceptation du message par le service email ; ne pas prétendre qu’il a été lu. Un état incertain doit rester explicite et bloquer une nouvelle tentative susceptible de créer un doublon.
 
 Les relances automatiques s’activent explicitement pour chaque devis envoyé, après vérification de leur calendrier et de leur contenu. Une réponse enregistrée, une acceptation, un refus ou l’expiration du devis arrête les prochains envois.
+
+## Prochaine action et suivi client
+
+Le tableau de bord distingue les actions à traiter aujourd'hui des relances déjà programmées. Prioriser une question sans réponse, un échec de livraison et un envoi incertain. Une information indisponible reste signalée ; ne pas afficher un dossier comme terminé en l'absence de données. Le guide de démarrage utilise uniquement les informations enregistrées pour l'entreprise courante.
+
+L'import associe chaque champ à l'extrait réel du document qui permet de le vérifier. Un montant ou une coordonnée ambiguë demande une correction. Ne pas inventer un score de confiance ni choisir un client existant à la place de l'utilisateur. Conserver le document visible et la saisie manuelle disponible.
+
+Le portail client présente le devis, son PDF et une conversation courte. Confirmer l'acceptation ou le refus avant de l'enregistrer ; ne pas décrire cette décision comme une signature électronique. Une question suspend les relances et donne à l'entreprise une prochaine action claire. Le lien peut expirer ou être révoqué : expliquer cet état sans révéler les données du dossier.
+
+Le suivi email affiche les états réellement connus : accepté par le service, retardé, livré ou erreur. Une livraison ne prouve pas une lecture. La réception automatique des réponses et la confirmation des livraisons doivent montrer leur état de configuration ; aucune promesse d'automatisation tant que le service correspondant n'est pas activé.

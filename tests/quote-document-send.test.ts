@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { createHmac } from "node:crypto"
 import test from "node:test"
+import { portalTextSuffix } from "../supabase/functions/_shared/quote-email-links.ts"
 import {
   classifyDocumentProviderError,
   createQuoteDocumentHandler,
@@ -52,6 +53,7 @@ const input = {
   retry: false,
 }
 const cleanup: CleanupClaim = { id: cleanupId, storage_path: path, lease_token: lease }
+const portalUrl = `https://www.cadova.fr/devis/suivi#token=${"a".repeat(43)}`
 const initialJob: DocumentClaim = {
   id: jobId,
   quote_id: quoteId,
@@ -90,6 +92,9 @@ class Backend implements DocumentSendBackend {
   cleanupClaims: CleanupClaim[] = [cleanup]
   removed: string[] = []
   nonces = new Set<string>()
+  linkUrl = portalUrl
+  replyRoute = `q-${"a".repeat(48)}@replies.cadova.fr`
+  replyDomains: (string | undefined)[] = []
   visit(name: string) {
     this.calls.push(name)
     if (this.failure === name) throw new Error("private-database-error@example.test")
@@ -131,6 +136,16 @@ class Backend implements DocumentSendBackend {
     this.visit("download")
     assert.equal(value, path)
     return this.file
+  }
+  async prepareLinks(claim: DocumentClaim, publicUrl: string, replyDomain?: string) {
+    this.visit("links")
+    assert.equal(claim.lease_token, lease)
+    assert.equal(publicUrl, "https://www.cadova.fr")
+    this.replyDomains.push(replyDomain)
+    return {
+      portalUrl: this.linkUrl,
+      ...(replyDomain ? { replyTo: this.replyRoute } : {}),
+    }
   }
   async persist(claim: DocumentClaim, payload: DocumentProviderPayload, hash: string) {
     this.visit("persist")
@@ -399,6 +414,7 @@ test("PDF privé : snapshot durable avant fournisseur puis acceptation avant fin
     "request",
     "claim",
     "download",
+    "links",
     "persist",
     "accept",
     "complete",
@@ -410,6 +426,8 @@ test("PDF privé : snapshot durable avant fournisseur puis acceptation avant fin
   assert.equal(request.headers.get("Idempotency-Key"), `cadova-quote-initial-${jobId}`)
   assert.equal(payload.to, input.recipientEmail)
   assert.equal(payload.reply_to, "artisan@example.test")
+  assert.equal(payload.text, input.message + portalTextSuffix(portalUrl))
+  assert.ok(payload.html.includes(`href="${portalUrl}"`))
   assert.equal(payload.attachments[0].content_type, "application/pdf")
   assert.equal(payload.attachments[0].filename, "Devis été.pdf")
   assert.deepEqual(
@@ -970,4 +988,77 @@ test("un échec de suppression est remis en attente et ne bloque pas le reste du
   assert.deepEqual(data, { removed: 0, pending: 1 })
   assert.ok(backend.calls.includes("cleanup_fail"))
   assert.ok(!backend.calls.includes("cleanup_complete"))
+})
+
+test("lien portail indisponible ou non fiable : aucun email ni snapshot fournisseur", async () => {
+  for (const variant of ["unavailable", "external", "query_token"]) {
+    const backend = new Backend()
+    if (variant === "unavailable") backend.failure = "links"
+    if (variant === "external")
+      backend.linkUrl = portalUrl.replace("www.cadova.fr", "evil.test")
+    if (variant === "query_token")
+      backend.linkUrl = portalUrl.replace("#token=", "?token=")
+    const sender = provider()
+    const { data } = await invoke(backend, config, sender.fetcher)
+    assert.equal(sender.requests.length, 0)
+    assert.equal(data.errorCode, "client_link_unavailable")
+    assert.equal(backend.payload, null)
+  }
+})
+
+test("réception email activée explicitement, contact entreprise sinon et aucun routage arbitraire", async () => {
+  for (const options of [
+    { receiveDomain: "replies.cadova.fr" },
+    { replyEmailEnabled: false, receiveDomain: "replies.cadova.fr" },
+    { replyEmailEnabled: true, receiveDomain: "evil.test" },
+    { replyEmailEnabled: true, receiveDomain: "replies.cadova.fr" },
+  ]) {
+    const backend = new Backend()
+    const sender = provider()
+    await invoke(backend, { ...config, ...options }, sender.fetcher)
+    const enabled =
+      options.replyEmailEnabled === true &&
+      options.receiveDomain === "replies.cadova.fr"
+    assert.equal(
+      JSON.parse(sender.requests[0].body).reply_to,
+      enabled ? backend.replyRoute : initialJob.reply_to,
+    )
+    assert.deepEqual(backend.replyDomains, [enabled ? "replies.cadova.fr" : undefined])
+  }
+})
+
+test("retry initial garde lien et Reply-To gelés malgré changements de configuration et service indisponible", async () => {
+  const backend = new Backend()
+  const first = provider(500, { name: "server_error" })
+  await invoke(
+    backend,
+    { ...config, replyEmailEnabled: true, receiveDomain: "replies.cadova.fr" },
+    first.fetcher,
+  )
+  backend.failure = "links"
+  backend.linkUrl = portalUrl.replace("a", "z")
+  const retry = provider()
+  await invoke(
+    backend,
+    {
+      ...config,
+      resendFrom: "Cadova <changed@example.test>",
+      replyEmailEnabled: false,
+    },
+    retry.fetcher,
+    { ...input, retry: true },
+    { now: instant + 60000 },
+  )
+  assert.equal(first.requests[0].body, retry.requests[0].body)
+  assert.equal(backend.calls.filter((call) => call === "links").length, 1)
+})
+
+test("ancien envoi incertain sans snapshot est bloqué avant lien ou email", async () => {
+  const backend = new Backend()
+  backend.firstAttempt = new Date(instant).toISOString()
+  const sender = provider()
+  const { data } = await invoke(backend, config, sender.fetcher)
+  assert.equal(data.errorCode, "send_snapshot_missing")
+  assert.equal(sender.requests.length, 0)
+  assert.ok(!backend.calls.includes("links"))
 })

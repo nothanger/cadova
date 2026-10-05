@@ -4,6 +4,15 @@ import {
   isEmailAddress,
   isEmailSender,
 } from "./validation.ts"
+import {
+  portalHtml,
+  portalTextSuffix,
+  quotePublicUrl,
+  receiveDomain,
+  validFrozenReply,
+  validQuotePortalUrl,
+  type QuoteEmailLinks,
+} from "../_shared/quote-email-links.ts"
 
 export interface ClaimedFollowupJob {
   id: string
@@ -24,6 +33,7 @@ export interface PreparedFollowupSend {
   company_name?: string
   first_attempt_at?: string | null
   provider_message_id?: string | null
+  provider_payload?: ProviderEmailPayload | null
 }
 
 export type FollowupServiceStatus = "ready" | "disabled" | "email_configuration_missing"
@@ -46,6 +56,11 @@ export interface QuoteFollowupBackend {
   ): Promise<void>
   claim(batchSize: number, leaseSeconds: number): Promise<ClaimedFollowupJob[]>
   prepare(job: ClaimedFollowupJob, sender: string): Promise<PreparedFollowupSend>
+  prepareLinks(
+    job: ClaimedFollowupJob,
+    publicUrl: string,
+    replyDomain?: string,
+  ): Promise<QuoteEmailLinks>
   persistPayload(
     job: ClaimedFollowupJob,
     payload: ProviderEmailPayload,
@@ -60,6 +75,9 @@ export interface FollowupWorkerConfig {
   emailEnabled: boolean
   resendApiKey?: string
   resendFrom?: string
+  publicUrl?: string
+  replyEmailEnabled?: boolean
+  receiveDomain?: string
 }
 
 interface WorkerDependencies {
@@ -79,7 +97,8 @@ export function followupServiceState(config: FollowupWorkerConfig) {
     config.resendApiKey &&
     config.resendApiKey.length >= 8 &&
     !/\s/.test(config.resendApiKey) &&
-    isEmailSender(config.resendFrom),
+    isEmailSender(config.resendFrom) &&
+    quotePublicUrl(config.publicUrl),
   )
   return {
     enabled: config.emailEnabled && configured,
@@ -92,11 +111,15 @@ export function followupServiceState(config: FollowupWorkerConfig) {
   }
 }
 
-export function buildFollowupEmail(companyName: string, body: string) {
+export function buildFollowupEmail(
+  companyName: string,
+  body: string,
+  portalUrl?: string,
+) {
   const htmlText = body.replace(/\r\n?/g, "\n")
   return {
-    text: body,
-    html: `<!doctype html><html lang="fr"><head><meta charset="utf-8"></head><body style="margin:0;padding:24px;font-family:Arial,sans-serif;color:#0b1020"><main style="max-width:600px;margin:auto"><p style="margin:0 0 24px;font-size:14px;color:#596176">${escapeHtml(companyName)}</p><div style="font-size:16px;line-height:1.6;overflow-wrap:anywhere">${escapeHtml(htmlText).replace(/\n/g, "<br>")}</div></main></body></html>`,
+    text: body + (portalUrl ? portalTextSuffix(portalUrl) : ""),
+    html: `<!doctype html><html lang="fr"><head><meta charset="utf-8"></head><body style="margin:0;padding:24px;font-family:Arial,sans-serif;color:#0b1020"><main style="max-width:600px;margin:auto"><p style="margin:0 0 24px;font-size:14px;color:#596176">${escapeHtml(companyName)}</p><div style="font-size:16px;line-height:1.6;overflow-wrap:anywhere">${escapeHtml(htmlText).replace(/\n/g, "<br>")}</div>${portalUrl ? portalHtml(portalUrl, escapeHtml) : ""}</main></body></html>`,
   }
 }
 
@@ -140,7 +163,7 @@ function validProviderPayload(value: ProviderEmailPayload) {
     !/[\x00-\x1f\x7f]/.test(value.subject) &&
     typeof value.text === "string" &&
     value.text.length > 0 &&
-    value.text.length <= 12000 &&
+    value.text.length <= 13000 &&
     typeof value.html === "string" &&
     value.html.length > 0 &&
     value.html.length <= 30000 &&
@@ -321,24 +344,61 @@ export function createQuoteFollowupHandler(
         await fail(job, "idempotency_window_expired", true)
         continue
       }
-      const content = buildFollowupEmail(prepared.company_name!, prepared.body!)
-      const candidate: ProviderEmailPayload = {
-        from: prepared.sender!,
-        to: prepared.recipient_email!,
-        reply_to: prepared.reply_to!,
-        subject: prepared.subject!,
-        ...content,
-      }
-      if (!validProviderPayload(candidate)) {
-        await fail(job, "invalid_job_payload", false)
-        continue
-      }
       let persisted: { payload: ProviderEmailPayload; first_attempt_at: string }
-      try {
-        persisted = await backend.persistPayload(job, candidate)
-      } catch {
-        await fail(job, "prepare_failed", false)
-        continue
+      if (prepared.provider_payload) {
+        persisted = {
+          payload: prepared.provider_payload,
+          first_attempt_at: prepared.first_attempt_at!,
+        }
+      } else {
+        if (prepared.first_attempt_at) {
+          await fail(job, "send_snapshot_missing", true)
+          continue
+        }
+        let links: QuoteEmailLinks
+        try {
+          links = await backend.prepareLinks(
+            job,
+            quotePublicUrl(config.publicUrl)!,
+            config.replyEmailEnabled
+              ? (receiveDomain(config.receiveDomain) ?? undefined)
+              : undefined,
+          )
+        } catch {
+          await fail(job, "client_link_unavailable", false)
+          continue
+        }
+        if (
+          !validQuotePortalUrl(links?.portalUrl) ||
+          (links.replyTo !== undefined &&
+            (!isEmailAddress(links.replyTo) ||
+              !validFrozenReply(links.replyTo, prepared.reply_to!)))
+        ) {
+          await fail(job, "client_link_unavailable", false)
+          continue
+        }
+        const content = buildFollowupEmail(
+          prepared.company_name!,
+          prepared.body!,
+          links.portalUrl,
+        )
+        const candidate: ProviderEmailPayload = {
+          from: prepared.sender!,
+          to: prepared.recipient_email!,
+          reply_to: links.replyTo ?? prepared.reply_to!,
+          subject: prepared.subject!,
+          ...content,
+        }
+        if (!validProviderPayload(candidate)) {
+          await fail(job, "invalid_job_payload", false)
+          continue
+        }
+        try {
+          persisted = await backend.persistPayload(job, candidate)
+        } catch {
+          await fail(job, "prepare_failed", false)
+          continue
+        }
       }
       if (!validProviderPayload(persisted?.payload)) {
         await fail(job, "invalid_job_payload", false)

@@ -288,6 +288,100 @@ try {
   check(limits[1].name, "AbortError", "Cancelled reader does not continue importing")
   await readerPage.context().close()
 
+  // A real PDF with conflicting totals and recipients never chooses values for
+  // the user. Corrections are compared to the original and saved as a draft.
+  const uncertain = await pageFor()
+  await visitNew(uncertain)
+  const { PDFDocument } = await import("pdf-lib")
+  const conflictingPdf = await PDFDocument.create()
+  const conflictingPage = conflictingPdf.addPage([595, 842])
+  ;[
+    "Devis DEV-REVIEW-101",
+    "Client : Claire Martin",
+    "claire@example.test",
+    "compta@example.test",
+    "Objet : travaux",
+    "Total TTC : 1200,00 EUR",
+    "Total TTC : 1400,00 EUR",
+    "Validite : 30 jours",
+  ].forEach((line, index) =>
+    conflictingPage.drawText(line, { x: 40, y: 780 - index * 22, size: 12 }),
+  )
+  await uncertain
+    .getByLabel("Choisir le document du devis", { exact: true })
+    .setInputFiles({
+      name: "ambiguous.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from(await conflictingPdf.save()),
+    })
+  await uncertain.waitForFunction(
+    () => document.querySelector("#reference")?.value === "DEV-REVIEW-101",
+  )
+  check(
+    await uncertain.locator("#amount").inputValue(),
+    "",
+    "Contradictory totals stay empty",
+  )
+  check(
+    await uncertain.locator("#client_email").inputValue(),
+    "",
+    "Conflicting recipient addresses stay empty",
+  )
+  check(
+    await uncertain.locator("#expires_at").inputValue(),
+    "",
+    "A validity duration is never guessed into a date",
+  )
+  check(
+    await uncertain.getByText("À vérifier", { exact: true }).count(),
+    3,
+    "Only uncertain required information and explicit validity are flagged",
+  )
+  await uncertain
+    .getByRole("button", { name: "Comparer montant ttc au document", exact: true })
+    .click()
+  const sourcePassages = await uncertain
+    .locator("#quote-document-comparison")
+    .textContent()
+  check(
+    sourcePassages.includes("1200,00") && sourcePassages.includes("1400,00"),
+    true,
+    "Both original totals are available for comparison",
+  )
+  await uncertain.getByRole("button", { name: "Retour au champ", exact: true }).click()
+  await uncertain.locator("#amount").fill("1400,00")
+  await uncertain.locator("#client_email").fill("claire@example.test")
+  await uncertain.locator("#expires_at").fill("2026-11-04")
+  check(
+    await uncertain.getByText("À vérifier", { exact: true }).count(),
+    0,
+    "Manual corrections resolve the review flags",
+  )
+  check(
+    await uncertain.getByText("Vérifié", { exact: true }).count(),
+    3,
+    "Corrected information is marked verified",
+  )
+  await accessible(uncertain)
+  await uncertain
+    .getByRole("button", { name: "Enregistrer le brouillon", exact: true })
+    .click()
+  await uncertain
+    .getByRole("heading", { name: "DEV-REVIEW-101", exact: true })
+    .waitFor()
+  const correctedState = await ownState(uncertain)
+  check(
+    correctedState.quotes.at(-1).amount_cents,
+    140000,
+    "The reviewed amount is stored exactly",
+  )
+  check(
+    correctedState.calls.filter((call) => call.type === "edge").length,
+    0,
+    "Reviewing and saving never sends an email",
+  )
+  await uncertain.context().close()
+
   // A user with no clients can import, confirm and create one client + draft.
   for (const width of [320, 390, 1280]) {
     const page = await pageFor({}, width)
@@ -303,6 +397,37 @@ try {
       await page.getByLabel("Email du client", { exact: true }).inputValue(),
       "client@example.test",
       "Imported recipient",
+    )
+    await page
+      .getByRole("button", { name: "Comparer montant ttc au document", exact: true })
+      .click()
+    check(
+      (await page.locator("#quote-document-comparison").textContent()).includes(
+        "1 250,50",
+      ),
+      true,
+      "Review exposes the real TTC source passage",
+    )
+    check(
+      (await page.locator("details").getAttribute("open")) !== null,
+      true,
+      "Comparison opens the source document",
+    )
+    await page.getByRole("button", { name: "Retour au champ", exact: true }).click()
+    check(
+      await page
+        .locator("#amount")
+        .evaluate((input) => input === document.activeElement),
+      true,
+      "Source comparison returns keyboard focus to the amount",
+    )
+    await page
+      .getByRole("button", { name: "Confirmer montant ttc", exact: true })
+      .click()
+    check(
+      await page.getByText("Vérifié", { exact: true }).count(),
+      1,
+      "An imported amount can be explicitly reviewed",
     )
     check(
       await page.evaluate(
@@ -902,9 +1027,22 @@ try {
   await visitNew(matched)
   await importPdf(matched)
   check(
+    await matched.locator("#client_id").count(),
+    0,
+    "Exact email requires an explicit choice before selecting an existing client",
+  )
+  check(
+    await matched.getByText("Même adresse email", { exact: true }).count(),
+    1,
+    "Suggestion explains the matching coordinate",
+  )
+  await matched
+    .getByRole("button", { name: "Utiliser Client de test", exact: true })
+    .click()
+  check(
     await matched.locator("#client_id").inputValue(),
     "client-test",
-    "Exact email suggests an existing company client",
+    "Confirmed match selects the company client",
   )
   await matched
     .getByRole("button", { name: "Enregistrer le brouillon", exact: true })

@@ -19,6 +19,9 @@ import { listClients } from "@/features/clients/api"
 import { getQuote, listQuotes, updateQuote, type QuoteInput } from "./api"
 import { documentError, saveImportedQuote } from "./documentApi"
 import { QuoteImportPanel, type PreparedQuoteDocument } from "./QuoteImportPanel"
+import { findClientMatches } from "./import/clientMatches"
+import { ImportFieldReview } from "./import/ImportFieldReview"
+import type { QuoteImportField, QuoteImportReview } from "./import/types"
 import { humanizeError } from "@/lib/errors"
 import { centsToInput, parseAmountToCents } from "@/lib/money"
 import { todayISO } from "@/lib/dates"
@@ -40,20 +43,13 @@ interface NewClient {
 }
 
 const statuses: QuoteStatus[] = ["draft", "sent", "accepted", "refused"]
-const normalizedEmail = (value: string) => value.trim().toLowerCase()
-const normalizedPhone = (value: string) =>
-  value.replace(/[\s().-]/g, "").replace(/^00/, "+")
-
-function matchingClients(clients: Client[], email: string, phone: string): Client[] {
-  const emailKey = normalizedEmail(email)
-  const phoneKey = normalizedPhone(phone)
-  return clients.filter(
-    (client) =>
-      (emailKey && client.email && normalizedEmail(client.email) === emailKey) ||
-      (phoneKey.length >= 8 &&
-        client.phone &&
-        normalizedPhone(client.phone) === phoneKey),
-  )
+const reviewFields: Record<QuoteImportField, { id: string; label: string }> = {
+  reference: { id: "reference", label: "Référence" },
+  amount: { id: "amount", label: "Montant TTC" },
+  expiresAt: { id: "expires_at", label: "Date de validité" },
+  clientName: { id: "client_name", label: "Nom du client" },
+  clientEmail: { id: "client_email", label: "Email du client" },
+  clientPhone: { id: "client_phone", label: "Téléphone du client" },
 }
 
 // A scope change unmounts the reader and discards unsaved fields immediately.
@@ -113,6 +109,11 @@ function ScopedQuoteForm({
     notes: "",
   })
   const [importedDocument, setImportedDocument] = useState<File | null>(null)
+  const [importReview, setImportReview] = useState<QuoteImportReview | null>(null)
+  const [confirmedFields, setConfirmedFields] = useState<Set<QuoteImportField>>(
+    new Set(),
+  )
+  const [comparedField, setComparedField] = useState<QuoteImportField | null>(null)
   const [importBusy, setImportBusy] = useState(false)
   const [clientNotice, setClientNotice] = useState("")
   const [loading, setLoading] = useState(true)
@@ -188,16 +189,28 @@ function ScopedQuoteForm({
       quote.reference.trim().toLowerCase() === form.reference.trim().toLowerCase(),
   )
   const possibleClients =
-    clientMode === "new"
-      ? matchingClients(clients, newClient.email, newClient.phone)
-      : []
+    clientMode === "new" ? findClientMatches(clients, companyId, newClient) : []
   const selectedClient = clients.find((client) => client.id === form.client_id)
   const backTo = mode === "edit" && quoteId ? `/app/quotes/${quoteId}` : "/app/quotes"
+  const comparison = useMemo(
+    () =>
+      comparedField && importReview
+        ? {
+            label: reviewFields[comparedField].label,
+            review: importReview[comparedField],
+          }
+        : undefined,
+    [comparedField, importReview],
+  )
 
   function change<K extends keyof FormState>(key: K, value: FormState[K]) {
     touched.current.add(key)
     setForm((current) => ({ ...current, [key]: value }))
     setFieldErrors((current) => ({ ...current, [key]: "" }))
+    const reviewKey = (Object.keys(reviewFields) as QuoteImportField[]).find(
+      (field) => reviewFields[field].id === key,
+    )
+    if (reviewKey) markEdited(reviewKey, String(value))
   }
 
   function changeNewClient(key: keyof NewClient, value: string) {
@@ -206,10 +219,58 @@ function ScopedQuoteForm({
     setNewClient((current) => ({ ...current, [key]: value }))
     setFieldErrors((current) => ({ ...current, [`client_${key}`]: "" }))
     setClientNotice("")
+    const reviewKey = `client${key[0].toUpperCase()}${key.slice(1)}` as QuoteImportField
+    markEdited(reviewKey, value)
+  }
+
+  function markEdited(field: QuoteImportField, value: string) {
+    setConfirmedFields((current) => {
+      const next = new Set(current)
+      if (value.trim()) next.add(field)
+      else next.delete(field)
+      return next
+    })
+  }
+
+  function confirmField(field: QuoteImportField) {
+    setConfirmedFields((current) => new Set(current).add(field))
+  }
+
+  function fieldReview(field: QuoteImportField, value: string) {
+    return (
+      <ImportFieldReview
+        field={field}
+        label={reviewFields[field].label}
+        review={importReview?.[field]}
+        value={value}
+        confirmed={confirmedFields.has(field) && Boolean(value.trim())}
+        onConfirm={() => confirmField(field)}
+        onCompare={() => {
+          setComparedField(field)
+          if (!window.matchMedia("(min-width: 1280px)").matches)
+            requestAnimationFrame(() =>
+              window.document
+                .getElementById("quote-document-comparison")
+                ?.scrollIntoView({ block: "start" }),
+            )
+        }}
+      />
+    )
   }
 
   function onPrepared(document: PreparedQuoteDocument | null) {
     setImportedDocument(document?.pdf ?? null)
+    setImportReview(document?.review ?? null)
+    setConfirmedFields(
+      new Set(
+        document
+          ? (Object.keys(reviewFields) as QuoteImportField[]).filter((field) =>
+              touched.current.has(reviewFields[field].id),
+            )
+          : [],
+      ),
+    )
+    setComparedField(null)
     if (!document) {
       const previous = inferred.current
       inferred.current = {}
@@ -257,19 +318,12 @@ function ScopedQuoteForm({
           : current.expires_at,
     }))
     if (touched.current.has("client_id") || form.client_id) return
-    const matches = matchingClients(
-      clients,
-      fields.clientEmail ?? "",
-      fields.clientPhone ?? "",
-    )
-    if (matches.length === 1) {
-      inferred.current.client_id = matches[0].id
-      setClientMode("existing")
-      setForm((current) => ({ ...current, client_id: matches[0].id }))
-      setClientNotice(
-        "Client retrouvé par ses coordonnées. Vérifiez qu’il s’agit du bon destinataire.",
-      )
-    } else if (fields.clientName || fields.clientEmail || fields.clientPhone) {
+    const matches = findClientMatches(clients, companyId, {
+      name: fields.clientName ?? "",
+      email: fields.clientEmail ?? "",
+      phone: fields.clientPhone ?? "",
+    })
+    if (fields.clientName || fields.clientEmail || fields.clientPhone) {
       for (const [key, value, current] of [
         ["client_name", fields.clientName, newClient.name],
         ["client_email", fields.clientEmail, newClient.email],
@@ -294,8 +348,8 @@ function ScopedQuoteForm({
             : current.phone,
       }))
       setClientNotice(
-        matches.length > 1
-          ? "Ces coordonnées correspondent à plusieurs clients. Choisissez le bon dossier ci-dessous."
+        matches.length > 0
+          ? "Des clients existants correspondent aux informations lues. Choisissez le bon dossier ci-dessous."
           : "Vérifiez les coordonnées du client avant de créer sa fiche.",
       )
     }
@@ -313,7 +367,7 @@ function ScopedQuoteForm({
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newClient.email.trim())
       )
         errs.client_email = "Vérifiez l’adresse email du client."
-      if (possibleClients.length)
+      if (possibleClients.some((match) => match.contactMatch))
         errs.client_email =
           "Ces coordonnées sont déjà utilisées. Sélectionnez un client existant ci-dessus."
     }
@@ -421,15 +475,26 @@ function ScopedQuoteForm({
           label: mode === "edit" ? "Retour au devis" : "Retour aux devis",
         }}
       />
-      <div className="flex max-w-3xl flex-col gap-5">
+      <div
+        className={
+          importedDocument
+            ? "grid max-w-6xl min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]"
+            : "flex max-w-3xl flex-col gap-5"
+        }
+      >
         {mode === "new" && (
           <QuoteImportPanel
             disabled={submitting}
             onPrepared={onPrepared}
             onBusyChange={setImportBusy}
+            comparison={comparison}
+            onReturnToField={() => {
+              if (comparedField)
+                window.document.getElementById(reviewFields[comparedField].id)?.focus()
+            }}
           />
         )}
-        <Card className="min-w-0 p-5 sm:p-8">
+        <Card className="min-w-0 p-5 sm:p-8 xl:order-1">
           <form onSubmit={onSubmit} noValidate>
             <fieldset
               disabled={submitting}
@@ -536,91 +601,116 @@ function ScopedQuoteForm({
                     {possibleClients.length > 0 && (
                       <div className="space-y-2 rounded-lg bg-warning-soft p-3">
                         <p className="text-sm text-warning">
-                          Ces coordonnées existent déjà dans votre entreprise.
+                          Clients à vérifier avant de créer une nouvelle fiche.
                         </p>
-                        {possibleClients.map((client) => (
-                          <Button
+                        {possibleClients.map(({ client, reasons }) => (
+                          <div
                             key={client.id}
-                            type="button"
-                            variant="secondary"
-                            className="max-w-full break-words text-left"
-                            onClick={() => {
-                              change("client_id", client.id)
-                              setClientMode("existing")
-                              setFieldErrors({})
-                              setClientNotice("Client existant sélectionné.")
-                            }}
+                            className="rounded-lg border border-warning/20 bg-surface p-3"
                           >
-                            Utiliser {client.name}
-                          </Button>
+                            <p className="break-words text-sm font-medium text-ink">
+                              {client.name}
+                            </p>
+                            <p className="mt-1 break-words text-xs text-muted">
+                              {[client.email, client.phone].filter(Boolean).join(" · ")}
+                            </p>
+                            <p className="mt-1 text-xs text-muted">
+                              {reasons.join(" · ")}
+                            </p>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              className="mt-2 max-w-full whitespace-normal break-words text-left"
+                              onClick={() => {
+                                change("client_id", client.id)
+                                setClientMode("existing")
+                                setFieldErrors({})
+                                setClientNotice("Client existant sélectionné.")
+                              }}
+                            >
+                              Utiliser {client.name}
+                            </Button>
+                          </div>
                         ))}
                       </div>
                     )}
-                    <Field
-                      label="Nom / raison sociale"
-                      htmlFor="client_name"
-                      required
-                      error={fieldErrors.client_name}
-                    >
-                      <Input
-                        id="client_name"
-                        value={newClient.name}
+                    <div>
+                      <Field
+                        label="Nom / raison sociale"
+                        htmlFor="client_name"
                         required
-                        maxLength={200}
-                        autoComplete="off"
-                        onChange={(event) =>
-                          changeNewClient("name", event.target.value)
-                        }
-                      />
-                    </Field>
-                    <Field
-                      label="Email du client"
-                      htmlFor="client_email"
-                      error={fieldErrors.client_email}
-                      hint="Vous pourrez compléter cette adresse avant d’envoyer le devis."
-                    >
-                      <Input
-                        id="client_email"
-                        type="email"
-                        value={newClient.email}
-                        maxLength={254}
-                        autoComplete="off"
-                        onChange={(event) =>
-                          changeNewClient("email", event.target.value)
-                        }
-                      />
-                    </Field>
-                    <Field label="Téléphone du client" htmlFor="client_phone">
-                      <Input
-                        id="client_phone"
-                        type="tel"
-                        value={newClient.phone}
-                        maxLength={40}
-                        autoComplete="off"
-                        onChange={(event) =>
-                          changeNewClient("phone", event.target.value)
-                        }
-                      />
-                    </Field>
+                        error={fieldErrors.client_name}
+                      >
+                        <Input
+                          id="client_name"
+                          value={newClient.name}
+                          required
+                          maxLength={200}
+                          autoComplete="off"
+                          onChange={(event) =>
+                            changeNewClient("name", event.target.value)
+                          }
+                        />
+                      </Field>
+                      {fieldReview("clientName", newClient.name)}
+                    </div>
+                    <div>
+                      <Field
+                        label="Email du client"
+                        htmlFor="client_email"
+                        error={fieldErrors.client_email}
+                        hint="Vous pourrez compléter cette adresse avant d’envoyer le devis."
+                      >
+                        <Input
+                          id="client_email"
+                          type="email"
+                          value={newClient.email}
+                          maxLength={254}
+                          autoComplete="off"
+                          onChange={(event) =>
+                            changeNewClient("email", event.target.value)
+                          }
+                        />
+                      </Field>
+                      {fieldReview("clientEmail", newClient.email)}
+                    </div>
+                    <div>
+                      <Field label="Téléphone du client" htmlFor="client_phone">
+                        <Input
+                          id="client_phone"
+                          type="tel"
+                          value={newClient.phone}
+                          maxLength={40}
+                          autoComplete="off"
+                          onChange={(event) =>
+                            changeNewClient("phone", event.target.value)
+                          }
+                        />
+                      </Field>
+                      {fieldReview("clientPhone", newClient.phone)}
+                    </div>
                   </div>
                 )}
               </div>
 
-              <Field
-                label="Référence"
-                htmlFor="reference"
-                required
-                error={fieldErrors.reference}
-              >
-                <Input
-                  id="reference"
-                  placeholder="DEV-001"
-                  value={form.reference}
+              <div>
+                <Field
+                  label="Référence"
+                  htmlFor="reference"
                   required
-                  maxLength={120}
-                  onChange={(event) => change("reference", event.target.value)}
-                />
-              </Field>
+                  error={fieldErrors.reference}
+                >
+                  <Input
+                    id="reference"
+                    placeholder="DEV-001"
+                    value={form.reference}
+                    required
+                    maxLength={120}
+                    onChange={(event) => change("reference", event.target.value)}
+                  />
+                </Field>
+                {fieldReview("reference", form.reference)}
+              </div>
               {duplicate && (
                 <p
                   role="status"
@@ -637,35 +727,41 @@ function ScopedQuoteForm({
               )}
 
               <div className="grid min-w-0 gap-6 sm:grid-cols-2">
-                <Field
-                  label="Montant TTC (€)"
-                  htmlFor="amount"
-                  required
-                  error={fieldErrors.amount}
-                  hint="En euros, tel qu’il figure sur le devis."
-                >
-                  <Input
-                    id="amount"
-                    inputMode="decimal"
-                    placeholder="1250,50"
-                    value={form.amount}
+                <div className="min-w-0">
+                  <Field
+                    label="Montant TTC (€)"
+                    htmlFor="amount"
                     required
-                    onChange={(event) => change("amount", event.target.value)}
-                  />
-                </Field>
-                <Field
-                  label="Valable jusqu’au"
-                  htmlFor="expires_at"
-                  error={fieldErrors.expires_at}
-                  hint="À compléter si votre devis indique une date limite."
-                >
-                  <Input
-                    id="expires_at"
-                    type="date"
-                    value={form.expires_at}
-                    onChange={(event) => change("expires_at", event.target.value)}
-                  />
-                </Field>
+                    error={fieldErrors.amount}
+                    hint="En euros, tel qu’il figure sur le devis."
+                  >
+                    <Input
+                      id="amount"
+                      inputMode="decimal"
+                      placeholder="1250,50"
+                      value={form.amount}
+                      required
+                      onChange={(event) => change("amount", event.target.value)}
+                    />
+                  </Field>
+                  {fieldReview("amount", form.amount)}
+                </div>
+                <div className="min-w-0">
+                  <Field
+                    label="Valable jusqu’au"
+                    htmlFor="expires_at"
+                    error={fieldErrors.expires_at}
+                    hint="À compléter si votre devis indique une date limite."
+                  >
+                    <Input
+                      id="expires_at"
+                      type="date"
+                      value={form.expires_at}
+                      onChange={(event) => change("expires_at", event.target.value)}
+                    />
+                  </Field>
+                  {fieldReview("expiresAt", form.expires_at)}
+                </div>
               </div>
 
               {mode === "edit" ? (

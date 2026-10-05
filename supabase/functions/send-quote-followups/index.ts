@@ -6,6 +6,7 @@ import {
   type ProviderEmailPayload,
   type QuoteFollowupBackend,
 } from "./handler.ts"
+import { prepareQuoteEmailLinks } from "../_shared/quote-email-links.ts"
 
 const url = Deno.env.get("SUPABASE_URL")
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
@@ -45,6 +46,8 @@ const backend: QuoteFollowupBackend = {
       ...jobArguments(job),
       p_sender: sender,
     }),
+  prepareLinks: (job, publicUrl, replyDomain) =>
+    prepareQuoteEmailLinks(rpc, serviceKey, "followup", job, publicUrl, replyDomain),
   persistPayload: (job, payload) =>
     rpc<{ payload: ProviderEmailPayload; first_attempt_at: string }>(
       "persist_quote_followup_payload",
@@ -76,5 +79,8 @@ Deno.serve(
     emailEnabled: Deno.env.get("QUOTE_FOLLOWUP_EMAIL_ENABLED") === "true",
     resendApiKey: Deno.env.get("RESEND_API_KEY"),
     resendFrom: Deno.env.get("RESEND_FROM"),
+    publicUrl: Deno.env.get("CADOVA_PUBLIC_URL"),
+    replyEmailEnabled: Deno.env.get("QUOTE_REPLY_EMAIL_ENABLED") === "true",
+    receiveDomain: Deno.env.get("RESEND_RECEIVE_DOMAIN"),
   }),
 )

@@ -238,3 +238,60 @@ test("un bloc commercial séparé ne complète pas les coordonnées client", () 
   assert.equal(result.fields.clientName, "Claire Martin")
   assert.equal(result.fields.clientEmail, undefined)
 })
+
+test("les informations contradictoires exposent leurs vrais passages pour la vérification", () => {
+  const result = extractQuoteFields(
+    "Devis DEV-101\nRéférence du devis : DEV-102\nTotal TTC : 1200,00 €\nTotal TTC : 1400,00 €\nClient : Claire Martin\nclaire@example.test\ncompta@example.test\nObjet : travaux",
+  )
+  assert.equal(result.review.reference.state, "ambiguous")
+  assert.equal(result.review.amount.state, "ambiguous")
+  assert.equal(result.review.clientEmail.state, "ambiguous")
+  assert.deepEqual(result.review.amount.sources, [
+    "Total TTC : 1200,00 €",
+    "Total TTC : 1400,00 €",
+  ])
+  assert.ok(result.review.clientEmail.sources[0].includes("compta@example.test"))
+  assert.equal(result.fields.amount, undefined)
+  assert.equal(result.fields.clientEmail, undefined)
+})
+
+test("une valeur TTC illisible conserve le passage à comparer sans inventer un montant", () => {
+  const result = extractQuoteFields("Total TTC : 1 25O,50 €")
+  assert.equal(result.review.amount.state, "missing")
+  assert.deepEqual(result.review.amount.sources, ["Total TTC : 1 25O,50 €"])
+  assert.equal(result.fields.amount, undefined)
+})
+
+test("deux numéros différents exigent un choix mais les formats d’un même numéro ne créent pas de conflit", () => {
+  const conflicting = extractQuoteFields(
+    "Client : Claire Martin\nTéléphone : 06 12 34 56 78\nMobile : 07 12 34 56 78\nObjet : travaux",
+  )
+  assert.equal(conflicting.fields.clientPhone, undefined)
+  assert.equal(conflicting.review.clientPhone.state, "ambiguous")
+  const repeated = extractQuoteFields(
+    "Client : Claire Martin\nTéléphone : 06 12 34 56 78\nMobile : +33 6 12 34 56 78\nObjet : travaux",
+  )
+  assert.equal(repeated.fields.clientPhone, "06 12 34 56 78")
+  assert.equal(repeated.review.clientPhone.state, "identified")
+})
+
+test("la vérification distingue une date facultative absente d’une durée ambiguë", () => {
+  assert.equal(extractQuoteFields("Devis DEV-123").review.expiresAt.state, "missing")
+  const result = extractQuoteFields("Validité : 30 jours")
+  assert.equal(result.review.expiresAt.state, "uncertain")
+  assert.deepEqual(result.review.expiresAt.sources, ["Validité : 30 jours"])
+  assert.equal(result.fields.expiresAt, undefined)
+})
+
+test("une page OCR peu nette signale les champs de cette page seulement", () => {
+  const uncertainPage = "Client : Claire Martin\nclaire@example.test\nObjet : travaux"
+  const result = extractQuoteFields(
+    `Devis DEV-2026-001\nTotal TTC : 1250,50 €\n${uncertainPage}`,
+    { lowConfidenceText: [uncertainPage] },
+  )
+  assert.equal(result.review.clientName.state, "uncertain")
+  assert.equal(result.review.clientEmail.state, "uncertain")
+  assert.equal(result.review.amount.state, "identified")
+  assert.equal(result.review.reference.state, "identified")
+  assert.equal(result.fields.clientName, "Claire Martin")
+})

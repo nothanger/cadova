@@ -17,6 +17,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from edge_bundle import FUNCTION_ROOT, function_sources
 
 
 class DeploymentError(Exception):
@@ -186,7 +187,7 @@ def deploy(mode):
         raise DeploymentError("The document schema is incomplete. Inspect and repair the partial migration before deployment.")
 
     root = Path(__file__).resolve().parents[1]
-    sources = sorted((root / "supabase/functions/send-quote-document").glob("*.ts"))
+    sources = sorted(function_sources("send-quote-document"))
     if not {"index.ts", "handler.ts", "validation.ts"}.issubset(source.name for source in sources):
         raise DeploymentError("The quote document worker sources are incomplete.")
     migration = (root / "supabase/migrations/0011_quote_documents.sql").read_text()
@@ -252,14 +253,14 @@ def deploy(mode):
         {"name": "QUOTE_FOLLOWUP_SCHEDULER_SECRET", "value": scheduler_secret},
     ])
     boundary = "cadova-documents-" + secrets.token_hex(20)
-    metadata = {"name": "send-quote-document", "entrypoint_path": "index.ts", "verify_jwt": False}
+    metadata = {"name": "send-quote-document", "entrypoint_path": "send-quote-document/index.ts", "verify_jwt": False}
     chunks = [
         f'--{boundary}\r\nContent-Disposition: form-data; name="metadata"\r\n\r\n'.encode(),
         json.dumps(metadata).encode(), b"\r\n",
     ]
     for source in sources:
         chunks.extend([
-            f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{source.name}"\r\nContent-Type: application/octet-stream\r\n\r\n'.encode(),
+            f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{source.relative_to(FUNCTION_ROOT).as_posix()}"\r\nContent-Type: application/octet-stream\r\n\r\n'.encode(),
             source.read_bytes(), b"\r\n",
         ])
     chunks.append(f"--{boundary}--\r\n".encode())
