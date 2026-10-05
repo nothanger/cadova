@@ -76,6 +76,23 @@ try {
       viewport: { width, height },
       reducedMotion: reducedMotion === "no-preference" ? "reduce" : reducedMotion,
     })
+    await context.addInitScript(() => {
+      // Count actual GPU submissions without exposing production scene internals.
+      window.sceneDrawCalls = 0
+      for (const Context of [
+        window.WebGLRenderingContext,
+        window.WebGL2RenderingContext,
+      ]) {
+        if (!Context) continue
+        for (const method of ["drawArrays", "drawElements"]) {
+          const draw = Context.prototype[method]
+          Context.prototype[method] = function (...args) {
+            window.sceneDrawCalls++
+            return draw.apply(this, args)
+          }
+        }
+      }
+    })
     if (noWebGL) {
       await context.addInitScript(() => {
         const getContext = window.HTMLCanvasElement.prototype.getContext
@@ -110,16 +127,39 @@ try {
       await page.clock.pauseAt(new Date("2026-10-03T12:00:01Z"))
       await page.emulateMedia({ reducedMotion: "no-preference" })
       await page.getByRole("button", { name: "Mettre l’animation en pause" }).waitFor()
-      await page.clock.runFor(32)
+      await advance(page, 32)
     }
     return { page, canvas }
   }
 
   async function snapshot(canvas, name) {
-    return canvas.screenshot({
+    // Locator screenshots wait for RAF-based stability; our clock is deliberately frozen.
+    const clip = await canvas.boundingBox()
+    assert.ok(clip, "The scene canvas must be laid out")
+    return canvas.page().screenshot({
       ...(name ? { path: `${artifacts}scene-${name}.png` } : {}),
+      clip,
       animations: "allow",
     })
+  }
+
+  async function advance(page, milliseconds) {
+    if (milliseconds < 400) return page.clock.runFor(milliseconds)
+    // SwiftShader runs on the CPU. Drive normal playback at 25 fps and drain
+    // its queue periodically instead of submitting hundreds of frames at once.
+    let pending = 0
+    for (let remaining = milliseconds; remaining > 0;) {
+      const step = Math.min(40, remaining)
+      await page.clock.fastForward(step)
+      remaining -= step
+      pending += step
+      if (pending >= 400) {
+        await page.evaluate(() => {
+          document.querySelector("main canvas")?.getContext("webgl2")?.finish()
+        })
+        pending = 0
+      }
+    }
   }
 
   async function pixels(buffer) {
@@ -259,12 +299,23 @@ try {
 
   async function captureChapters(page, canvas, width, elapsed = 0) {
     for (const [index, time] of [3000, 6800, 10300, 15200].entries()) {
-      await page.clock.fastForward(time - elapsed)
+      await advance(page, time - elapsed)
       elapsed = time
       await assertChapter(page, index)
       await assertArtwork(
         await snapshot(canvas, `story-${width}-${chapters[index].label.toLowerCase()}`),
       )
+      if (index === 0) {
+        const draws = await page.evaluate(() => window.sceneDrawCalls)
+        await advance(page, 300)
+        elapsed += 300
+        assert.equal(
+          await page.evaluate(() => window.sceneDrawCalls),
+          draws,
+          "A reading pause must keep its timing without drawing identical frames",
+        )
+        checks++
+      }
     }
   }
 
@@ -317,14 +368,63 @@ try {
 
   const { page, canvas } = await pageFor(1440, "no-preference")
   const start = await snapshot(canvas, "motion-start")
-  await page.clock.fastForward(700)
+  // fastForward fires a single RAF after a long delay, like a blocked main thread.
+  await page.clock.fastForward(5000)
+  await assertChapter(page, 0)
+  assert.ok(
+    await page.getByRole("button", { name: "Mettre l’animation en pause" }).isVisible(),
+    "A delayed frame must not skip the story or end playback",
+  )
+  await advance(page, 700)
   const moving = await snapshot(canvas, "motion-organizing")
   assert.ok((await difference(start, moving)) > 0.002, "Scene should animate")
-  await page.getByRole("button", { name: "Mettre l’animation en pause" }).click()
-  await page.mouse.move(0, 0)
+  await canvas.evaluate(
+    (node) =>
+      new Promise((resolve) => {
+        const host = node.parentElement
+        const observer = new window.IntersectionObserver(([entry]) => {
+          if (!entry.isIntersecting) {
+            observer.disconnect()
+            resolve()
+          }
+        })
+        observer.observe(host)
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: "instant",
+        })
+      }),
+  )
+  const hiddenDraws = await page.evaluate(() => window.sceneDrawCalls)
+  await advance(page, 8000)
+  assert.equal(
+    await page.evaluate(() => window.sceneDrawCalls),
+    hiddenDraws,
+    "An offscreen scene must not submit GPU draws",
+  )
+  await canvas.evaluate(
+    (node) =>
+      new Promise((resolve) => {
+        const host = node.parentElement
+        const observer = new window.IntersectionObserver(([entry]) => {
+          if (entry.isIntersecting) {
+            observer.disconnect()
+            resolve()
+          }
+        })
+        observer.observe(host)
+        host.scrollIntoView({ block: "center", behavior: "instant" })
+      }),
+  )
+  await advance(page, 32)
+  await assertChapter(page, 0)
+  checks++
+  await page
+    .getByRole("button", { name: "Mettre l’animation en pause" })
+    .dispatchEvent("click")
   await page.getByRole("button", { name: "Reprendre l’animation" }).waitFor()
   const paused = await snapshot(canvas, "paused")
-  await page.clock.fastForward(500)
+  await advance(page, 500)
   assert.equal(
     await difference(paused, await snapshot(canvas)),
     0,
@@ -341,36 +441,116 @@ try {
     "Selecting a chapter while paused must preserve pause",
   )
   const selectedPaused = await snapshot(canvas, "selected-paused")
-  await page.clock.fastForward(500)
+  await advance(page, 500)
   assert.equal(
     await difference(selectedPaused, await snapshot(canvas)),
     0,
     "Keyboard chapter selection must remain paused",
   )
-  await page.getByRole("button", { name: "Reprendre l’animation" }).click()
-  await page.mouse.move(0, 0)
-  await page.clock.runFor(32)
-  await page.clock.fastForward(6500)
+  await page
+    .getByRole("button", { name: "Reprendre l’animation" })
+    .dispatchEvent("click")
+  await advance(page, 32)
+  await advance(page, 6500)
   await assertChapter(page, 3)
   assert.ok(
     (await difference(selectedPaused, await snapshot(canvas))) > 0.002,
     "Resume should continue the scene",
   )
-  await page.clock.fastForward(16000)
+  await advance(page, 16000)
   await page
     .getByRole("button", { name: "Rejouer l’animation" })
     .waitFor({ timeout: 15000 })
   const finished = await snapshot(canvas, "finished")
   await assertArtwork(finished)
   await assertChapter(page, 3)
-  await page.clock.fastForward(400)
+  await advance(page, 400)
   assert.equal(
     await difference(finished, await snapshot(canvas)),
     0,
     "Completed animation should settle",
   )
-  await page.getByRole("button", { name: "Rejouer l’animation" }).click()
-  await page.mouse.move(0, 0)
+
+  const synchronousDraws = await canvas.evaluate((node) => {
+    const host = node.parentElement
+    const rect = host.getBoundingClientRect()
+    const before = window.sceneDrawCalls
+    // A burst of events should update a target, never render per event.
+    for (let index = 0; index < 25; index++) {
+      host.dispatchEvent(
+        new window.PointerEvent("pointermove", {
+          pointerType: "mouse",
+          clientX: rect.x + rect.width * 0.95,
+          clientY: rect.y + rect.height * 0.05,
+        }),
+      )
+    }
+    return window.sceneDrawCalls - before
+  })
+  assert.equal(
+    synchronousDraws,
+    0,
+    "Pointer events must defer drawing to one animation frame",
+  )
+  assert.equal(
+    await difference(finished, await snapshot(canvas)),
+    0,
+    "Pointer tilt must not jump to its target before the next frame",
+  )
+  await advance(page, 48)
+  const tilting = await snapshot(canvas, "pointer-intermediate")
+  assert.ok(
+    (await difference(finished, tilting)) > 0.0001,
+    "Pointer tilt should ease toward its target over several frames",
+  )
+  await advance(page, 1000)
+  const tilted = await snapshot(canvas, "pointer-settled")
+  assert.ok(
+    (await difference(tilting, tilted)) > 0.0001,
+    "Pointer tilt should continue moving after its first frames",
+  )
+  const settledDraws = await page.evaluate(() => window.sceneDrawCalls)
+  await advance(page, 1000)
+  assert.equal(
+    await difference(tilted, await snapshot(canvas)),
+    0,
+    "Pointer tilt must settle",
+  )
+  assert.equal(
+    await page.evaluate(() => window.sceneDrawCalls),
+    settledDraws,
+    "A settled completed scene must stop GPU submissions",
+  )
+  await canvas.evaluate((node) => {
+    node.parentElement.dispatchEvent(new window.PointerEvent("pointerleave"))
+  })
+  assert.equal(
+    await difference(tilted, await snapshot(canvas)),
+    0,
+    "Leaving the scene must not snap its tilt back",
+  )
+  await advance(page, 48)
+  const returning = await snapshot(canvas, "pointer-returning")
+  assert.ok(
+    (await difference(tilted, returning)) > 0.0001,
+    "Pointer return must animate",
+  )
+  assert.ok(
+    (await difference(returning, finished)) > 0.0001,
+    "Pointer return must be gradual",
+  )
+  await advance(page, 1000)
+  assert.equal(
+    await difference(finished, await snapshot(canvas)),
+    0,
+    "Pointer leave must return exactly to the neutral pose",
+  )
+  checks += 11
+  console.log(
+    "PASS: delayed-frame recovery, coalesced pointer easing and idle GPU pause",
+  )
+
+  await page.getByRole("button", { name: "Rejouer l’animation" }).dispatchEvent("click")
   await page.getByRole("button", { name: "Mettre l’animation en pause" }).waitFor()
   await assertChapter(page, 0)
   assert.ok(
@@ -381,7 +561,7 @@ try {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.getByRole("button", { name: /animation/ }).waitFor({ state: "detached" })
   const reduced = await snapshot(canvas, "media-reduced")
-  await page.clock.fastForward(400)
+  await advance(page, 400)
   assert.equal(
     await difference(reduced, await snapshot(canvas)),
     0,
@@ -389,9 +569,9 @@ try {
   )
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.getByRole("button", { name: "Mettre l’animation en pause" }).waitFor()
-  await page.clock.runFor(32)
+  await advance(page, 32)
   const restarted = await snapshot(canvas)
-  await page.clock.fastForward(700)
+  await advance(page, 700)
   assert.ok(
     (await difference(restarted, await snapshot(canvas))) > 0.002,
     "Live motion preference should restart the sequence",
@@ -402,14 +582,14 @@ try {
 
   const story = await pageFor(1440, "no-preference")
   await captureChapters(story.page, story.canvas, 1440)
-  await story.page.clock.fastForward(300)
+  await advance(story.page, 300)
   assert.ok(
     await story.page.getByRole("button", { name: "Rejouer l’animation" }).isVisible(),
     "Continuous playback should finish within 15.5 seconds",
   )
   checks++
   await story.page.getByRole("button", { name: "Rejouer l’animation" }).click()
-  await story.page.clock.runFor(32)
+  await advance(story.page, 32)
   await story.page
     .getByRole("navigation", { name: "Parcours du dossier" })
     .getByRole("button", { name: "Devis", exact: true })
@@ -422,16 +602,16 @@ try {
       .isVisible(),
     "Selecting a chapter during playback must preserve playback",
   )
-  await story.page.clock.runFor(32)
-  await story.page.clock.fastForward(1000)
+  await advance(story.page, 32)
+  await advance(story.page, 1000)
   await assertChapter(story.page, 2)
-  await story.page.clock.fastForward(16000)
+  await advance(story.page, 16000)
   await story.page.getByRole("button", { name: "Rejouer l’animation" }).waitFor()
   await story.page.context().close()
 
   const mobile = await pageFor(390, "no-preference")
   const mobileStart = await snapshot(mobile.canvas, "mobile-motion-start")
-  await mobile.page.clock.fastForward(700)
+  await advance(mobile.page, 700)
   assert.ok(
     (await difference(
       mobileStart,
@@ -469,6 +649,34 @@ try {
     await view.page.screenshot({ path: `${artifacts}scene-page-relance-${width}.png` })
     await view.page.context().close()
   }
+
+  const restored = await pageFor(390, "reduce")
+  const beforeLoss = await snapshot(restored.canvas)
+  await restored.canvas.evaluate((node) => {
+    const extension = node.getContext("webgl2").getExtension("WEBGL_lose_context")
+    if (!extension) throw new Error("Context loss simulation is unavailable")
+    window.sceneContextExtension = extension
+    extension.loseContext()
+  })
+  await restored.page.waitForFunction(() =>
+    document.querySelector("main canvas").classList.contains("opacity-0"),
+  )
+  await restored.canvas.locator("..").locator("img").waitFor({ state: "visible" })
+  await restored.page.evaluate(() => window.sceneContextExtension.restoreContext())
+  await restored.page.waitForFunction(
+    () =>
+      window.getComputedStyle(document.querySelector("main canvas")).opacity === "1",
+  )
+  await assertArtwork(await snapshot(restored.canvas, "context-restored"))
+  assert.equal(
+    await difference(beforeLoss, await snapshot(restored.canvas)),
+    0,
+    "Context restoration must rebuild materials and preserve the pose",
+  )
+  await assertChapter(restored.page, 3)
+  await restored.page.context().close()
+  checks++
+  console.log("PASS: shader preparation after WebGL context restoration")
 
   const fallback = await pageFor(390, "reduce", true)
   const logo = fallback.canvas.locator("..").locator("img")

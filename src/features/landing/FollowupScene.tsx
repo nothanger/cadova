@@ -70,6 +70,7 @@ export function FollowupScene() {
     renderer.toneMappingExposure = 1
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFShadowMap
+    renderer.shadowMap.autoUpdate = false
 
     const scene = new THREE.Scene()
     const camera = new THREE.OrthographicCamera(-3.2, 3.2, 3, -3, 0.1, 40)
@@ -198,7 +199,14 @@ export function FollowupScene() {
       const line = new THREE.Line(geometry, material)
       line.frustumCulled = false
       world.add(line)
-      return { line, material, path, positions }
+      return {
+        line,
+        material,
+        path,
+        positions,
+        uploadedStart: new THREE.Vector3(Infinity, Infinity, Infinity),
+        uploadedEnd: new THREE.Vector3(Infinity, Infinity, Infinity),
+      }
     })
     const rest = new THREE.Vector3()
     const marker = new THREE.Vector3()
@@ -235,38 +243,61 @@ export function FollowupScene() {
     let running = !reducedMotion.matches
     let visible = true
     let contextLost = false
+    let prepared = false
+    let disposed = false
+    let preparationVersion = 0
     let frame = 0
     let previousTime = 0
     let lastChapter = -1
+    let viewportWidth = 0
+    let viewportHeight = 0
+    let needsRender = true
     const pointer = new THREE.Vector2()
+    const pointerTarget = new THREE.Vector2()
     const conclusionStart = storyChapters[3].start
     const returnStart = conclusionStart + 2.4
+    const transforms = [world, logo, dot, ...cards.map(({ group }) => group)].map(
+      (object) => ({ object, matrix: new THREE.Matrix4(), visible: object.visible }),
+    )
+    const railColors = cards.map(({ railMaterial }) => railMaterial.color.clone())
+    const linkOpacities = links.map(() => 0)
 
     function updateLinks() {
-      links.forEach(({ line, material, path, positions }, index) => {
-        material.opacity =
-          ease((elapsed - storyChapters[index + 1].start - 1.3) / 1.2) * 0.38
-        const first = cards[index].group
-        const second = cards[index + 1].group
-        path.v0.set(
-          first.position.x - first.scale.x * 1.22,
-          first.position.y,
-          first.position.z + 0.2,
-        )
-        path.v3.set(
-          second.position.x - second.scale.x * 1.22,
-          second.position.y,
-          second.position.z + 0.2,
-        )
-        const left = Math.min(path.v0.x, path.v3.x) - 0.24
-        path.v1.set(left, path.v0.y, 0.55)
-        path.v2.set(left, path.v3.y, 0.55)
-        for (let vertex = 0; vertex <= 48; vertex++) {
-          path.getPoint(vertex / 48, linkPoint)
-          linkPoint.toArray(positions, vertex * 3)
-        }
-        line.geometry.attributes.position.needsUpdate = true
-      })
+      links.forEach(
+        ({ line, material, path, positions, uploadedStart, uploadedEnd }, index) => {
+          material.opacity =
+            ease((elapsed - storyChapters[index + 1].start - 1.3) / 1.2) * 0.38
+          const first = cards[index].group
+          const second = cards[index + 1].group
+          path.v0.set(
+            first.position.x - first.scale.x * 1.22,
+            first.position.y,
+            first.position.z + 0.2,
+          )
+          path.v3.set(
+            second.position.x - second.scale.x * 1.22,
+            second.position.y,
+            second.position.z + 0.2,
+          )
+          const left = Math.min(path.v0.x, path.v3.x) - 0.24
+          path.v1.set(left, path.v0.y, 0.55)
+          path.v2.set(left, path.v3.y, 0.55)
+          // The dot still needs the path before the connecting line appears.
+          line.visible = material.opacity > 0
+          if (
+            !line.visible ||
+            (uploadedStart.equals(path.v0) && uploadedEnd.equals(path.v3))
+          )
+            return
+          for (let vertex = 0; vertex <= 48; vertex++) {
+            path.getPoint(vertex / 48, linkPoint)
+            linkPoint.toArray(positions, vertex * 3)
+          }
+          line.geometry.attributes.position.needsUpdate = true
+          uploadedStart.copy(path.v0)
+          uploadedEnd.copy(path.v3)
+        },
+      )
     }
 
     // Each chapter gives its dossier the foreground before revealing the full relationship.
@@ -302,9 +333,11 @@ export function FollowupScene() {
         }
         group.position.lerp(settled, conclusion)
         scale = THREE.MathUtils.lerp(scale, 0.72, conclusion)
+        // Orthographic depth alone cannot hide a card at the start of its entrance.
+        scale *= ease((elapsed - storyChapters[index].start - 0.2) / 0.45)
         group.scale.setScalar(scale)
         group.rotation.set(0.06, -0.3 + arrival * 0.2, (1 - arrival) * -0.1)
-        const emphasis = index === Math.min(current, 2) ? arrival : 0
+        const emphasis = arrival * (index < 2 ? 1 - departure : 1)
         railMaterial.color.copy(gray).lerp(accent, emphasis)
 
         if (current === index) {
@@ -354,9 +387,38 @@ export function FollowupScene() {
     }
 
     function draw() {
-      if (contextLost) return
+      if (contextLost || !prepared || disposed) return
       pose()
+      let transformsChanged = false
+      for (const saved of transforms) {
+        saved.object.updateMatrix()
+        if (
+          !saved.matrix.equals(saved.object.matrix) ||
+          saved.visible !== saved.object.visible
+        ) {
+          transformsChanged = true
+          saved.matrix.copy(saved.object.matrix)
+          saved.visible = saved.object.visible
+        }
+      }
+      let colorsChanged = false
+      cards.forEach(({ railMaterial }, index) => {
+        if (!railColors[index].equals(railMaterial.color)) {
+          colorsChanged = true
+          railColors[index].copy(railMaterial.color)
+        }
+      })
+      links.forEach(({ material }, index) => {
+        if (linkOpacities[index] !== material.opacity) {
+          colorsChanged = true
+          linkOpacities[index] = material.opacity
+        }
+      })
+      // Reading pauses keep their timing without rendering identical frames.
+      if (!needsRender && !transformsChanged && !colorsChanged) return
+      renderer.shadowMap.needsUpdate = needsRender || transformsChanged
       renderer.render(scene, camera)
+      needsRender = false
     }
 
     function stopFrame() {
@@ -367,23 +429,37 @@ export function FollowupScene() {
 
     function tick(now: number) {
       frame = 0
-      if (!running || !visible || document.hidden || contextLost) return
-      if (previousTime)
-        elapsed = Math.min(DURATION, elapsed + (now - previousTime) / 1000)
+      if (!visible || document.hidden || contextLost || !prepared || disposed) return
+      // A busy frame must not skip a whole movement on a slower device.
+      const delta = previousTime ? Math.min((now - previousTime) / 1000, 0.05) : 0
       previousTime = now
+      if (running) elapsed = Math.min(DURATION, elapsed + delta)
+      pointer.lerp(pointerTarget, 1 - Math.exp(-12 * delta))
+      if (!pointerMoving()) pointer.copy(pointerTarget)
       draw()
-      if (elapsed >= DURATION) {
+      if (running && elapsed >= DURATION) {
         running = false
         setPlaying(false)
         setFinished(true)
-        previousTime = 0
-      } else {
-        frame = window.requestAnimationFrame(tick)
       }
+      resume()
+      if (!frame) previousTime = 0
+    }
+
+    function pointerMoving() {
+      return pointer.distanceToSquared(pointerTarget) > 0.000001
     }
 
     function resume() {
-      if (running && visible && !document.hidden && !contextLost && !frame) {
+      if (
+        (running || pointerMoving()) &&
+        visible &&
+        !document.hidden &&
+        !contextLost &&
+        prepared &&
+        !disposed &&
+        !frame
+      ) {
         frame = window.requestAnimationFrame(tick)
       }
     }
@@ -391,6 +467,9 @@ export function FollowupScene() {
     function resize() {
       const { width, height } = host.getBoundingClientRect()
       if (!width || !height) return
+      if (width === viewportWidth && height === viewportHeight) return
+      viewportWidth = width
+      viewportHeight = height
       renderer.setSize(width, height, false)
       const aspect = width / height
       const viewHeight = Math.max(4.65, 5.45 / aspect)
@@ -399,6 +478,7 @@ export function FollowupScene() {
       camera.top = viewHeight / 2
       camera.bottom = -viewHeight / 2
       camera.updateProjectionMatrix()
+      needsRender = true
       draw()
     }
 
@@ -406,6 +486,7 @@ export function FollowupScene() {
       running = !reducedMotion.matches
       elapsed = reducedMotion.matches ? DURATION : 0
       pointer.set(0, 0)
+      pointerTarget.set(0, 0)
       stopFrame()
       setMotionAllowed(!reducedMotion.matches)
       setPlaying(running)
@@ -422,21 +503,23 @@ export function FollowupScene() {
     function move(event: PointerEvent) {
       if (reducedMotion.matches || event.pointerType === "touch") return
       const rect = host.getBoundingClientRect()
-      pointer.set(
+      pointerTarget.set(
         clamp(((event.clientX - rect.left) / rect.width - 0.5) * 2, -1, 1),
         clamp(((event.clientY - rect.top) / rect.height - 0.5) * 2, -1, 1),
       )
-      if (!running) draw()
+      resume()
     }
 
     function leave() {
-      pointer.set(0, 0)
-      if (!running) draw()
+      pointerTarget.set(0, 0)
+      resume()
     }
 
     function loseContext(event: Event) {
       event.preventDefault()
       contextLost = true
+      prepared = false
+      preparationVersion++
       stopFrame()
       setReady(false)
     }
@@ -446,7 +529,23 @@ export function FollowupScene() {
       environment.dispose()
       environment = makeEnvironment()
       scene.environment = environment.texture
+      needsRender = true
       resize()
+      void prepare()
+    }
+
+    async function prepare() {
+      const version = ++preparationVersion
+      try {
+        await renderer.compileAsync(scene, camera)
+      } catch {
+        // Keep first-render compilation available if preparation fails.
+      }
+      if (disposed || contextLost || version !== preparationVersion) return
+      cards.forEach(({ texture }) => renderer.initTexture(texture))
+      prepared = true
+      needsRender = true
+      draw()
       setReady(true)
       resume()
     }
@@ -476,6 +575,7 @@ export function FollowupScene() {
 
     const observer = new ResizeObserver(resize)
     const intersection = new IntersectionObserver(([entry]) => {
+      if (visible === entry.isIntersecting) return
       visible = entry.isIntersecting
       stopFrame()
       resume()
@@ -490,9 +590,10 @@ export function FollowupScene() {
     canvas.addEventListener("webglcontextrestored", restoreContext)
     motionChange()
     resize()
-    setReady(true)
+    void prepare()
 
     return () => {
+      disposed = true
       toggleRef.current = null
       seekRef.current = null
       stopFrame()
