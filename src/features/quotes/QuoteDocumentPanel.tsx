@@ -4,6 +4,8 @@ import { Check, Download, FileText, RefreshCw, Send, Upload, X } from "lucide-re
 import { Button, Card, Field, Input, Spinner, Textarea } from "@/components/ui"
 import { Dialog } from "@/components/ui/Dialog"
 import type { QuoteWithClient } from "@/types"
+import { formatCents } from "@/lib/money"
+import { CompanyMessageControl } from "@/features/message-templates/CompanyMessageControl"
 import {
   attachQuoteDocument,
   documentError,
@@ -329,6 +331,24 @@ export function QuoteDocumentPanel({
                     </p>
                   )}
                   <form className="mt-5 space-y-4" onSubmit={confirmPreview}>
+                    <CompanyMessageControl
+                      companyId={quote.company_id}
+                      kind="quote_send"
+                      values={{
+                        client_name: context.client.name,
+                        quote_reference: quote.reference,
+                        company_name: "",
+                        amount_formatted: formatCents(quote.amount_cents),
+                      }}
+                      current={{ subject, body: message }}
+                      disabled={
+                        frozen || Boolean(busy) || Boolean(job?.first_attempt_at)
+                      }
+                      onApply={(draft) => {
+                        setSubject(draft.subject)
+                        setMessage(draft.body)
+                      }}
+                    />
                     <Field label="Destinataire" htmlFor="quote-recipient" required>
                       <Input
                         id="quote-recipient"

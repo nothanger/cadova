@@ -84,6 +84,11 @@ pnpm test:ui
 pnpm test:documents
 pnpm test:portal
 pnpm test:workspace
+pnpm test:search
+pnpm test:photos
+pnpm test:work-orders
+pnpm test:templates
+pnpm test:timeline
 pnpm test:scene
 ```
 
@@ -182,3 +187,24 @@ Pour recevoir les réponses dans le dossier :
 Les nouveaux envois utilisent alors une adresse de réponse propre au dossier. Une réponse provenant du destinataire connu est ajoutée au suivi et suspend les relances. Les emails déjà tentés conservent leur ancienne adresse de réponse. Sans cette configuration, les réponses continuent d’arriver à l’adresse d’entreprise et doivent être enregistrées manuellement ; le portail fonctionne indépendamment.
 
 `test:portal` couvre le parcours client et la gestion des liens sans requête vers un projet réel. `test:workspace` couvre les actions quotidiennes et le démarrage guidé. Les tests SQL locaux vérifient aussi l’isolation des entreprises, les signatures/reprises d’événements et les décisions concurrentes. Les données de test ne sont pas déployées.
+
+## Dossiers et outils d’entreprise
+
+Le détail du devis rassemble les messages, les documents, les envois et les étapes de suivi dans un fil chronologique. Les changements confirmés restent distincts des envois en cours et des rappels à venir. Un chargement incomplet est signalé. Les contrôles de document, de lien client et de relance conservent leurs vérifications et confirmations.
+
+Après acceptation, le suivi de l’intervention permet de planifier une date, démarrer le travail et le terminer. Il conserve le statut commercial **Accepté** du devis. Les étapes sont journalisées ; une modification concurrente demande une actualisation pour éviter d’écraser celle d’un autre membre.
+
+La recherche globale s’ouvre depuis la navigation ou avec `Ctrl K` / `⌘ K`. Elle recherche les clients et devis de l’entreprise sélectionnée, par nom, coordonnées, référence ou montant exact. Les résultats limités invitent à préciser la recherche ; ils ne mélangent pas les entreprises.
+
+Dans les paramètres, le propriétaire peut enregistrer ses modèles d’envoi et de relance et sa signature. Les variables autorisées sont `{{client_name}}`, `{{quote_reference}}`, `{{company_name}}` et `{{amount_formatted}}`. L’application d’un modèle est explicite, avec aperçu ; elle ne remplace pas une saisie en cours ni le contenu d’un email déjà tenté. Les messages restent modifiables avant confirmation et les calendriers existants ne changent pas après l’édition d’un modèle.
+
+Pour les photos, la préparation précède l’OCR : rotation, recadrage et correction manuelle de l’inclinaison. Le résultat est visible avant lecture et constitue le document utilisé pour le dossier. L’avertissement de netteté est calculé sur l’image et reste indicatif ; le document et les champs extraits doivent toujours être vérifiés. Les fichiers PDF conservent leur parcours direct.
+
+Installer `0015_company_productivity.sql` après `0014` avec les variables Supabase sécurisées du terminal :
+
+```sh
+python3 scripts/deploy-company-productivity.py --inspect
+python3 scripts/deploy-company-productivity.py --deploy
+```
+
+La migration installe les tables protégées des modèles, signatures et interventions ainsi que la recherche limitée à l’entreprise autorisée. Le script vérifie l’empreinte du fichier installé, refuse une version différente et ne crée aucun compte, devis ni email. `test:search`, `test:photos`, `test:work-orders`, `test:templates` et `test:timeline` vérifient les parcours correspondants avec données simulées ; `test:admin:db` vérifie les véritables règles et transactions dans une base locale jetable.

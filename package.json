@@ -24,8 +24,13 @@
     "typecheck:documents": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/send-quote-document/handler.ts tests/quote-document-send.test.ts",
     "test:portal": "node tests/portal-workflow.mjs",
     "test:workspace": "node tests/workspace-actions.mjs",
+    "test:search": "node tests/search-workflow.mjs",
+    "test:photos": "node tests/photo-preparation-workflow.mjs",
+    "test:work-orders": "node tests/work-orders-workflow.mjs",
     "typecheck:portal": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/quote-client-portal/handler.ts tests/quote-client-portal.test.ts",
-    "typecheck:email-events": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/resend-events/handler.ts tests/quote-email-events.test.ts"
+    "typecheck:email-events": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/resend-events/handler.ts tests/quote-email-events.test.ts",
+    "test:templates": "node tests/company-messages-workflow.mjs",
+    "test:timeline": "node tests/timeline-workflow.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",

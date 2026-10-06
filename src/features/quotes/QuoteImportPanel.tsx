@@ -3,6 +3,7 @@ import { Camera, FileText, Upload, X } from "lucide-react"
 import { Button, Card } from "@/components/ui"
 import type { prepareQuoteDocument } from "./import/documentReader"
 import type { QuoteFieldReview } from "./import/types"
+import { PhotoPreparationEditor } from "./import/PhotoPreparationEditor"
 
 export type PreparedQuoteDocument = Awaited<ReturnType<typeof prepareQuoteDocument>>
 
@@ -23,6 +24,7 @@ export function QuoteImportPanel({
   const cameraInput = useRef<HTMLInputElement>(null)
   const currentRead = useRef<AbortController | null>(null)
   const [document, setDocument] = useState<PreparedQuoteDocument | null>(null)
+  const [photo, setPhoto] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState("")
   const [pdfUrl, setPdfUrl] = useState("")
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -60,10 +62,15 @@ export function QuoteImportPanel({
     currentRead.current?.abort()
     currentRead.current = null
     setBusy(false)
+    setPhoto(null)
     onBusyChange(false)
   }
 
-  async function readFile(file: File | undefined) {
+  async function readFile(
+    file: File | undefined,
+    photoPrepared = false,
+    photoWarnings: string[] = [],
+  ) {
     if (!file || disabled) return
     cancelRead()
     const controller = new AbortController()
@@ -74,7 +81,21 @@ export function QuoteImportPanel({
     setBusy(true)
     onBusyChange(true)
     setProgress({ progress: 0, label: "Préparation du document…" })
+    let awaitingPhoto = false
     try {
+      if (!photoPrepared) {
+        const header = new TextDecoder("ascii").decode(
+          await file.slice(0, 5).arrayBuffer(),
+        )
+        if (controller.signal.aborted || currentRead.current !== controller) return
+        if (!header.startsWith("%PDF-")) {
+          // Photo editing is local and explicit; OCR starts only after validation.
+          awaitingPhoto = true
+          setPhoto(file)
+          setBusy(false)
+          return
+        }
+      }
       const { prepareQuoteDocument } = await import("./import/documentReader")
       if (controller.signal.aborted) return
       const result = await prepareQuoteDocument(file, {
@@ -84,8 +105,12 @@ export function QuoteImportPanel({
         },
       })
       if (controller.signal.aborted || currentRead.current !== controller) return
-      setDocument(result)
-      onPrepared(result)
+      const prepared = {
+        ...result,
+        warnings: [...new Set([...photoWarnings, ...result.warnings])],
+      }
+      setDocument(prepared)
+      onPrepared(prepared)
     } catch (err) {
       if (controller.signal.aborted || currentRead.current !== controller) return
       setError(
@@ -97,7 +122,8 @@ export function QuoteImportPanel({
       if (currentRead.current === controller && !controller.signal.aborted) {
         currentRead.current = null
         setBusy(false)
-        onBusyChange(false)
+        // Keep saving disabled while the photo is awaiting explicit validation.
+        if (!awaitingPhoto) onBusyChange(false)
       }
     }
   }
@@ -124,7 +150,7 @@ export function QuoteImportPanel({
         accept="application/pdf,image/jpeg,image/png,image/webp"
         className="hidden"
         aria-label="Choisir le document du devis"
-        disabled={disabled || busy}
+        disabled={disabled || busy || !!photo}
         onChange={(event) => {
           void readFile(event.target.files?.[0])
           event.target.value = ""
@@ -137,14 +163,14 @@ export function QuoteImportPanel({
         capture="environment"
         className="hidden"
         aria-label="Photographier le devis"
-        disabled={disabled || busy}
+        disabled={disabled || busy || !!photo}
         onChange={(event) => {
           void readFile(event.target.files?.[0])
           event.target.value = ""
         }}
       />
 
-      {!document && !busy && (
+      {!document && !busy && !photo && (
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button
             type="button"
@@ -165,6 +191,21 @@ export function QuoteImportPanel({
             Prendre une photo
           </Button>
         </div>
+      )}
+
+      {photo && !busy && (
+        <PhotoPreparationEditor
+          file={photo}
+          disabled={disabled}
+          onCancel={() => {
+            cancelRead()
+            setError("")
+          }}
+          onApply={(prepared, warnings) => {
+            setPhoto(null)
+            void readFile(prepared, true, warnings)
+          }}
+        />
       )}
 
       {busy && (
@@ -292,7 +333,7 @@ export function QuoteImportPanel({
           )}
         </div>
       )}
-      {!document && !busy && (
+      {!document && !busy && !photo && (
         <p className="mt-3 text-xs leading-5 text-muted">
           PDF, JPEG, PNG ou WebP · 10 Mo et 10 pages maximum. Vous pouvez aussi remplir
           le formulaire directement.

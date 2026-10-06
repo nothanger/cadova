@@ -28,6 +28,7 @@ import { useAdmin } from "@/features/admin/AdminContext"
 import { useCompany } from "@/features/company/CompanyContext"
 import { formatCents } from "@/lib/money"
 import type { QuoteWithClient } from "@/types"
+import { CompanyMessageControl } from "@/features/message-templates/CompanyMessageControl"
 import {
   automationError,
   listAutomationJobs,
@@ -177,9 +178,11 @@ function ResponseDialog({
 function AutomationContent({
   quote,
   onChanged,
+  showHistory = true,
 }: {
   quote: QuoteWithClient
   onChanged: () => Promise<void>
+  showHistory?: boolean
 }) {
   const navigate = useNavigate()
   const { isAdmin } = useAdmin()
@@ -704,6 +707,21 @@ function AutomationContent({
                   />
                 </Field>
               )}
+              <CompanyMessageControl
+                companyId={quote.company_id}
+                kind="automatic_followup"
+                mode="template"
+                values={values}
+                current={{ subject: editor.subject, body: editor.body }}
+                disabled={busy || uncertain}
+                onApply={(draft) =>
+                  setEditor((current) => ({
+                    ...current,
+                    subject: draft.subject,
+                    body: draft.body,
+                  }))
+                }
+              />
               <Field
                 htmlFor="automation-subject"
                 label="Objet de la relance"
@@ -806,113 +824,118 @@ function AutomationContent({
               {notice}
             </p>
           )}
-          <div className="mt-6 border-t border-line pt-5">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-ink">
+          {showHistory && (
+            <details className="mt-6 border-t border-line pt-5">
+              <summary className="cursor-pointer text-sm font-semibold text-ink focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
                 Historique des envois automatiques
-              </h3>
-              <Button
-                variant="ghost"
-                aria-label="Actualiser les envois automatiques"
-                onClick={() => {
-                  void load()
-                  void loadJobs()
-                }}
-                disabled={busy || jobsLoading}
-              >
-                <RefreshCw size={16} aria-hidden="true" />
-              </Button>
-            </div>
-            {jobsError ? (
-              <p role="alert" className="mt-3 text-sm text-danger">
-                {jobsError}
-              </p>
-            ) : jobsLoading ? (
-              <Spinner label="Chargement des envois…" />
-            ) : jobs.length === 0 ? (
-              <p className="mt-3 text-sm text-muted">
-                Aucun envoi automatique enregistré.
-              </p>
-            ) : (
-              <ol className="mt-4 space-y-3">
-                {jobs.map((job) => (
-                  <li key={job.id} className="rounded-lg border border-line p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-medium text-ink">Relance {job.step}</p>
-                      <span
-                        className={cx(
-                          "rounded-md px-2 py-0.5 text-xs font-medium",
-                          job.status === "sent"
-                            ? "bg-success-soft text-success"
-                            : ["failed", "delivery_unknown"].includes(job.status)
-                              ? "bg-warning-soft text-warning"
-                              : "bg-background text-muted",
-                        )}
-                      >
-                        {jobLabels[job.status]}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-xs leading-5 text-muted">
-                      {job.status === "sent"
-                        ? job.sent_at
-                          ? `Acceptée par le service d’envoi le ${dateLabel(job.sent_at)}.`
-                          : "Acceptée par le service d’envoi."
-                        : `Date prévue : ${dateLabel(job.scheduled_at)}.`}
-                    </p>
-                    {job.status === "queued" && job.attempts > 0 && (
-                      <p className="mt-1 text-xs leading-5 text-muted">
-                        {job.next_attempt_at
-                          ? `Nouvel essai automatique prévu le ${dateLabel(job.next_attempt_at)}.`
-                          : "Aucune nouvelle tentative planifiée."}
-                      </p>
-                    )}
-                    {job.status === "delivery_unknown" && (
-                      <p className="mt-2 text-xs leading-5 text-warning">
-                        Le service n’a pas confirmé le résultat. Aucun nouvel essai
-                        automatique n’est effectué pour éviter un doublon.
-                      </p>
-                    )}
-                    {job.status === "failed" && (
-                      <p className="mt-2 text-xs leading-5 text-warning">
-                        L’envoi a échoué. Vérifiez les coordonnées du client ou
-                        contactez Cadova.
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ol>
-            )}
-            {(jobPage > 0 || jobsMore) && (
-              <nav
-                aria-label="Pagination des envois automatiques"
-                className="mt-4 flex flex-wrap items-center justify-between gap-2"
-              >
+              </summary>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-ink">Envois enregistrés</h3>
                 <Button
-                  variant="secondary"
-                  aria-label="Envois plus récents"
-                  disabled={jobPage === 0 || jobsLoading}
+                  variant="ghost"
+                  aria-label="Actualiser les envois automatiques"
                   onClick={() => {
-                    setJobs([])
-                    setJobPage((page) => page - 1)
+                    void load()
+                    void loadJobs()
                   }}
+                  disabled={busy || jobsLoading}
                 >
-                  <ChevronLeft size={16} aria-hidden="true" />
+                  <RefreshCw size={16} aria-hidden="true" />
                 </Button>
-                <p className="text-xs text-muted">Page {jobPage + 1}</p>
-                <Button
-                  variant="secondary"
-                  aria-label="Envois précédents"
-                  disabled={!jobsMore || jobsLoading}
-                  onClick={() => {
-                    setJobs([])
-                    setJobPage((page) => page + 1)
-                  }}
+              </div>
+              {jobsError ? (
+                <p role="alert" className="mt-3 text-sm text-danger">
+                  {jobsError}
+                </p>
+              ) : jobsLoading ? (
+                <Spinner label="Chargement des envois…" />
+              ) : jobs.length === 0 ? (
+                <p className="mt-3 text-sm text-muted">
+                  Aucun envoi automatique enregistré.
+                </p>
+              ) : (
+                <ol className="mt-4 space-y-3">
+                  {jobs.map((job) => (
+                    <li key={job.id} className="rounded-lg border border-line p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-ink">
+                          Relance {job.step}
+                        </p>
+                        <span
+                          className={cx(
+                            "rounded-md px-2 py-0.5 text-xs font-medium",
+                            job.status === "sent"
+                              ? "bg-success-soft text-success"
+                              : ["failed", "delivery_unknown"].includes(job.status)
+                                ? "bg-warning-soft text-warning"
+                                : "bg-background text-muted",
+                          )}
+                        >
+                          {jobLabels[job.status]}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-muted">
+                        {job.status === "sent"
+                          ? job.sent_at
+                            ? `Acceptée par le service d’envoi le ${dateLabel(job.sent_at)}.`
+                            : "Acceptée par le service d’envoi."
+                          : `Date prévue : ${dateLabel(job.scheduled_at)}.`}
+                      </p>
+                      {job.status === "queued" && job.attempts > 0 && (
+                        <p className="mt-1 text-xs leading-5 text-muted">
+                          {job.next_attempt_at
+                            ? `Nouvel essai automatique prévu le ${dateLabel(job.next_attempt_at)}.`
+                            : "Aucune nouvelle tentative planifiée."}
+                        </p>
+                      )}
+                      {job.status === "delivery_unknown" && (
+                        <p className="mt-2 text-xs leading-5 text-warning">
+                          Le service n’a pas confirmé le résultat. Aucun nouvel essai
+                          automatique n’est effectué pour éviter un doublon.
+                        </p>
+                      )}
+                      {job.status === "failed" && (
+                        <p className="mt-2 text-xs leading-5 text-warning">
+                          L’envoi a échoué. Vérifiez les coordonnées du client ou
+                          contactez Cadova.
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+              {(jobPage > 0 || jobsMore) && (
+                <nav
+                  aria-label="Pagination des envois automatiques"
+                  className="mt-4 flex flex-wrap items-center justify-between gap-2"
                 >
-                  <ChevronRight size={16} aria-hidden="true" />
-                </Button>
-              </nav>
-            )}
-          </div>
+                  <Button
+                    variant="secondary"
+                    aria-label="Envois plus récents"
+                    disabled={jobPage === 0 || jobsLoading}
+                    onClick={() => {
+                      setJobs([])
+                      setJobPage((page) => page - 1)
+                    }}
+                  >
+                    <ChevronLeft size={16} aria-hidden="true" />
+                  </Button>
+                  <p className="text-xs text-muted">Page {jobPage + 1}</p>
+                  <Button
+                    variant="secondary"
+                    aria-label="Envois précédents"
+                    disabled={!jobsMore || jobsLoading}
+                    onClick={() => {
+                      setJobs([])
+                      setJobPage((page) => page + 1)
+                    }}
+                  >
+                    <ChevronRight size={16} aria-hidden="true" />
+                  </Button>
+                </nav>
+              )}
+            </details>
+          )}
         </>
       ) : null}
       {previewOpen && data && (
@@ -974,6 +997,7 @@ function AutomationContent({
 export function AutomationPanel(props: {
   quote: QuoteWithClient
   onChanged: () => Promise<void>
+  showHistory?: boolean
 }) {
   const { user } = useAuth()
   return (

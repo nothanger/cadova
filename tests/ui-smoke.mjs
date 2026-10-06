@@ -198,13 +198,13 @@ try {
   )
 
   await app.getByRole("button", { name: "Enregistrer", exact: true }).click()
-  await app.getByText("Relance effectuée", { exact: true }).waitFor()
+  await app.getByText("Relance enregistrée", { exact: true }).waitFor()
   await app.getByLabel("Note de suivi").fill("Réponse de test")
   await app.getByRole("button", { name: "Ajouter", exact: true }).click()
   await app.getByText("Réponse de test", { exact: true }).waitFor()
   await app.getByLabel("Date de la prochaine relance").fill("2027-01-01")
   await app.getByRole("button", { name: "Planifier" }).click()
-  await app.getByText("Relance planifiée", { exact: true }).waitFor()
+  await app.getByText("Rappel de relance fixé", { exact: true }).waitFor()
   await app.getByRole("button", { name: "Marquer accepté" }).click()
   await app.getByRole("button", { name: "Marquer accepté" }).waitFor()
   assert.equal(
@@ -2598,9 +2598,12 @@ try {
       automationHistory: state === "sent",
     })
     await visit(page, "/app/quotes/quote-test", "TEST-001")
-    await page
-      .getByRole("heading", { name: "Historique des envois automatiques" })
-      .waitFor()
+    const history = page.locator("details").filter({
+      has: page.locator("summary", { hasText: "Historique des envois automatiques" }),
+    })
+    assert.equal(await history.evaluate((element) => element.open), false)
+    await history.locator("summary").click()
+    await history.getByRole("heading", { name: "Envois enregistrés" }).waitFor()
     const label = {
       sent: "Envoyé",
       failed: "Échec",

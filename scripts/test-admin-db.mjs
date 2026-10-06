@@ -104,6 +104,7 @@ try {
     "0012_quote_client_portal.sql",
     "0013_quote_email_events.sql",
     "0014_quote_send_tracking.sql",
+    "0015_company_productivity.sql",
   ]) {
     sql(
       readFileSync(
@@ -131,6 +132,12 @@ try {
     readFileSync(new URL("../tests/quote-send-tracking.sql", import.meta.url), "utf8"),
   )
   sql(readFileSync(new URL("../tests/admin-rls.sql", import.meta.url), "utf8"))
+  sql(
+    readFileSync(
+      new URL("../tests/company-productivity-rls.sql", import.meta.url),
+      "utf8",
+    ),
+  )
   sql(readFileSync(new URL("../tests/notifications-rls.sql", import.meta.url), "utf8"))
   sql(
     readFileSync(new URL("../tests/admin-companies-rls.sql", import.meta.url), "utf8"),
@@ -675,8 +682,59 @@ try {
     if (select count(*) from public.quote_events where company_id='b2000000-0000-4000-8000-000000000001' and portal_message_id is not null)<>2 then raise exception 'Concurrent requests duplicated event';end if;
     if (select count(*) from public.notifications where company_id='b2000000-0000-4000-8000-000000000001' and portal_message_id is not null)<>2 then raise exception 'Concurrent requests duplicated notification';end if;
   end$$;`)
+  // Fulfilment saves serialize both retries and concurrent edits.
+  sql(`
+    insert into public.quotes(id,company_id,client_id,reference,amount_cents,status)
+      values('c4000000-0000-4000-8000-000000000001','b2000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000001','WORK-RACE',1000,'accepted');
+  `)
+  const workAuth = `set local role authenticated; select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000001',true);`
+  const duplicateWork = await Promise.all(
+    [1, 2].map(() =>
+      concurrentSql(`
+    begin; ${workAuth}
+    select public.save_quote_work_order('c4000000-0000-4000-8000-000000000001','to_schedule');
+    select pg_sleep(0.1); commit;
+  `),
+    ),
+  )
+  if (duplicateWork.some((result) => result.code !== 0))
+    throw new Error("Concurrent work retry failed")
+  sql(`do $$begin
+    if (select count(*) from public.quote_events where quote_id='c4000000-0000-4000-8000-000000000001' and event_type='work_order_change')<>1 then raise exception 'Concurrent work retry duplicated history'; end if;
+  end$$;
+  create table public.productivity_race_versions as select updated_at original_version from public.quote_work_orders where quote_id='c4000000-0000-4000-8000-000000000001';
+  grant select on public.productivity_race_versions to authenticated;
+  `)
+  const concurrentWorkEdits = await Promise.all(
+    ["scheduled", "completed"].map((status) =>
+      concurrentSql(`
+    begin; ${workAuth}
+    do $$ begin
+      begin
+        perform public.save_quote_work_order('c4000000-0000-4000-8000-000000000001','${status}',current_date+1,(select original_version from public.productivity_race_versions));
+        raise notice 'WORK_SAVED';
+      exception when serialization_failure then raise notice 'WORK_VERSION_CONFLICT'; end;
+    end $$;
+    select pg_sleep(0.1); commit;
+  `),
+    ),
+  )
+  if (
+    concurrentWorkEdits.some((result) => result.code !== 0) ||
+    concurrentWorkEdits.filter((result) =>
+      result.output.includes("WORK_VERSION_CONFLICT"),
+    ).length !== 1 ||
+    concurrentWorkEdits.filter((result) => result.output.includes("WORK_SAVED"))
+      .length !== 1
+  )
+    throw new Error("Concurrent work edits did not reject stale state")
+  sql(`do $$begin
+    if (select count(*) from public.quote_events where quote_id='c4000000-0000-4000-8000-000000000001' and event_type='work_order_change')<>2 then raise exception 'Conflicting work edit changed history'; end if;
+    if (select status from public.quotes where id='c4000000-0000-4000-8000-000000000001')<>'accepted' then raise exception 'Work edit changed commercial state'; end if;
+  end$$;`)
+
   console.log(
-    "Administration, messagerie, relances, documents, portail et livraison : neuf suites SQL et dix-sept courses concurrentes validées. Aucun email envoyé.",
+    "Administration, messagerie, devis, suivi client et outils d’entreprise : dix suites SQL et dix-neuf courses concurrentes validées. Aucun email envoyé.",
   )
 } finally {
   docker(["exec", container, "dropdb", "-U", "postgres", "--force", database])

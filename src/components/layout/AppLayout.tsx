@@ -10,6 +10,7 @@ import {
   Settings,
   ShieldCheck,
   Bell,
+  Search,
 } from "lucide-react"
 import { CadovaLogo } from "@/components/CadovaLogo"
 import { useAuth } from "@/features/auth/AuthContext"
@@ -17,6 +18,7 @@ import { useCompany } from "@/features/company/CompanyContext"
 import { cx } from "@/components/ui"
 import { NotificationBell } from "@/features/notifications/NotificationBell"
 import { useAdmin } from "@/features/admin/AdminContext"
+import { SearchDialog } from "@/features/search/SearchDialog"
 
 const nav = [{ to: "/app", label: "Tableau de bord", icon: LayoutDashboard, end: true }]
 const followup = [
@@ -66,9 +68,28 @@ export function AppLayout() {
   const { isAdmin } = useAdmin()
   const { company } = useCompany()
   const [open, setOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const toggleRef = useRef<HTMLButtonElement>(null)
   const sidebarRef = useRef<HTMLElement>(null)
   const close = () => setOpen(false)
+
+  useEffect(() => {
+    const handleSearchShortcut = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.altKey ||
+        event.repeat ||
+        (!event.metaKey && !event.ctrlKey) ||
+        event.key.toLowerCase() !== "k"
+      )
+        return
+      event.preventDefault()
+      setOpen(false)
+      setSearchOpen(true)
+    }
+    window.addEventListener("keydown", handleSearchShortcut)
+    return () => window.removeEventListener("keydown", handleSearchShortcut)
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -119,6 +140,15 @@ export function AppLayout() {
           <CadovaLogo variant="full" className="h-6" />
         </Link>
         <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Rechercher un client ou un devis"
+            aria-haspopup="dialog"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-ink hover:bg-background"
+          >
+            <Search size={20} aria-hidden="true" />
+          </button>
           <NotificationBell />
           <button
             ref={toggleRef}
@@ -156,6 +186,23 @@ export function AppLayout() {
             <CadovaLogo variant="full" className="h-7" />
           </Link>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          aria-haspopup="dialog"
+          aria-keyshortcuts="Control+K Meta+K"
+          className="mt-6 hidden w-full items-center gap-2 rounded-lg border border-line px-3 py-2.5 text-sm text-ink-soft transition-colors hover:bg-background md:flex"
+        >
+          <Search size={17} aria-hidden="true" />
+          Rechercher
+          <kbd
+            aria-hidden="true"
+            className="ml-auto whitespace-nowrap rounded border border-line bg-background px-1 text-xs text-muted"
+          >
+            Ctrl/⌘ K
+          </kbd>
+        </button>
 
         <nav
           aria-label="Navigation de votre espace"
@@ -229,6 +276,14 @@ export function AppLayout() {
           <Outlet />
         </div>
       </main>
+      {searchOpen && company && (
+        <SearchDialog
+          key={`${user?.id}:${company.id}`}
+          companyId={company.id}
+          companyName={company.name}
+          onClose={() => setSearchOpen(false)}
+        />
+      )}
     </div>
   )
 }

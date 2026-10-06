@@ -561,7 +561,7 @@ try {
       "One persisted sent event",
     )
     check(
-      await sending.getByText("Devis envoyé", { exact: true }).count(),
+      await sending.getByText("Devis remis au service email", { exact: true }).count(),
       1,
       "Accepted initial send appears once in the visible history",
     )
@@ -1172,6 +1172,7 @@ try {
   await manual
     .getByLabel("Choisir le document du devis", { exact: true })
     .setInputFiles({ name: "photo.png", mimeType: "image/png", buffer: photo })
+  await manual.getByRole("button", { name: "Lire cette photo", exact: true }).click()
   await manual
     .getByRole("button", { name: "Retirer le document", exact: true })
     .waitFor({ timeout: 45000 })
@@ -1244,6 +1245,7 @@ try {
   await cancelled
     .getByLabel("Choisir le document du devis", { exact: true })
     .setInputFiles({ name: "photo.png", mimeType: "image/png", buffer: photo })
+  await cancelled.getByRole("button", { name: "Lire cette photo", exact: true }).click()
   await cancelled
     .getByRole("button", { name: "Annuler la lecture", exact: true })
     .click()

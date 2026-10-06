@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { MailCheck, RefreshCw } from "lucide-react"
 import { Button, Card, Spinner } from "@/components/ui"
 import type { QuoteWithClient } from "@/types"
+import { formatTimelineDate } from "./timeline/merge"
 import {
   deliveryStatusDetail,
   deliveryStatusLabel,
@@ -9,12 +10,14 @@ import {
 } from "./emailTrackingApi"
 
 type Tracking = Awaited<ReturnType<typeof getQuoteEmailTracking>>
-const date = new Intl.DateTimeFormat("fr-FR", {
-  dateStyle: "medium",
-  timeStyle: "short",
-})
 
-export function QuoteEmailTrackingPanel({ quote }: { quote: QuoteWithClient }) {
+export function QuoteEmailTrackingPanel({
+  quote,
+  showHistory = true,
+}: {
+  quote: QuoteWithClient
+  showHistory?: boolean
+}) {
   const [data, setData] = useState<Tracking | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -26,7 +29,15 @@ export function QuoteEmailTrackingPanel({ quote }: { quote: QuoteWithClient }) {
     setError("")
     try {
       const value = await getQuoteEmailTracking(quote.id)
-      if (active.current && ticket === request.current) setData(value)
+      if (active.current && ticket === request.current)
+        setData({
+          ...value,
+          deliveries: value.deliveries.filter(
+            (delivery) =>
+              delivery.company_id === quote.company_id &&
+              delivery.quote_id === quote.id,
+          ),
+        })
     } catch {
       if (active.current && ticket === request.current)
         setError(
@@ -35,7 +46,7 @@ export function QuoteEmailTrackingPanel({ quote }: { quote: QuoteWithClient }) {
     } finally {
       if (active.current && ticket === request.current) setLoading(false)
     }
-  }, [quote.id, quote.updated_at])
+  }, [quote.id, quote.company_id, quote.updated_at])
   useEffect(() => {
     active.current = true
     void load()
@@ -75,41 +86,49 @@ export function QuoteEmailTrackingPanel({ quote }: { quote: QuoteWithClient }) {
                   configurée. Un envoi accepté ne confirme pas sa livraison.
                 </p>
               )}
-              {data.deliveries.length ? (
-                <ol
-                  aria-label="Livraison des emails du devis"
-                  className="mt-4 space-y-3"
-                >
-                  {data.deliveries.map((delivery) => (
-                    <li key={delivery.id} className="rounded-lg border border-line p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-sm font-semibold">
-                          {deliveryStatusLabel(delivery.status)}
+              <details open={showHistory || undefined} className="mt-4">
+                <summary className="cursor-pointer rounded-lg text-sm leading-6 text-muted focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+                  Historique de livraison des emails
+                </summary>
+                {data.deliveries.length ? (
+                  <ol
+                    aria-label="Livraison des emails du devis"
+                    className="mt-4 space-y-3"
+                  >
+                    {data.deliveries.map((delivery) => (
+                      <li
+                        key={delivery.id}
+                        className="rounded-lg border border-line p-4"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm font-semibold">
+                            {deliveryStatusLabel(delivery.status)}
+                          </p>
+                          <time
+                            dateTime={delivery.last_event_at}
+                            className="text-xs text-muted"
+                          >
+                            {formatTimelineDate(delivery.last_event_at)}
+                          </time>
+                        </div>
+                        <p className="mt-1 text-xs text-muted">
+                          {delivery.initial_send_job_id
+                            ? "Envoi du devis"
+                            : "Relance automatique"}
                         </p>
-                        <time
-                          dateTime={delivery.last_event_at}
-                          className="text-xs text-muted"
-                        >
-                          {date.format(new Date(delivery.last_event_at))}
-                        </time>
-                      </div>
-                      <p className="mt-1 text-xs text-muted">
-                        {delivery.initial_send_job_id
-                          ? "Envoi du devis"
-                          : "Relance automatique"}
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-ink-soft">
-                        {deliveryStatusDetail(delivery.status)}
-                      </p>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <p className="mt-4 text-sm leading-6 text-muted">
-                  Aucun email suivi pour ce devis. Un devis marqué comme déjà envoyé
-                  n’ajoute pas de preuve de livraison.
-                </p>
-              )}
+                        <p className="mt-2 text-sm leading-6 text-ink-soft">
+                          {deliveryStatusDetail(delivery.status)}
+                        </p>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="mt-4 text-sm leading-6 text-muted">
+                    Aucun email suivi pour ce devis. Un devis marqué comme déjà envoyé
+                    n’ajoute pas de preuve de livraison.
+                  </p>
+                )}
+              </details>
               <p className="mt-5 border-t border-line pt-4 text-xs leading-5 text-muted">
                 {data.service.receivingReady
                   ? "Une réponse reçue par email est ajoutée au dossier et suspend les relances automatiques. Elle ne vaut pas acceptation du devis."

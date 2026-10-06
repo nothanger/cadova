@@ -2,6 +2,9 @@
 
 export type QuoteStatus = "draft" | "sent" | "accepted" | "refused"
 
+export type QuoteWorkOrderStatus =
+  "to_schedule" | "scheduled" | "in_progress" | "completed"
+
 export type MemberRole = "owner" | "member"
 
 export interface Company {
@@ -53,6 +56,7 @@ export type QuoteEventType =
   | "followup_scheduled"
   | "followup_auto_sent"
   | "followup_auto_failed"
+  | "work_order_change"
 
 export interface QuoteEvent {
   id: string
@@ -67,6 +71,8 @@ export interface QuoteEvent {
   portal_message_id?: string | null
   email_delivery_id?: string | null
   email_reply_id?: string | null
+  work_order_status?: QuoteWorkOrderStatus | null
+  work_order_scheduled_for?: string | null
   delivery_status?: "sent" | "failed" | "delivery_unknown" | null
 }
 

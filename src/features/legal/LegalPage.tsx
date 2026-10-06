@@ -22,7 +22,7 @@ const legalPages: Record<
       {
         title: "Données enregistrées",
         content:
-          "Le service utilise votre adresse email pour votre compte, le nom de votre entreprise, les coordonnées et notes de vos clients, ainsi que les références, montants, statuts, dates et historiques de vos devis. Les PDF et photos importés servent à préparer le dossier du devis ; le document conservé est un PDF privé. Le suivi conserve les messages échangés avec le client, ses décisions et les états de livraison des emails disponibles.",
+          "Le service utilise votre adresse email pour votre compte, le nom de votre entreprise, les coordonnées et notes de vos clients, ainsi que les références, montants, statuts, dates et historiques de vos devis. Les PDF et photos importés servent à préparer le dossier du devis ; le document conservé est un PDF privé. Le suivi conserve les messages échangés avec le client, ses décisions, les états de livraison disponibles et les dates et étapes des interventions. L’entreprise peut aussi enregistrer ses modèles de messages et sa signature.",
       },
       {
         title: "Utilisation des données",

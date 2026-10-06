@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import {
   AlertTriangle,
-  CalendarClock,
   Check,
   Clipboard,
   Copy,
@@ -28,7 +27,6 @@ import {
   addQuoteEvent,
   duplicateQuote,
   getQuote,
-  listQuoteEvents,
   scheduleFollowUp,
   setQuoteStatus,
 } from "./api"
@@ -41,7 +39,10 @@ import { AutomationPanel } from "./AutomationPanel"
 import { QuoteDocumentPanel } from "./QuoteDocumentPanel"
 import { QuoteClientPortalPanel } from "./QuoteClientPortalPanel"
 import { QuoteEmailTrackingPanel } from "./QuoteEmailTrackingPanel"
-import type { QuoteEvent, QuoteStatus, QuoteWithClient } from "@/types"
+import { QuoteTimeline } from "./timeline/QuoteTimeline"
+import { QuoteWorkOrderPanel } from "./work-orders/QuoteWorkOrderPanel"
+import { CompanyMessageControl } from "@/features/message-templates/CompanyMessageControl"
+import type { QuoteStatus, QuoteWithClient } from "@/types"
 
 type Template = "first" | "second" | "expiry"
 const templateLabels: Record<Template, string> = {
@@ -63,13 +64,14 @@ export function QuoteDetailPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [quote, setQuote] = useState<QuoteWithClient | null>(null)
-  const [events, setEvents] = useState<QuoteEvent[]>([])
+  const [timelineRevision, setTimelineRevision] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [updating, setUpdating] = useState<QuoteStatus | null>(null)
   const [modal, setModal] = useState(false)
   const [template, setTemplate] = useState<Template>("first")
   const [message, setMessage] = useState("")
+  const [subject, setSubject] = useState("")
   const [note, setNote] = useState("")
   const [nextDate, setNextDate] = useState("")
   const [saving, setSaving] = useState(false)
@@ -90,7 +92,7 @@ export function QuoteDetailPage() {
     setLoading(true)
     setError("")
     setQuote(null)
-    setEvents([])
+    setTimelineRevision(0)
     setModal(false)
     setNote("")
     setCopied(false)
@@ -100,13 +102,12 @@ export function QuoteDetailPage() {
     setDuplicating(false)
     try {
       const q = await getQuote(quoteId)
-      const nextEvents = await listQuoteEvents(quoteId).catch(() => [])
       if (ticket !== request.current || identity.current !== currentScope) return
       setQuote(q)
       setLoadedScope(currentScope)
       setNextDate(q.next_followup_at ?? "")
       setMessage(messageFor("first", q))
-      setEvents(nextEvents)
+      setSubject(`Suivi du devis ${q.reference}`)
     } catch (e) {
       if (ticket === request.current && identity.current === currentScope)
         setError(humanizeError(e, "Devis introuvable."))
@@ -127,13 +128,10 @@ export function QuoteDetailPage() {
     if (!quoteId) return
     const currentScope = `${user?.id}:${quoteId}`
     try {
-      const [updatedQuote, nextEvents] = await Promise.all([
-        getQuote(quoteId),
-        listQuoteEvents(quoteId),
-      ])
+      const updatedQuote = await getQuote(quoteId)
       if (!active.current || identity.current !== currentScope) return
       setQuote(updatedQuote)
-      setEvents(nextEvents)
+      setTimelineRevision((value) => value + 1)
     } catch {
       if (active.current && identity.current === currentScope)
         setError(
@@ -143,7 +141,10 @@ export function QuoteDetailPage() {
   }, [quoteId, user?.id])
   function chooseTemplate(value: Template) {
     setTemplate(value)
-    if (quote) setMessage(messageFor(value, quote))
+    if (quote) {
+      setMessage(messageFor(value, quote))
+      setSubject(`Suivi du devis ${quote.reference}`)
+    }
   }
   async function changeStatus(status: QuoteStatus) {
     if (!quote || updating) return
@@ -156,10 +157,10 @@ export function QuoteDetailPage() {
       const event = await addQuoteEvent(
         quote,
         "status_change",
-        `Statut : ${status}`,
+        `Statut : ${status === "accepted" ? "accepté" : status === "refused" ? "refusé" : status}`,
       ).catch(() => null)
       if (event && active.current && identity.current === currentScope)
-        setEvents((v) => [event, ...v])
+        setTimelineRevision((value) => value + 1)
     } catch (e) {
       if (active.current && identity.current === currentScope)
         setError(humanizeError(e, "Mise à jour impossible."))
@@ -172,9 +173,9 @@ export function QuoteDetailPage() {
     const currentScope = scope
     setSaving(true)
     try {
-      const event = await addQuoteEvent(quote, "followup", message)
+      await addQuoteEvent(quote, "followup", message)
       if (!active.current || identity.current !== currentScope) return
-      setEvents((v) => [event, ...v])
+      setTimelineRevision((value) => value + 1)
       setModal(false)
     } catch (e) {
       if (active.current && identity.current === currentScope)
@@ -218,9 +219,9 @@ export function QuoteDetailPage() {
     const currentScope = scope
     setSaving(true)
     try {
-      const event = await addQuoteEvent(quote, "note", note)
+      await addQuoteEvent(quote, "note", note)
       if (!active.current || identity.current !== currentScope) return
-      setEvents((v) => [event, ...v])
+      setTimelineRevision((value) => value + 1)
       setNote("")
     } catch (e) {
       if (active.current && identity.current === currentScope)
@@ -236,13 +237,13 @@ export function QuoteDetailPage() {
     try {
       await scheduleFollowUp(quote.id, nextDate || null)
       if (nextDate) {
-        const event = await addQuoteEvent(
+        await addQuoteEvent(
           quote,
           "followup_scheduled",
           `Prochaine relance : ${formatDate(nextDate)}`,
         )
         if (active.current && identity.current === currentScope)
-          setEvents((v) => [event, ...v])
+          setTimelineRevision((value) => value + 1)
       }
       if (active.current && identity.current === currentScope)
         setQuote({ ...quote, next_followup_at: nextDate || null })
@@ -331,21 +332,14 @@ export function QuoteDetailPage() {
               </div>
             </dl>
           </Card>
-          <QuoteDocumentPanel key={scope} quote={quote} onChanged={refreshDetails} />
-          <QuoteClientPortalPanel key={`portal:${scope}`} quote={quote} onChanged={refreshDetails} />
-          <AutomationPanel quote={quote} onChanged={refreshDetails} />
-          <QuoteEmailTrackingPanel key={`email:${scope}`} quote={quote} />
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-semibold text-ink">
-                  Historique et prochaine action
-                </h2>
-                <p className="mt-1 text-sm text-muted">
-                  Toutes les interactions utiles, au même endroit.
-                </p>
-              </div>
-              <CalendarClock className="text-primary" size={20} />
+          <QuoteWorkOrderPanel quote={quote} onChanged={refreshDetails} />
+          <QuoteTimeline quote={quote} revision={timelineRevision}>
+            <div>
+              <h3 className="text-sm font-semibold">Prévoir une relance manuelle</h3>
+              <p className="mt-1 text-xs leading-5 text-muted">
+                Ce rappel n’envoie aucun email. Les relances automatiques se règlent
+                dans les outils ci-dessous.
+              </p>
             </div>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <Input
@@ -358,28 +352,6 @@ export function QuoteDetailPage() {
               <Button variant="secondary" loading={saving} onClick={plan}>
                 Planifier
               </Button>
-            </div>
-            <div className="mt-6 space-y-4 border-l border-line pl-5">
-              {events.length === 0 && (
-                <p className="text-sm text-muted">Aucune activité enregistrée.</p>
-              )}
-              {events.map((e) => (
-                <Timeline key={e.id} event={e} />
-              ))}
-              {quote.sent_at &&
-                !events.some((event) => event.event_type === "sent") && (
-                  <Timeline
-                    event={{
-                      id: "sent",
-                      company_id: quote.company_id,
-                      quote_id: quote.id,
-                      event_type: "sent",
-                      content: null,
-                      occurred_at: quote.sent_at,
-                      created_by: null,
-                    }}
-                  />
-                )}
             </div>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Input
@@ -397,7 +369,23 @@ export function QuoteDetailPage() {
                 <MessageSquarePlus size={16} /> Ajouter
               </Button>
             </div>
-          </Card>
+          </QuoteTimeline>
+          <section className="space-y-6" aria-label="Outils du devis">
+            <h2 className="font-semibold text-ink">Outils du devis</h2>
+            <QuoteDocumentPanel key={scope} quote={quote} onChanged={refreshDetails} />
+            <QuoteClientPortalPanel
+              key={`portal:${scope}`}
+              quote={quote}
+              onChanged={refreshDetails}
+              showConversation={false}
+            />
+            <AutomationPanel quote={quote} onChanged={refreshDetails} showHistory />
+            <QuoteEmailTrackingPanel
+              key={`email:${scope}`}
+              quote={quote}
+              showHistory={false}
+            />
+          </section>
         </div>
         <Card className="h-fit p-6">
           <h2 className="text-sm font-semibold text-ink">Actions</h2>
@@ -455,6 +443,37 @@ export function QuoteDetailPage() {
               </button>
             ))}
           </div>
+          <div className="mt-4">
+            <CompanyMessageControl
+              companyId={quote.company_id}
+              kind={
+                template === "first"
+                  ? "first_followup"
+                  : template === "second"
+                    ? "second_followup"
+                    : "expiry_followup"
+              }
+              values={{
+                client_name: quote.client?.name ?? "",
+                quote_reference: quote.reference,
+                company_name: "",
+                amount_formatted: formatCents(quote.amount_cents),
+              }}
+              current={{ subject, body: message }}
+              onApply={(draft) => {
+                setSubject(draft.subject)
+                setMessage(draft.body)
+              }}
+              disabled={saving}
+            />
+          </div>
+          <Input
+            aria-label="Objet de la relance"
+            className="mt-4"
+            value={subject}
+            maxLength={160}
+            onChange={(event) => setSubject(event.target.value)}
+          />
           <Textarea
             aria-label="Message de relance"
             className="mt-4 min-h-56"
@@ -473,7 +492,7 @@ export function QuoteDetailPage() {
             </Button>
             <a
               className="ui-button border border-line-strong hover:bg-background"
-              href={`mailto:?subject=${encodeURIComponent(`Suivi du devis ${quote.reference}`)}&body=${encodeURIComponent(message)}`}
+              href={`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`}
             >
               <Mail size={16} /> Ouvrir l’email
             </a>
@@ -499,39 +518,6 @@ function Detail({
     <div>
       <dt className="text-xs uppercase tracking-wider text-muted">{label}</dt>
       <dd className={`mt-1 text-ink ${mono ? "font-mono" : ""}`}>{value}</dd>
-    </div>
-  )
-}
-function Timeline({ event }: { event: QuoteEvent }) {
-  const labels: Record<QuoteEvent["event_type"], string> = {
-    sent: "Devis envoyé",
-    followup: "Relance effectuée",
-    response: "Réponse reçue",
-    note: "Note",
-    status_change: "Statut modifié",
-    followup_scheduled: "Relance planifiée",
-    followup_auto_sent: "Relance automatique envoyée",
-    followup_auto_failed:
-      event.delivery_status === "delivery_unknown"
-        ? "Envoi automatique à vérifier"
-        : "Échec de la relance automatique",
-  }
-  return (
-    <div className="relative">
-      <span className="absolute -left-[25px] top-1.5 h-2 w-2 rounded-full bg-primary ring-4 ring-surface" />
-      <div className="flex flex-wrap justify-between gap-2">
-        <p className="text-sm font-medium">{labels[event.event_type]}</p>
-        <time className="text-xs text-muted">
-          {new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(
-            new Date(event.occurred_at),
-          )}
-        </time>
-      </div>
-      {event.content && (
-        <p className="mt-1 break-words whitespace-pre-wrap text-sm leading-6 text-muted">
-          {event.content}
-        </p>
-      )}
     </div>
   )
 }

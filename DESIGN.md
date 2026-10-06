@@ -58,3 +58,13 @@ L'import associe chaque champ à l'extrait réel du document qui permet de le v�
 Le portail client présente le devis, son PDF et une conversation courte. Confirmer l'acceptation ou le refus avant de l'enregistrer ; ne pas décrire cette décision comme une signature électronique. Une question suspend les relances et donne à l'entreprise une prochaine action claire. Le lien peut expirer ou être révoqué : expliquer cet état sans révéler les données du dossier.
 
 Le suivi email affiche les états réellement connus : accepté par le service, retardé, livré ou erreur. Une livraison ne prouve pas une lecture. La réception automatique des réponses et la confirmation des livraisons doivent montrer leur état de configuration ; aucune promesse d'automatisation tant que le service correspondant n'est pas activé.
+
+## Dossier de travail
+
+Un fil chronologique commun rapproche les messages, documents et envois sans afficher deux fois le même fait. Les événements réalisés utilisent leur véritable date ; les prochains rappels restent identifiés comme prévus. Les outils d’envoi et de gestion restent accessibles sans perdre les saisies.
+
+Le suivi de l’intervention commence après acceptation. La date prévue et les étapes du travail sont distinctes du statut commercial du devis. Confirmer la fin et la réouverture d’une intervention ; rendre explicites les conflits de modification.
+
+La recherche doit être accessible au clavier et au toucher, limitée à l’entreprise courante et vidée lors d’un changement d’espace. Les modèles et signatures décrivent la voix choisie par l’entreprise : leur application est volontaire et visible avant l’envoi.
+
+La préparation d’une photo montre les pixels qui seront lus et conservés. Proposer rotation, cadrage et inclinaison avec des contrôles nommés et utilisables au clavier. Une alerte de netteté reste une aide ; ne pas la présenter comme une garantie d’extraction.

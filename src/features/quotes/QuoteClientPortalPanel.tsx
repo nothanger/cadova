@@ -32,9 +32,11 @@ const expiryDate = new Intl.DateTimeFormat("fr-FR", {
 export function QuoteClientPortalPanel({
   quote,
   onChanged,
+  showConversation = true,
 }: {
   quote: QuoteWithClient
   onChanged: () => Promise<void>
+  showConversation?: boolean
 }) {
   const [data, setData] = useState<PortalInspection | null>(null)
   const [loading, setLoading] = useState(true)
@@ -286,7 +288,24 @@ export function QuoteClientPortalPanel({
           <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold">
             <MessageSquare size={17} aria-hidden="true" /> Échanges avec le client
           </h3>
-          <PortalConversation messages={data.messages} companyName="Votre entreprise" />
+          {showConversation ? (
+            <PortalConversation
+              messages={data.messages}
+              companyName="Votre entreprise"
+            />
+          ) : (
+            <details>
+              <summary className="cursor-pointer rounded-lg text-sm leading-6 text-muted focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+                Consulter les échanges du suivi client
+              </summary>
+              <div className="mt-4">
+                <PortalConversation
+                  messages={data.messages}
+                  companyName="Votre entreprise"
+                />
+              </div>
+            </details>
+          )}
           {available && (
             <form className="mt-5 space-y-3" onSubmit={sendReply}>
               <Field

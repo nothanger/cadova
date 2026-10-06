@@ -16,6 +16,7 @@ import { humanizeError } from "@/lib/errors"
 import { isNotificationsMigrationMissing } from "@/lib/setup"
 import { supabase } from "@/lib/supabase"
 import { CompanyEmailSettings } from "./CompanyEmailSettings"
+import { CompanyMessageSettings } from "@/features/message-templates/CompanyMessageSettings"
 
 const DELAY_OPTIONS = [
   { value: 1, label: "1 jour" },
@@ -341,6 +342,7 @@ export function SettingsPage() {
             </>
           )}
           <CompanyEmailSettings />
+          <CompanyMessageSettings />
           {role === "owner" && (
             <Card id="company-name-settings" className="p-5 sm:p-7">
               <div className="flex items-start gap-3 mb-5">
