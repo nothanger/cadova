@@ -100,7 +100,7 @@ try {
     page.setDefaultTimeout(15000)
     page.on("pageerror", (error) => errors.push(error.message))
     await page.goto(`${base}/app/quotes/new`, { waitUntil: "networkidle" })
-    await page.getByRole("heading", { name: "Nouveau devis", exact: true }).waitFor()
+    await page.getByRole("heading", { name: "Ajouter un devis", exact: true }).waitFor()
     return page
   }
 
@@ -462,12 +462,15 @@ try {
         exact: true,
       })
       .click()
-    await scoped
-      .getByRole("heading", { name: "Tableau de bord", exact: true })
-      .waitFor()
+    await scoped.getByRole("heading", { name: "Aujourd’hui", exact: true }).waitFor()
     await scoped.getByRole("link", { name: "Devis", exact: true }).click()
-    await scoped.getByRole("link", { name: "Nouveau devis", exact: true }).click()
-    await scoped.getByRole("heading", { name: "Nouveau devis", exact: true }).waitFor()
+    await scoped
+      .locator("#app-content")
+      .getByRole("link", { name: "Ajouter un devis", exact: true })
+      .click()
+    await scoped
+      .getByRole("heading", { name: "Ajouter un devis", exact: true })
+      .waitFor()
     await scoped.waitForTimeout(2700)
     check(
       await scoped.locator("#reference").inputValue(),

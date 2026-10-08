@@ -13,14 +13,7 @@ import {
 import { useAuth } from "@/features/auth/AuthContext"
 import { useNotifications } from "./NotificationsContext"
 import { notificationAPIError } from "./api"
-import type { Notification } from "./types"
-
-function destination(item: Notification) {
-  if (item.support_thread_id)
-    return `/notifications?view=messages&thread=${encodeURIComponent(item.support_thread_id)}`
-  if (item.related_quote_id) return `/app/quotes/${item.related_quote_id}`
-  return `/notifications?notification=${encodeURIComponent(item.id)}`
-}
+import { NotificationDestinationLink } from "./NotificationDestinationLink"
 
 export function NotificationBell() {
   const { user } = useAuth()
@@ -222,16 +215,16 @@ export function NotificationBell() {
                         <Icon size={16} aria-hidden="true" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <Link
-                          to={destination(item)}
-                          onClick={() => {
+                        <NotificationDestinationLink
+                          item={item}
+                          onOpened={() => {
                             void read(item.id)
                             setOpen(false)
                           }}
                           className="break-words text-sm font-medium text-ink hover:text-primary"
                         >
                           {item.title}
-                        </Link>
+                        </NotificationDestinationLink>
                         <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-muted">
                           {item.message}
                         </p>

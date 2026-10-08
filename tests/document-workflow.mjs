@@ -112,7 +112,7 @@ try {
 
   async function visitNew(page) {
     await page.goto(`${base}/app/quotes/new`, { waitUntil: "networkidle" })
-    await page.getByRole("heading", { name: "Nouveau devis", exact: true }).waitFor()
+    await page.getByRole("heading", { name: "Ajouter un devis", exact: true }).waitFor()
   }
 
   async function accessible(page) {
@@ -409,7 +409,10 @@ try {
       "Review exposes the real TTC source passage",
     )
     check(
-      (await page.locator("details").getAttribute("open")) !== null,
+      (await page
+        .locator("details")
+        .filter({ has: page.getByText("Voir le document", { exact: true }) })
+        .getAttribute("open")) !== null,
       true,
       "Comparison opens the source document",
     )
@@ -913,9 +916,7 @@ try {
   await scopedSend
     .getByRole("button", { name: "Ouvrir l’entreprise Autre entreprise", exact: true })
     .click()
-  await scopedSend
-    .getByRole("heading", { name: "Tableau de bord", exact: true })
-    .waitFor()
+  await scopedSend.getByRole("heading", { name: "Aujourd’hui", exact: true }).waitFor()
   await scopedSend.waitForFunction(
     () => window.__documentCalls.find((call) => call.type === "edge")?.completed,
   )
@@ -1282,10 +1283,13 @@ try {
   await scoped
     .getByRole("button", { name: "Ouvrir l’entreprise Autre entreprise", exact: true })
     .click()
-  await scoped.getByRole("heading", { name: "Tableau de bord", exact: true }).waitFor()
+  await scoped.getByRole("heading", { name: "Aujourd’hui", exact: true }).waitFor()
   await scoped.getByRole("link", { name: "Devis", exact: true }).click()
-  await scoped.getByRole("link", { name: "Nouveau devis", exact: true }).click()
-  await scoped.getByRole("heading", { name: "Nouveau devis", exact: true }).waitFor()
+  await scoped
+    .locator("#app-content")
+    .getByRole("link", { name: "Ajouter un devis", exact: true })
+    .click()
+  await scoped.getByRole("heading", { name: "Ajouter un devis", exact: true }).waitFor()
   await scoped.waitForFunction(
     () =>
       window.__documentCalls.find((call) => call.name === "save_imported_quote")

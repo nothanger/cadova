@@ -11,12 +11,14 @@ export function QuoteImportPanel({
   disabled,
   onPrepared,
   onBusyChange,
+  onManualEntry,
   comparison,
   onReturnToField,
 }: {
   disabled: boolean
   onPrepared: (document: PreparedQuoteDocument | null) => void
   onBusyChange: (busy: boolean) => void
+  onManualEntry?: () => void
   comparison?: { label: string; review: QuoteFieldReview }
   onReturnToField?: () => void
 }) {
@@ -137,10 +139,12 @@ export function QuoteImportPanel({
           <FileText size={20} aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <h2 className="text-base font-semibold text-ink">Importer votre devis</h2>
+          <h2 className="text-base font-semibold text-ink">
+            Commencez par votre document
+          </h2>
           <p className="mt-1 text-sm leading-6 text-muted">
-            Ajoutez votre document pour préremplir les champs. Vous pourrez les vérifier
-            avant l’enregistrement.
+            Cadova retrouve le client, la référence et le montant. Vous vérifiez les
+            informations avant de les enregistrer.
           </p>
         </div>
       </div>
@@ -174,7 +178,7 @@ export function QuoteImportPanel({
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button
             type="button"
-            variant="secondary"
+            variant="primary"
             disabled={disabled}
             onClick={() => fileInput.current?.click()}
           >
@@ -334,10 +338,22 @@ export function QuoteImportPanel({
         </div>
       )}
       {!document && !busy && !photo && (
-        <p className="mt-3 text-xs leading-5 text-muted">
-          PDF, JPEG, PNG ou WebP · 10 Mo et 10 pages maximum. Vous pouvez aussi remplir
-          le formulaire directement.
-        </p>
+        <div className="mt-3">
+          <p className="text-xs leading-5 text-muted">
+            PDF, JPEG, PNG ou WebP · 10 Mo et 10 pages maximum.
+          </p>
+          {onManualEntry && (
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={disabled}
+              className="mt-2"
+              onClick={onManualEntry}
+            >
+              Saisir sans document
+            </Button>
+          )}
+        </div>
       )}
     </Card>
   )

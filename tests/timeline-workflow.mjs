@@ -296,9 +296,13 @@ try {
       false,
       `No overflow ${width}`,
     )
-    const audit = page.locator("details").filter({
-      has: page.locator("summary", { hasText: "Historique des envois automatiques" }),
-    })
+    const advanced = page
+      .locator("summary")
+      .filter({ hasText: /^Relances automatiques$/ })
+    if (await advanced.isVisible()) await advanced.click()
+    const audit = page
+      .locator("summary", { hasText: "Historique des envois automatiques" })
+      .locator("..")
     check(
       await audit.evaluate((element) => element.open),
       false,

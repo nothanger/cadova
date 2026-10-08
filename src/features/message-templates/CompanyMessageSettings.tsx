@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import { FileText, RefreshCw, Save, Trash2 } from "lucide-react"
-import { Button, Card, Field, Input, Select, Spinner, Textarea } from "@/components/ui"
+import { FileText, RefreshCw, Save, Trash2, ChevronDown } from "lucide-react"
+import { Button, Card, Field, Select, Spinner, Textarea } from "@/components/ui"
 import { Dialog } from "@/components/ui/Dialog"
 import { useAuth } from "@/features/auth/AuthContext"
 import { useCompany } from "@/features/company/CompanyContext"
 import { supabase } from "@/lib/supabase"
 import { formatCents } from "@/lib/money"
 import type { Company, QuoteWithClient } from "@/types"
-import { AUTOMATION_VARIABLES } from "../quotes/automationMessages"
+import {
+  AUTOMATION_VARIABLES,
+  type AutomationVariable,
+} from "../quotes/automationMessages"
 import {
   companyMessageError,
   deleteCompanyMessageTemplate,
@@ -27,6 +30,12 @@ import {
 import { useCompanyMessages } from "./useCompanyMessages"
 
 const emptyDraft = (): MessageDraft => ({ subject: "", body: "" })
+const variableLabels: Record<AutomationVariable, string> = {
+  client_name: "Nom du client",
+  quote_reference: "Référence du devis",
+  company_name: "Nom de l’entreprise",
+  amount_formatted: "Montant du devis",
+}
 
 function CompanyMessageEditor({
   company,
@@ -54,6 +63,9 @@ function CompanyMessageEditor({
   const initialized = useRef(false)
   const active = useRef(true)
   const locked = useRef(false)
+  const subjectRef = useRef<HTMLInputElement>(null)
+  const bodyRef = useRef<HTMLTextAreaElement>(null)
+  const focusedField = useRef<"subject" | "body">("body")
   useEffect(() => {
     active.current = true
     return () => {
@@ -136,6 +148,26 @@ function CompanyMessageEditor({
   function updateDraft(field: keyof MessageDraft, value: string) {
     setDrafts((current) => ({ ...current, [kind]: { ...draft, [field]: value } }))
     setNotice("")
+  }
+  function insertVariable(variable: AutomationVariable) {
+    if (busy || !canEdit) return
+    const field = focusedField.current
+    const input = field === "subject" ? subjectRef.current : bodyRef.current
+    const text = draft[field]
+    const start = input?.selectionStart ?? text.length
+    const end = input?.selectionEnd ?? start
+    const token = `{{${variable}}}`
+    const updated = `${text.slice(0, start)}${token}${text.slice(end)}`
+    if (updated.length > (field === "subject" ? 160 : 4000)) {
+      setError("Raccourcissez le texte avant d’ajouter cette information.")
+      return
+    }
+    updateDraft(field, updated)
+    setError("")
+    requestAnimationFrame(() => {
+      input?.focus()
+      input?.setSelectionRange(start + token.length, start + token.length)
+    })
   }
   async function run(action: () => Promise<void>) {
     if (!canEdit || locked.current) return
@@ -237,102 +269,7 @@ function CompanyMessageEditor({
               consulter et les utiliser dans vos devis.
             </p>
           )}
-          <form className="mt-5 space-y-4" onSubmit={saveTemplate}>
-            <Field htmlFor="company-message-kind" label="Message à préparer">
-              <Select
-                id="company-message-kind"
-                value={kind}
-                disabled={busy}
-                onChange={(event) => {
-                  setKind(event.target.value as CompanyMessageKind)
-                  setError("")
-                  setNotice("")
-                }}
-              >
-                {COMPANY_MESSAGE_KINDS.map((value) => (
-                  <option key={value} value={value}>
-                    {MESSAGE_KIND_LABELS[value]}
-                    {templates.some((row) => row.kind === value) ? " · enregistré" : ""}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            {!saved && (
-              <p className="text-xs leading-5 text-muted">
-                Aucun modèle enregistré pour ce message. Cadova conserve ses messages
-                habituels jusqu’à votre choix.
-              </p>
-            )}
-            <Field
-              htmlFor="company-message-subject"
-              label="Objet du modèle"
-              required
-              error={draft.subject ? errors.subject : undefined}
-              hint="160 caractères maximum, sur une seule ligne."
-            >
-              <Input
-                id="company-message-subject"
-                required
-                maxLength={160}
-                value={draft.subject}
-                disabled={busy || !canEdit}
-                onChange={(event) => updateDraft("subject", event.target.value)}
-              />
-            </Field>
-            <Field
-              htmlFor="company-message-body"
-              label="Texte du modèle"
-              required
-              error={draft.body ? errors.body : undefined}
-              hint="4 000 caractères maximum, signature comprise lors de l’envoi."
-            >
-              <Textarea
-                id="company-message-body"
-                required
-                rows={7}
-                maxLength={4000}
-                value={draft.body}
-                disabled={busy || !canEdit}
-                onChange={(event) => updateDraft("body", event.target.value)}
-              />
-            </Field>
-            <div className="text-xs leading-5 text-muted">
-              <p>Informations remplacées automatiquement dans le message :</p>
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {AUTOMATION_VARIABLES.map((variable) => (
-                  <li
-                    key={variable}
-                    className="break-all rounded-md border border-line bg-background px-2 py-1 font-mono text-[11px]"
-                  >{`{{${variable}}}`}</li>
-                ))}
-              </ul>
-            </div>
-            {canEdit && (
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="submit"
-                  loading={busy}
-                  disabled={!modified || Boolean(errors.subject || errors.body)}
-                >
-                  <Save size={15} aria-hidden="true" /> Enregistrer le modèle
-                </Button>
-                {saved && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={busy}
-                    onClick={() => setDeleting(kind)}
-                  >
-                    <Trash2 size={15} aria-hidden="true" /> Supprimer le modèle
-                  </Button>
-                )}
-              </div>
-            )}
-          </form>
-          <form
-            className="mt-6 space-y-4 border-t border-line pt-6"
-            onSubmit={saveSignature}
-          >
+          <form className="mt-5 space-y-4" onSubmit={saveSignature}>
             <Field
               htmlFor="company-message-signature"
               label="Signature de l’entreprise"
@@ -362,61 +299,219 @@ function CompanyMessageEditor({
               </Button>
             )}
           </form>
-          <div className="mt-6 border-t border-line pt-6">
-            <h3 className="text-sm font-semibold">Aperçu sur un devis</h3>
-            {previewLoading ? (
-              <Spinner />
-            ) : previewError ? (
-              <p className="mt-3 text-sm text-muted">{previewError}</p>
-            ) : quotes.length === 0 ? (
-              <p className="mt-3 text-sm leading-6 text-muted">
-                L’aperçu sera disponible après la création de votre premier devis.
-              </p>
-            ) : (
-              <>
-                <div className="mt-3">
-                  <Field
-                    htmlFor="company-message-preview-quote"
-                    label="Devis utilisé pour l’aperçu"
+          <details className="group/templates mt-6 border-t border-line pt-4">
+            <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-semibold text-ink">
+              Personnaliser les messages
+              <ChevronDown
+                size={17}
+                aria-hidden="true"
+                className="shrink-0 text-muted transition-transform group-open/templates:rotate-180"
+              />
+            </summary>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Enregistrez vos formulations habituelles. Vous choisissez ensuite le
+              modèle à utiliser dans chaque devis, avant de confirmer l’envoi.
+            </p>
+            <form className="mt-5 space-y-4" onSubmit={saveTemplate}>
+              <Field htmlFor="company-message-kind" label="Message à préparer">
+                <Select
+                  id="company-message-kind"
+                  value={kind}
+                  disabled={busy}
+                  onChange={(event) => {
+                    setKind(event.target.value as CompanyMessageKind)
+                    setError("")
+                    setNotice("")
+                  }}
+                >
+                  {COMPANY_MESSAGE_KINDS.map((value) => (
+                    <option key={value} value={value}>
+                      {MESSAGE_KIND_LABELS[value]}
+                      {templates.some((row) => row.kind === value)
+                        ? " · enregistré"
+                        : ""}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              {!saved && (
+                <p className="text-xs leading-5 text-muted">
+                  Aucun modèle enregistré pour ce message. Cadova conserve ses messages
+                  habituels jusqu’à votre choix.
+                </p>
+              )}
+              <Field
+                htmlFor="company-message-subject"
+                label="Objet du modèle"
+                required
+                error={draft.subject ? errors.subject : undefined}
+                hint="160 caractères maximum, sur une seule ligne."
+              >
+                <input
+                  ref={subjectRef}
+                  className="ui-input"
+                  id="company-message-subject"
+                  required
+                  maxLength={160}
+                  value={draft.subject}
+                  disabled={busy || !canEdit}
+                  onChange={(event) => updateDraft("subject", event.target.value)}
+                  onFocus={() => {
+                    focusedField.current = "subject"
+                  }}
+                />
+              </Field>
+              <Field
+                htmlFor="company-message-body"
+                label="Texte du modèle"
+                required
+                error={draft.body ? errors.body : undefined}
+                hint="4 000 caractères maximum, signature comprise lors de l’envoi."
+              >
+                <textarea
+                  ref={bodyRef}
+                  className="ui-input ui-textarea"
+                  id="company-message-body"
+                  required
+                  rows={7}
+                  maxLength={4000}
+                  value={draft.body}
+                  disabled={busy || !canEdit}
+                  onChange={(event) => updateDraft("body", event.target.value)}
+                  onFocus={() => {
+                    focusedField.current = "body"
+                  }}
+                />
+              </Field>
+              <div className="text-sm leading-6 text-muted">
+                <p>Ajoutez une information qui sera remplacée par celle du devis.</p>
+                {canEdit && (
+                  <div
+                    className="mt-2 flex flex-wrap gap-2"
+                    aria-label="Informations à insérer"
                   >
-                    <Select
-                      id="company-message-preview-quote"
-                      value={previewId}
-                      onChange={(event) => setPreviewId(event.target.value)}
-                    >
-                      {quotes.map((row) => (
-                        <option key={row.id} value={row.id}>
-                          {row.reference} · {row.client?.name ?? "Client"}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-                </div>
-                {draft.subject.trim() && draft.body.trim() && preview ? (
-                  <>
-                    <p className="mt-4 break-words text-sm font-semibold">
-                      {preview.preview.subject}
-                    </p>
-                    <p className="mt-2 whitespace-pre-wrap break-words rounded-lg border border-line bg-background p-4 text-sm leading-6">
-                      {preview.preview.body}
-                    </p>
-                    {preview.error && (
-                      <p role="status" className="mt-3 text-sm text-danger">
-                        {preview.error}
-                      </p>
-                    )}
-                    <p className="mt-3 text-xs leading-5 text-muted">
-                      Cet aperçu utilise le devis sélectionné. Aucun email n’est envoyé.
-                    </p>
-                  </>
-                ) : (
-                  <p className="mt-3 text-sm text-muted">
-                    Renseignez l’objet et le texte pour voir le résultat.
-                  </p>
+                    {AUTOMATION_VARIABLES.map((variable) => (
+                      <Button
+                        key={variable}
+                        type="button"
+                        variant="secondary"
+                        disabled={busy}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => insertVariable(variable)}
+                      >
+                        {variableLabels[variable]}
+                      </Button>
+                    ))}
+                  </div>
                 )}
-              </>
-            )}
-          </div>
+                <details className="group/variables mt-2 text-xs">
+                  <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 font-medium">
+                    Comprendre les informations automatiques
+                    <ChevronDown
+                      size={15}
+                      aria-hidden="true"
+                      className="shrink-0 transition-transform group-open/variables:rotate-180"
+                    />
+                  </summary>
+                  <p>
+                    Les éléments entre accolades restent dans le modèle. Cadova les
+                    remplace pour chaque devis :
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {AUTOMATION_VARIABLES.map((variable) => (
+                      <li key={variable} className="break-words">
+                        {variableLabels[variable]} : <code>{`{{${variable}}}`}</code>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
+              {canEdit && (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="submit"
+                    loading={busy}
+                    disabled={!modified || Boolean(errors.subject || errors.body)}
+                  >
+                    <Save size={15} aria-hidden="true" /> Enregistrer le modèle
+                  </Button>
+                  {saved && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={busy}
+                      onClick={() => setDeleting(kind)}
+                    >
+                      <Trash2 size={15} aria-hidden="true" /> Supprimer le modèle
+                    </Button>
+                  )}
+                </div>
+              )}
+            </form>
+            <details className="group/preview mt-5 border-t border-line pt-4">
+              <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm font-semibold">
+                Aperçu sur un devis
+                <ChevronDown
+                  size={17}
+                  aria-hidden="true"
+                  className="shrink-0 text-muted transition-transform group-open/preview:rotate-180"
+                />
+              </summary>
+              {previewLoading ? (
+                <Spinner />
+              ) : previewError ? (
+                <p className="mt-3 text-sm text-muted">{previewError}</p>
+              ) : quotes.length === 0 ? (
+                <p className="mt-3 text-sm leading-6 text-muted">
+                  L’aperçu sera disponible après la création de votre premier devis.
+                </p>
+              ) : (
+                <>
+                  <div className="mt-3">
+                    <Field
+                      htmlFor="company-message-preview-quote"
+                      label="Devis utilisé pour l’aperçu"
+                    >
+                      <Select
+                        id="company-message-preview-quote"
+                        value={previewId}
+                        onChange={(event) => setPreviewId(event.target.value)}
+                      >
+                        {quotes.map((row) => (
+                          <option key={row.id} value={row.id}>
+                            {row.reference} · {row.client?.name ?? "Client"}
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
+                  </div>
+                  {draft.subject.trim() && draft.body.trim() && preview ? (
+                    <>
+                      <p className="mt-4 break-words text-sm font-semibold">
+                        {preview.preview.subject}
+                      </p>
+                      <p className="mt-2 whitespace-pre-wrap break-words rounded-lg border border-line bg-background p-4 text-sm leading-6">
+                        {preview.preview.body}
+                      </p>
+                      {preview.error && (
+                        <p role="status" className="mt-3 text-sm text-danger">
+                          {preview.error}
+                        </p>
+                      )}
+                      <p className="mt-3 text-xs leading-5 text-muted">
+                        Cet aperçu utilise le devis sélectionné. Aucun email n’est
+                        envoyé.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="mt-3 text-sm text-muted">
+                      Renseignez l’objet et le texte pour voir le résultat.
+                    </p>
+                  )}
+                </>
+              )}
+            </details>
+          </details>
           {error && (
             <p role="alert" className="mt-4 text-sm leading-6 text-danger">
               {error}

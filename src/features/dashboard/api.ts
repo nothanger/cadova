@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabase"
 import type { QuoteWithClient } from "@/types"
 import { FOLLOWUP_THRESHOLD_DAYS } from "@/lib/followup"
+import type { QuoteWorkOrder } from "@/features/quotes/work-orders/model"
+import { getFollowupServiceStatus } from "@/features/company/contactApi"
 import {
   buildWorkspaceActions,
   type WorkspaceContext,
@@ -16,6 +18,8 @@ import {
 } from "./workspaceActions"
 
 export interface DashboardData {
+  context: WorkspaceContext
+  followupDelayDays: number
   followUp: { count: number; amountCents: number; complete: boolean }
   pending: { count: number; amountCents: number }
   accepted: { count: number; amountCents: number }
@@ -46,6 +50,7 @@ export interface DashboardData {
 export async function getDashboardData(
   companyId: string,
   followupDelayDays = FOLLOWUP_THRESHOLD_DAYS,
+  preferencesUnavailable = false,
 ): Promise<DashboardData> {
   const { data, error } = await supabase
     .from("quotes")
@@ -57,47 +62,59 @@ export async function getDashboardData(
   const quotes = ((data ?? []) as unknown as WorkspaceQuote[]).filter(
     (quote) => quote.company_id === companyId,
   )
-  const [automation, messages, events, deliveries, settings, sendJobs] =
-    await Promise.all([
-      readOptional<WorkspaceAutomation[]>(() =>
-        supabase
-          .from("quote_followup_automations")
-          .select("*")
-          .eq("company_id", companyId),
-      ),
-      readOptional<WorkspaceMessage[]>(() =>
-        supabase
-          .from("quote_client_messages")
-          .select("id,company_id,quote_id,author,kind,created_at")
-          .eq("company_id", companyId),
-      ),
-      readOptional<WorkspaceEvent[]>(() =>
-        supabase
-          .from("quote_events")
-          .select("company_id,quote_id,event_type,occurred_at")
-          .eq("company_id", companyId),
-      ),
-      readOptional<WorkspaceDelivery[]>(() =>
-        supabase.from("quote_email_deliveries").select("*").eq("company_id", companyId),
-      ),
-      readOptional<{
-        company_id: string
-        reply_to: string | null
-        automation_paused: boolean
-      } | null>(() =>
-        supabase
-          .from("company_email_settings")
-          .select("company_id,reply_to,automation_paused")
-          .eq("company_id", companyId)
-          .maybeSingle(),
-      ),
-      readOptional<WorkspaceSendJob[]>(() =>
-        supabase
-          .from("quote_initial_send_jobs")
-          .select("company_id,quote_id,status,created_at")
-          .eq("company_id", companyId),
-      ),
-    ])
+  const [
+    automation,
+    messages,
+    events,
+    deliveries,
+    settings,
+    sendJobs,
+    workOrders,
+    service,
+  ] = await Promise.all([
+    readOptional<WorkspaceAutomation[]>(() =>
+      supabase
+        .from("quote_followup_automations")
+        .select("*")
+        .eq("company_id", companyId),
+    ),
+    readOptional<WorkspaceMessage[]>(() =>
+      supabase
+        .from("quote_client_messages")
+        .select("id,company_id,quote_id,author,kind,created_at")
+        .eq("company_id", companyId),
+    ),
+    readOptional<WorkspaceEvent[]>(() =>
+      supabase
+        .from("quote_events")
+        .select("company_id,quote_id,event_type,occurred_at")
+        .eq("company_id", companyId),
+    ),
+    readOptional<WorkspaceDelivery[]>(() =>
+      supabase.from("quote_email_deliveries").select("*").eq("company_id", companyId),
+    ),
+    readOptional<{
+      company_id: string
+      reply_to: string | null
+      automation_paused: boolean
+    } | null>(() =>
+      supabase
+        .from("company_email_settings")
+        .select("company_id,reply_to,automation_paused")
+        .eq("company_id", companyId)
+        .maybeSingle(),
+    ),
+    readOptional<WorkspaceSendJob[]>(() =>
+      supabase
+        .from("quote_initial_send_jobs")
+        .select("company_id,quote_id,status,created_at")
+        .eq("company_id", companyId),
+    ),
+    readOptional<QuoteWorkOrder[]>(() =>
+      supabase.from("quote_work_orders").select("*").eq("company_id", companyId),
+    ),
+    getFollowupServiceStatus().catch(() => null),
+  ])
   const reads = {
     automation: automation.state,
     messages: messages.state,
@@ -107,21 +124,24 @@ export async function getDashboardData(
     sendJobs: sendJobs.state,
   }
   const emailSettings = settings.data?.company_id === companyId ? settings.data : null
-  const workspace = buildWorkspaceActions(
-    {
-      companyId,
-      quotes,
-      automations: automation.data ?? [],
-      messages: messages.data ?? [],
-      events: events.data ?? [],
-      deliveries: deliveries.data ?? [],
-      sendJobs: sendJobs.data ?? [],
-      replyTo: emailSettings?.reply_to ?? null,
-      companyPaused: emailSettings?.automation_paused ?? false,
-      reads,
-    },
+  const context: WorkspaceContext = {
+    companyId,
+    quotes,
+    automations: automation.data ?? [],
+    messages: messages.data ?? [],
+    events: events.data ?? [],
+    deliveries: deliveries.data ?? [],
+    sendJobs: sendJobs.data ?? [],
+    replyTo: emailSettings?.reply_to ?? null,
+    companyPaused: emailSettings?.automation_paused ?? false,
+    reads,
+    workOrders: workOrders.data ?? [],
+    workOrdersRead: workOrders.state,
+    serviceReady: service?.ready ?? null,
     followupDelayDays,
-  )
+    preferencesUnavailable,
+  }
+  const workspace = buildWorkspaceActions(context, followupDelayDays)
 
   const followUp = {
     count: workspace.manualDue.length,
@@ -180,6 +200,8 @@ export async function getDashboardData(
   )
 
   return {
+    context,
+    followupDelayDays,
     followUp,
     pending,
     accepted,

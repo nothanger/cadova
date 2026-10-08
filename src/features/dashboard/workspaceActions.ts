@@ -1,5 +1,6 @@
 import type { QuoteWithClient } from "@/types"
 import { daysBetween, toISODate } from "@/lib/dates"
+import type { QuoteWorkOrder } from "@/features/quotes/work-orders/model"
 
 export interface WorkspaceQuote extends QuoteWithClient {
   client: (QuoteWithClient["client"] & { email?: string | null }) | null
@@ -58,6 +59,12 @@ export interface WorkspaceContext {
   sendJobs: WorkspaceSendJob[]
   replyTo: string | null
   companyPaused: boolean
+  workOrders?: QuoteWorkOrder[]
+  workOrdersRead?: ReadState
+  serviceReady?: boolean | null
+  clientRead?: ReadState
+  followupDelayDays?: number
+  preferencesUnavailable?: boolean
   reads: Record<
     "automation" | "messages" | "events" | "deliveries" | "settings" | "sendJobs",
     ReadState
@@ -74,6 +81,7 @@ export type WorkActionKind =
   | "followup"
   | "automation_paused"
   | "review"
+  | "work"
 export interface WorkAction {
   id: string
   quoteId: string
@@ -90,12 +98,33 @@ export interface ScheduledAction extends WorkAction {
   automatic: boolean
 }
 
+const actionFocus: Record<WorkActionKind, string> = {
+  question: "conversation",
+  delivery: "delivery",
+  response: "history",
+  expired: "details",
+  missing_email: "details",
+  draft: "document",
+  followup: "followups",
+  automation_paused: "followups",
+  review: "history",
+  work: "work",
+}
+
 export function buildWorkspaceActions(
   context: WorkspaceContext,
   delayDays = 3,
   now = new Date(),
 ) {
   const today = toISODate(now)
+  // Automatic sending uses the Paris business day on the server, including
+  // expiry on the stated date. Personal reminders keep their local-day behavior.
+  const businessToday = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now)
   const actions: WorkAction[] = []
   const scheduled: ScheduledAction[] = []
   const manualDue: WorkspaceQuote[] = []
@@ -118,12 +147,14 @@ export function buildWorkspaceActions(
   const sendJobs = context.sendJobs.filter(
     (row) => row.company_id === context.companyId,
   )
-  const followupsKnown =
+  const followupSourcesKnown =
     context.reads.automation === "available" &&
     context.reads.events === "available" &&
     context.reads.messages === "available" &&
     context.reads.deliveries === "available" &&
-    context.reads.sendJobs === "available"
+    context.reads.sendJobs === "available" &&
+    context.reads.settings === "available"
+  const followupsKnown = followupSourcesKnown && !context.preferencesUnavailable
 
   for (const quote of quotes) {
     const quotePath = `/app/quotes/${quote.id}`
@@ -145,7 +176,7 @@ export function buildWorkspaceActions(
         detail,
         label,
         date,
-        to,
+        to: to === quotePath ? `${quotePath}?focus=${actionFocus[kind]}` : to,
       }
       actions.push(action)
       return action
@@ -216,6 +247,7 @@ export function buildWorkspaceActions(
             : "Le devis n’a pas pu être envoyé. Consultez le résultat dans le dossier.",
         "Voir l’envoi",
         latestSend.created_at,
+        `${quotePath}?focus=document`,
       )
     if (sendUnresolved) continue
 
@@ -226,11 +258,61 @@ export function buildWorkspaceActions(
           "Vérifier l’envoi",
           "Le statut d’envoi de ce brouillon n’a pas pu être vérifié. Consultez le dossier avant tout envoi.",
           "Voir le dossier",
+          null,
+          `${quotePath}?focus=document`,
         )
       continue
     }
 
-    if (quote.status === "accepted" || quote.status === "refused") continue
+    if (quote.status === "accepted") {
+      if (context.workOrdersRead === "available") {
+        const work = context.workOrders?.find(
+          (row) => row.quote_id === quote.id && row.company_id === context.companyId,
+        )
+        if (!work || work.status === "to_schedule")
+          add(
+            "work",
+            "Planifier l’intervention",
+            "Le devis est accepté. Choisissez la prochaine étape du chantier.",
+            "Organiser l’intervention",
+          )
+        else if (work.status === "in_progress")
+          add(
+            "work",
+            "Suivre l’intervention",
+            "L’intervention est en cours. Mettez à jour son avancement quand vous êtes prêt.",
+            "Voir l’intervention",
+            work.scheduled_for,
+          )
+        else if (work.status === "scheduled" && work.scheduled_for) {
+          const item: ScheduledAction = {
+            id: `${quote.id}:work`,
+            quoteId: quote.id,
+            reference: quote.reference,
+            clientName: quote.client?.name ?? "Client à vérifier",
+            kind: "work",
+            title: "Intervention prévue",
+            detail:
+              "Votre date d’intervention. Cadova n’envoie pas de message au client.",
+            label: "Voir l’intervention",
+            to: `${quotePath}?focus=work`,
+            date: work.scheduled_for,
+            automatic: false,
+          }
+          if (work.scheduled_for <= today)
+            add(
+              "work",
+              "Faire le point sur l’intervention",
+              "La date prévue est arrivée. Confirmez son avancement.",
+              "Voir l’intervention",
+              work.scheduled_for,
+            )
+          else scheduled.push(item)
+        }
+      }
+      continue
+    }
+    if (quote.status === "refused") continue
     const automation = automations.get(quote.id)
     if (automation?.stop_reason === "delivery_unknown") {
       if (!deliveryProblem)
@@ -239,6 +321,8 @@ export function buildWorkspaceActions(
           "Vérifier la relance",
           "Le résultat de la dernière relance est incertain. Vérifiez le dossier avant un nouvel envoi.",
           "Voir l’envoi",
+          null,
+          `${quotePath}?focus=followups`,
         )
       continue
     }
@@ -263,14 +347,14 @@ export function buildWorkspaceActions(
         "response",
         "Faire le point sur la réponse",
         "Une réponse a été reçue. Mettez à jour le devis ou choisissez la suite.",
-        "Voir le dossier",
+        "Lire la réponse",
         latestResponse?.occurred_at ?? null,
       )
-    if (quote.expires_at && quote.expires_at < today) {
+    if (quote.expires_at && quote.expires_at <= businessToday) {
       add(
         "expired",
         "Décider de la suite",
-        "La date de validité du devis est dépassée.",
+        "La validité est atteinte. Faites le point avec le client avant de modifier le devis ou d’enregistrer sa décision.",
         "Vérifier le devis",
         quote.expires_at,
       )
@@ -295,13 +379,14 @@ export function buildWorkspaceActions(
       )
       continue
     }
-    if (responseReceived || question || deliveryProblem || !followupsKnown) continue
+    if (responseReceived || question || deliveryProblem || !followupSourcesKnown)
+      continue
     if (automation?.stop_reason === "completed") {
       add(
         "review",
         "Faire le point sur le dossier",
         "Les relances prévues sont terminées. Choisissez la suite avec ce client.",
-        "Voir le dossier",
+        "Voir les échanges",
       )
       continue
     }
@@ -314,6 +399,22 @@ export function buildWorkspaceActions(
           "Les relances automatiques de ce devis sont en pause.",
           "Voir les relances",
         )
+      } else if (!context.replyTo?.trim() || !quote.client?.email?.trim()) {
+        add(
+          "automation_paused",
+          "Vérifier les coordonnées",
+          "Vérifiez l’adresse du client et l’adresse de réponse avant de poursuivre les relances.",
+          "Voir les relances",
+        )
+      } else if (context.serviceReady === false || context.serviceReady === null) {
+        add(
+          "automation_paused",
+          "Vérifier les relances",
+          context.serviceReady === false
+            ? "Le service d’envoi est indisponible. Aucun prochain envoi ne peut être confirmé."
+            : "La disponibilité du service d’envoi n’a pas pu être vérifiée.",
+          "Voir les relances",
+        )
       } else if (automation.next_send_at) {
         scheduled.push({
           id: `${quote.id}:automatic`,
@@ -324,13 +425,14 @@ export function buildWorkspaceActions(
           title: "Relance automatique",
           detail: "Envoi programmé, sous réserve de disponibilité du service.",
           label: "Voir le calendrier",
-          to: quotePath,
+          to: `${quotePath}?focus=followups`,
           date: automation.next_send_at,
           automatic: true,
         })
       }
       continue
     }
+    if (context.preferencesUnavailable) continue
     const scheduledDate = quote.next_followup_at
     const due = scheduledDate
       ? scheduledDate <= today
@@ -357,7 +459,7 @@ export function buildWorkspaceActions(
         title: "Relance à préparer",
         detail: "Rappel dans le dossier. Aucun email envoyé automatiquement.",
         label: "Voir le devis",
-        to: quotePath,
+        to: `${quotePath}?focus=followups`,
         date: scheduledDate,
         automatic: false,
       })
@@ -373,6 +475,7 @@ export function buildWorkspaceActions(
     missing_email: 6,
     automation_paused: 7,
     draft: 8,
+    work: 4,
   }
   actions.sort(
     (a, b) =>

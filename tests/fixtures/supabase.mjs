@@ -12,7 +12,7 @@ const company = {
   updated_at: today.toISOString(),
 }
 const user = { id: "user-test", email: "test@example.test" }
-let session = options.session ? { user } : null
+let session = options.session ? { user, access_token: "ui-fixture-session" } : null
 const listeners = new Set()
 const db = {
   companies: [company],
@@ -54,7 +54,7 @@ const db = {
           reference: "TEST-001",
           amount_cents: 125050,
           status: options.quoteStatus ?? "sent",
-          sent_at: iso(ago),
+          sent_at: options.quoteStatus === "draft" ? null : iso(ago),
           expires_at: options.expiresToday
             ? new Intl.DateTimeFormat("en-CA", {
                 timeZone: "Europe/Paris",
@@ -84,6 +84,9 @@ const db = {
   quote_events: [],
   quote_documents: [],
   quote_initial_send_jobs: [],
+  quote_client_messages: [],
+  quote_email_deliveries: [],
+  quote_work_orders: [],
   notifications: [
     {
       id: "notification-test",
@@ -114,6 +117,17 @@ const db = {
       : [],
   quote_followup_automations: [],
   quote_followup_jobs: [],
+}
+if (options.clientQuestion) {
+  db.quote_client_messages.push({
+    id: "question-test",
+    company_id: company.id,
+    quote_id: "quote-test",
+    author: "client",
+    kind: "question",
+    content: "Pouvez-vous préciser la date de début ?",
+    created_at: today.toISOString(),
+  })
 }
 window.__testStore = db
 const automationCalls = []
@@ -1177,6 +1191,9 @@ class Query {
     this.end = end
     return this
   }
+  abortSignal() {
+    return this
+  }
   single() {
     this.one = true
     return this
@@ -1215,6 +1232,15 @@ class Query {
             setTimeout(resolve, options.quoteMutationDelay),
           )
         }
+        if (
+          options.companyReadFailure &&
+          this.table === "company_members" &&
+          this.mode === "read"
+        )
+          return {
+            data: null,
+            error: { message: "Test membership connection failure" },
+          }
         if (options.fail && this.table === "quotes")
           return { data: null, error: { message: "Test connection failure" } }
         if (options.messagingFailure === this.table)
@@ -1248,6 +1274,9 @@ class Query {
             "quote_followup_jobs",
             "quote_documents",
             "quote_initial_send_jobs",
+            "quote_client_messages",
+            "quote_email_deliveries",
+            "quote_work_orders",
           ].includes(this.table)
         )
           rows = rows.filter((row) => hasCompany(row.company_id))
@@ -1557,7 +1586,7 @@ export const supabase = {
     signInWithPassword: async ({ password }) => {
       if (password === "invalid")
         return { error: { message: "Invalid login credentials" } }
-      session = { user }
+      session = { user, access_token: "ui-fixture-session" }
       listeners.forEach((callback) => callback("SIGNED_IN", session))
       return { error: null }
     },

@@ -55,7 +55,7 @@ try {
       (scenario) => {
         window.__scenario = scenario
       },
-      { session: true, ...options },
+      { session: true, automation: true, ...options },
     )
     await context.route("**/*", (route) => {
       const url = new URL(route.request().url())
@@ -83,9 +83,7 @@ try {
   }
   async function dashboard(page) {
     await page.goto(`${base}/app`, { waitUntil: "networkidle" })
-    await page
-      .getByRole("heading", { name: "À faire aujourd’hui", exact: true })
-      .waitFor()
+    await page.getByRole("heading", { name: "Aujourd’hui", exact: true }).waitFor()
   }
   for (const width of [320, 390, 768, 1280]) {
     const page = await pageFor({ workspace: "standard" }, width)
@@ -118,12 +116,12 @@ try {
     )
     check(
       await panel.getByRole("link", { name: "Lire la question" }).getAttribute("href"),
-      "/app/quotes/question-quote",
+      "/app/quotes/question-quote?focus=conversation",
       "Direct question action",
     )
     check(
       await panel.getByRole("link", { name: "Voir l’envoi" }).getAttribute("href"),
-      "/app/quotes/bounced-quote",
+      "/app/quotes/bounced-quote?focus=delivery",
       "Direct delivery action",
     )
     check(
@@ -177,6 +175,75 @@ try {
         path: `${artifacts}dashboard-desktop.png`,
         fullPage: true,
       })
+    await page.goto(`${base}/app/quotes`, { waitUntil: "networkidle" })
+    await page.getByRole("heading", { name: "Devis", exact: true }).waitFor()
+    await page
+      .getByText("Relance automatique prévue", { exact: true })
+      .filter({ visible: true })
+      .waitFor()
+    check(
+      await page
+        .getByText("Préparer la relance", { exact: true })
+        .filter({ visible: true })
+        .count(),
+      1,
+      "List preserves one manual followup",
+    )
+    check(
+      await page
+        .getByText("Répondre au client", { exact: true })
+        .filter({ visible: true })
+        .count(),
+      1,
+      "List keeps unanswered question",
+    )
+    check(
+      await page
+        .getByText("Vérifier l’envoi", { exact: true })
+        .filter({ visible: true })
+        .count(),
+      1,
+      "List keeps delivery problem",
+    )
+    await page.getByRole("button", { name: /^À traiter/ }).click()
+    await page
+      .getByText("Relance automatique prévue", { exact: true })
+      .filter({ visible: true })
+      .waitFor({ state: "hidden" })
+    check(
+      await page
+        .getByText("Relance automatique prévue", { exact: true })
+        .filter({ visible: true })
+        .count(),
+      0,
+      "Automatic schedule does not become an action to do",
+    )
+    check(
+      await page
+        .getByText("Préparer la relance", { exact: true })
+        .filter({ visible: true })
+        .count(),
+      1,
+      "Attention filter keeps manual work",
+    )
+    check(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth,
+      ),
+      false,
+      "List has no horizontal overflow",
+    )
+    if (width === 390) {
+      const { violations } = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+        .analyze()
+      check(
+        violations.map((violation) => violation.id),
+        [],
+        "Accessible responsive quote list",
+      )
+      await page.screenshot({ path: `${artifacts}quotes-mobile.png`, fullPage: true })
+    }
     await page.context().close()
   }
   for (const status of ["preparing", "processing", "delivery_unknown", "failed"]) {
@@ -190,7 +257,7 @@ try {
       await panel
         .getByRole("link", { name: "Voir l’envoi", exact: true })
         .getAttribute("href"),
-      "/app/quotes/quote-test",
+      "/app/quotes/quote-test?focus=document",
       `${status}: inspect actual job`,
     )
     check(
@@ -250,7 +317,7 @@ try {
     await guide
       .getByRole("link", { name: "Renseigner l’adresse" })
       .getAttribute("href"),
-    "/app/settings",
+    "/app/settings#company-email",
     "Real first incomplete step",
   )
   await guide.getByRole("button", { name: "Masquer le guide" }).click()
@@ -272,8 +339,7 @@ try {
     .getByRole("status")
     .filter({ hasText: "L’adresse de réponse a été enregistrée." })
     .waitFor()
-  await guide.getByRole("button", { name: "Ouvrir le menu", exact: true }).click()
-  await guide.getByRole("link", { name: "Tableau de bord", exact: true }).click()
+  await guide.getByRole("link", { name: "Aujourd’hui", exact: true }).click()
   await guide.getByRole("link", { name: "Importer un devis", exact: true }).waitFor()
   check(
     await guide
@@ -293,6 +359,7 @@ try {
     .getByRole("status")
     .filter({ hasText: "La liste peut être incomplète" })
     .waitFor()
+  await unavailable.getByText("Le bilan de vos devis", { exact: true }).click()
   check(
     await unavailable
       .getByRole("region", { name: "À faire aujourd’hui" })
@@ -302,11 +369,7 @@ try {
     "Do not guess while automation unavailable",
   )
   check(
-    await unavailable
-      .getByText(
-        "Les relances à préparer ne peuvent pas être confirmées pour le moment.",
-      )
-      .count(),
+    await unavailable.getByText("Vérifications indisponibles", { exact: true }).count(),
     1,
     "Metrics do not claim complete zero",
   )
@@ -365,6 +428,149 @@ try {
   )
   await unknownSend.context().close()
 
+  for (const source of [
+    "quote_followup_automations",
+    "quote_client_messages",
+    "quote_events",
+    "quote_email_deliveries",
+    "company_email_settings",
+    "quote_initial_send_jobs",
+  ]) {
+    const page = await pageFor({
+      workspace: "scheduled-only",
+      workspaceFailure: source,
+    })
+    await dashboard(page)
+    const panel = page.getByRole("region", { name: "À faire aujourd’hui", exact: true })
+    for (const name of ["Cadova envoie", "Vos rappels"]) {
+      const calendar = panel.getByRole("region", { name, exact: true })
+      check(
+        await calendar
+          .getByText(
+            "Les prochaines échéances ne peuvent pas être confirmées pour le moment.",
+            { exact: true },
+          )
+          .count(),
+        1,
+        `${source}: ${name} remains unverified rather than claiming no schedule`,
+      )
+    }
+    await page.evaluate(() => {
+      window.__workspaceFailure = null
+    })
+    await panel.getByRole("button", { name: "Réessayer les vérifications" }).click()
+    await page
+      .getByRole("region", { name: "Cadova envoie", exact: true })
+      .getByText("Relance automatique", { exact: true })
+      .waitFor()
+    check(
+      await page
+        .getByRole("region", { name: "Vos rappels", exact: true })
+        .getByText("Relance à préparer", { exact: true })
+        .count(),
+      1,
+      `${source}: retry restores the real manual schedule`,
+    )
+    await page.context().close()
+  }
+
+  const onlyUnknownReminder = await pageFor({
+    workspace: "manual-only",
+    workspacePreferencesFailure: true,
+  })
+  await dashboard(onlyUnknownReminder)
+  const unknownReminderPanel = onlyUnknownReminder.getByRole("region", {
+    name: "À faire aujourd’hui",
+    exact: true,
+  })
+  check(
+    await unknownReminderPanel
+      .getByText("Aucune action en attente", { exact: true })
+      .count(),
+    0,
+    "A failed personal delay does not claim an empty action list",
+  )
+  check(
+    await unknownReminderPanel
+      .getByText("Aucune action dans les données chargées", { exact: true })
+      .count(),
+    1,
+    "An incomplete action list is explicitly described",
+  )
+  check(
+    await unknownReminderPanel
+      .getByRole("region", { name: "Vos rappels", exact: true })
+      .getByText(
+        "Les prochaines échéances ne peuvent pas être confirmées pour le moment.",
+        { exact: true },
+      )
+      .count(),
+    1,
+    "The reminder calendar keeps the failed preference unknown",
+  )
+  await onlyUnknownReminder.evaluate(() => {
+    window.__workspacePreferencesFailure = false
+  })
+  await onlyUnknownReminder
+    .getByRole("button", { name: "Réessayer", exact: true })
+    .click()
+  await onlyUnknownReminder.getByText("Préparer la relance", { exact: true }).waitFor()
+  check(
+    await onlyUnknownReminder
+      .getByText("Aucune action dans les données chargées", { exact: true })
+      .count(),
+    0,
+    "Retry recovers the real due reminder",
+  )
+  await onlyUnknownReminder.context().close()
+
+  const prefsFailure = await pageFor({
+    workspace: "standard",
+    workspacePreferencesFailure: true,
+  })
+  await dashboard(prefsFailure)
+  check(
+    await prefsFailure
+      .getByRole("status")
+      .filter({ hasText: "Votre délai de rappel personnel" })
+      .count(),
+    1,
+    "Preference failure is visible",
+  )
+  check(
+    await prefsFailure.getByText("Préparer la relance", { exact: true }).count(),
+    0,
+    "Preference failure does not invent manual urgency",
+  )
+  await prefsFailure.goto(`${base}/app/quotes`, { waitUntil: "networkidle" })
+  await prefsFailure
+    .getByRole("status")
+    .filter({ hasText: "Votre délai de rappel personnel" })
+    .waitFor()
+  check(
+    await prefsFailure
+      .getByText("Préparer la relance", { exact: true })
+      .filter({ visible: true })
+      .count(),
+    0,
+    "List also preserves unknown preference",
+  )
+  await prefsFailure.context().close()
+
+  const disabledService = await pageFor({ workspace: "standard", serviceReady: false })
+  await dashboard(disabledService)
+  check(
+    await disabledService.getByText("Relance automatique", { exact: true }).count(),
+    0,
+    "Unavailable service never promises an automatic send",
+  )
+  check(
+    await disabledService.getByText("Vérifier les relances", { exact: true }).count(),
+    1,
+    "Configured automation with unavailable service is explained",
+  )
+  await disabledService.context().close()
+
   const admin = await pageFor({ admin: true, automation: true })
   await admin.addInitScript(() => {
     window.sessionStorage.setItem("cadova.admin-company.user-test", "company-other")
@@ -381,7 +587,7 @@ try {
   )
   const panel = admin.getByRole("region", { name: "À faire aujourd’hui" })
   check(
-    await panel.getByText("Client autre entreprise · OTHER-001").count(),
+    await panel.getByText("Client autre entreprise", { exact: true }).count(),
     1,
     "Admin chosen company data",
   )
@@ -397,9 +603,11 @@ try {
   await onboarding.getByRole("heading", { name: "Votre espace entreprise" }).waitFor()
   await onboarding.getByLabel("Nom de votre entreprise").fill("Entreprise du parcours")
   await onboarding.getByRole("button", { name: "Créer mon espace" }).click()
-  await onboarding.getByRole("heading", { name: "À faire aujourd’hui" }).waitFor()
+  await onboarding.getByRole("heading", { name: "Aujourd’hui", exact: true }).waitFor()
   check(
-    await onboarding.getByText("Le suivi des devis de Entreprise du parcours.").count(),
+    await onboarding
+      .getByText("Vos prochaines actions chez Entreprise du parcours.")
+      .count(),
     1,
     "Atomic onboarding still works",
   )

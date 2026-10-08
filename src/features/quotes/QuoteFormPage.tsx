@@ -17,7 +17,12 @@ import { useAuth } from "@/features/auth/AuthContext"
 import { useCompany } from "@/features/company/CompanyContext"
 import { listClients } from "@/features/clients/api"
 import { getQuote, listQuotes, updateQuote, type QuoteInput } from "./api"
-import { documentError, saveImportedQuote } from "./documentApi"
+import {
+  DocumentApiError,
+  documentError,
+  getInitialSendJob,
+  saveImportedQuote,
+} from "./documentApi"
 import { QuoteImportPanel, type PreparedQuoteDocument } from "./QuoteImportPanel"
 import { findClientMatches } from "./import/clientMatches"
 import { ImportFieldReview } from "./import/ImportFieldReview"
@@ -65,11 +70,12 @@ export function QuoteFormPage({ mode }: { mode: "new" | "edit" }) {
     )
   return (
     <ScopedQuoteForm
-      key={`${user.id}:${company.id}:${mode}:${quoteId ?? "new"}`}
+      key={`${user.id}:${company.id}:${mode}:${quoteId ?? "new"}:${params.get("alreadySent") ?? ""}`}
       mode={mode}
       companyId={company.id}
       quoteId={quoteId}
       initialClientId={params.get("client") ?? ""}
+      markAlreadySent={mode === "edit" && params.get("alreadySent") === "1"}
     />
   )
 }
@@ -79,11 +85,13 @@ function ScopedQuoteForm({
   companyId,
   quoteId,
   initialClientId,
+  markAlreadySent,
 }: {
   mode: "new" | "edit"
   companyId: string
   quoteId?: string
   initialClientId: string
+  markAlreadySent: boolean
 }) {
   const navigate = useNavigate()
   const mounted = useRef(true)
@@ -91,6 +99,7 @@ function ScopedQuoteForm({
   const submitController = useRef<AbortController | null>(null)
   const touched = useRef(new Set<string>())
   const inferred = useRef<Record<string, string>>({})
+  const initialStatus = useRef<QuoteStatus>("draft")
   const [clients, setClients] = useState<Client[]>([])
   const [quotes, setQuotes] = useState<QuoteWithClient[]>([])
   const [clientMode, setClientMode] = useState<"existing" | "new">("existing")
@@ -122,6 +131,8 @@ function ScopedQuoteForm({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [phoneOpen, setPhoneOpen] = useState(false)
+  const [extrasOpen, setExtrasOpen] = useState(false)
 
   useEffect(() => {
     mounted.current = true
@@ -140,7 +151,9 @@ function ScopedQuoteForm({
         const [loadedClients, loadedQuotes, quote] = await Promise.all([
           listClients(companyId),
           listQuotes(companyId),
-          mode === "edit" && quoteId ? getQuote(quoteId) : Promise.resolve(null),
+          mode === "edit" && quoteId
+            ? getQuote(quoteId, companyId)
+            : Promise.resolve(null),
         ])
         if (!active) return
         if (quote && quote.company_id !== companyId)
@@ -148,15 +161,36 @@ function ScopedQuoteForm({
         setClients(loadedClients)
         setQuotes(loadedQuotes)
         if (quote) {
+          initialStatus.current = quote.status
+          let proposeSent = false
+          if (markAlreadySent && quote.status === "draft" && !quote.sent_at) {
+            const job = await getInitialSendJob(quote.id)
+            if (!active) return
+            if (
+              job &&
+              ["preparing", "processing", "delivery_unknown", "sent"].includes(
+                job.status,
+              )
+            )
+              throw new DocumentApiError(
+                "L’envoi de ce devis doit être vérifié dans son dossier avant de le déclarer déjà envoyé.",
+              )
+            proposeSent = true
+          }
+          setExtrasOpen(Boolean(quote.expires_at || quote.notes))
           setForm({
             client_id: quote.client_id,
             reference: quote.reference,
             amount: centsToInput(quote.amount_cents),
-            status: quote.status,
+            status: proposeSent ? "sent" : quote.status,
             sent_at: quote.sent_at ?? "",
             expires_at: quote.expires_at ?? "",
             notes: quote.notes ?? "",
           })
+          if (proposeSent)
+            requestAnimationFrame(() =>
+              window.document.getElementById("sent_at")?.focus(),
+            )
         } else {
           const hasInitialClient = loadedClients.some(
             (client) => client.id === initialClientId,
@@ -169,7 +203,12 @@ function ScopedQuoteForm({
         }
       } catch (err) {
         if (active)
-          setLoadError(humanizeError(err, "Le formulaire n’a pas pu être chargé."))
+          setLoadError(
+            documentError(
+              err,
+              humanizeError(err, "Le formulaire n’a pas pu être chargé."),
+            ),
+          )
       } finally {
         if (active) setLoading(false)
       }
@@ -178,7 +217,7 @@ function ScopedQuoteForm({
     return () => {
       active = false
     }
-  }, [companyId, mode, quoteId, initialClientId, retry])
+  }, [companyId, mode, quoteId, initialClientId, markAlreadySent, retry])
 
   const amountCents = useMemo(() => parseAmountToCents(form.amount), [form.amount])
   const dateRequired = form.status !== "draft"
@@ -295,6 +334,13 @@ function ScopedQuoteForm({
       return
     }
     const { fields } = document
+    if (
+      fields.expiresAt ||
+      document.review.expiresAt.state === "uncertain" ||
+      document.review.expiresAt.state === "ambiguous"
+    )
+      setExtrasOpen(true)
+    if (fields.clientPhone) setPhoneOpen(true)
     for (const [key, value, current] of [
       ["reference", fields.reference, form.reference],
       ["amount", fields.amount, form.amount],
@@ -378,7 +424,10 @@ function ScopedQuoteForm({
       errs.amount = "Montant invalide (ex. 1250,50)."
     if (dateRequired && !form.sent_at)
       errs.sent_at = "Indiquez la date à laquelle le devis a été envoyé."
-    else if (mode === "new" && alreadySent && form.sent_at > todayISO())
+    else if (
+      (alreadySent || (initialStatus.current === "draft" && form.status === "sent")) &&
+      form.sent_at > todayISO()
+    )
       errs.sent_at = "La date d’un envoi déjà effectué ne peut pas être dans le futur."
     if (
       form.expires_at &&
@@ -390,6 +439,7 @@ function ScopedQuoteForm({
         "La date de validité doit être égale ou postérieure à la date d’envoi."
     setFieldErrors(errs)
     if (Object.keys(errs).length) {
+      if (errs.expires_at) setExtrasOpen(true)
       requestAnimationFrame(() =>
         window.document.getElementById(Object.keys(errs)[0])?.focus(),
       )
@@ -408,6 +458,24 @@ function ScopedQuoteForm({
     submitController.current = controller
     try {
       if (mode === "edit" && quoteId) {
+        if (initialStatus.current === "draft" && form.status === "sent") {
+          const [currentQuote, job] = await Promise.all([
+            getQuote(quoteId, companyId),
+            getInitialSendJob(quoteId),
+          ])
+          if (!mounted.current || controller.signal.aborted) return
+          if (
+            currentQuote.status !== "draft" ||
+            currentQuote.sent_at ||
+            (job &&
+              ["preparing", "processing", "delivery_unknown", "sent"].includes(
+                job.status,
+              ))
+          )
+            throw new DocumentApiError(
+              "L’état de l’envoi a changé. Revenez au dossier pour le vérifier avant d’enregistrer un envoi déjà effectué.",
+            )
+        }
         const payload: QuoteInput = {
           client_id: form.client_id,
           reference: form.reference,
@@ -469,7 +537,12 @@ function ScopedQuoteForm({
   return (
     <>
       <PageHeader
-        title={mode === "edit" ? "Modifier le devis" : "Nouveau devis"}
+        title={mode === "edit" ? "Modifier le devis" : "Ajouter un devis"}
+        subtitle={
+          mode === "new"
+            ? "Importez votre document, vérifiez les informations, puis choisissez la suite."
+            : "Les informations de votre dossier, sans modifier le document original."
+        }
         back={{
           to: backTo,
           label: mode === "edit" ? "Retour au devis" : "Retour aux devis",
@@ -487,6 +560,14 @@ function ScopedQuoteForm({
             disabled={submitting}
             onPrepared={onPrepared}
             onBusyChange={setImportBusy}
+            onManualEntry={() => {
+              window.document
+                .getElementById("quote-information-form")
+                ?.scrollIntoView({ block: "start", behavior: "instant" })
+              window.document
+                .getElementById(clientMode === "new" ? "client_name" : "client_id")
+                ?.focus()
+            }}
             comparison={comparison}
             onReturnToField={() => {
               if (comparedField)
@@ -494,7 +575,10 @@ function ScopedQuoteForm({
             }}
           />
         )}
-        <Card className="min-w-0 p-5 sm:p-8 xl:order-1">
+        <Card
+          id="quote-information-form"
+          className="min-w-0 scroll-mt-24 p-5 sm:p-8 xl:order-1"
+        >
           <form onSubmit={onSubmit} noValidate>
             <fieldset
               disabled={submitting}
@@ -512,16 +596,20 @@ function ScopedQuoteForm({
               {mode === "new" && (
                 <div>
                   <h2 className="text-base font-semibold text-ink">
-                    Vérifier les informations
+                    {importedDocument
+                      ? "Vérifier les informations lues"
+                      : "Informations du devis"}
                   </h2>
                   <p className="mt-1 text-sm leading-6 text-muted">
-                    Le devis sera enregistré dans votre espace. Vous pourrez ensuite
-                    préparer son envoi.
+                    {importedDocument
+                      ? "Comparez les champs au document. Rien n’est envoyé pendant cette étape."
+                      : "Le client, la référence et le montant suffisent pour commencer. Rien n’est envoyé pendant cette étape."}
                   </p>
                 </div>
               )}
 
               <div className="space-y-4">
+                <h2 className="text-sm font-semibold text-ink">Client concerné</h2>
                 {mode === "new" && (
                   <div
                     className="flex flex-wrap gap-2"
@@ -674,21 +762,30 @@ function ScopedQuoteForm({
                       </Field>
                       {fieldReview("clientEmail", newClient.email)}
                     </div>
-                    <div>
-                      <Field label="Téléphone du client" htmlFor="client_phone">
-                        <Input
-                          id="client_phone"
-                          type="tel"
-                          value={newClient.phone}
-                          maxLength={40}
-                          autoComplete="off"
-                          onChange={(event) =>
-                            changeNewClient("phone", event.target.value)
-                          }
-                        />
-                      </Field>
-                      {fieldReview("clientPhone", newClient.phone)}
-                    </div>
+                    <details
+                      open={phoneOpen}
+                      onToggle={(event) => setPhoneOpen(event.currentTarget.open)}
+                      className="border-t border-line"
+                    >
+                      <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium text-ink">
+                        Téléphone{newClient.phone ? " · renseigné" : " · facultatif"}
+                      </summary>
+                      <div className="pb-2">
+                        <Field label="Téléphone du client" htmlFor="client_phone">
+                          <Input
+                            id="client_phone"
+                            type="tel"
+                            value={newClient.phone}
+                            maxLength={40}
+                            autoComplete="off"
+                            onChange={(event) =>
+                              changeNewClient("phone", event.target.value)
+                            }
+                          />
+                        </Field>
+                        {fieldReview("clientPhone", newClient.phone)}
+                      </div>
+                    </details>
                   </div>
                 )}
               </div>
@@ -726,7 +823,7 @@ function ScopedQuoteForm({
                 </p>
               )}
 
-              <div className="grid min-w-0 gap-6 sm:grid-cols-2">
+              <div>
                 <div className="min-w-0">
                   <Field
                     label="Montant TTC (€)"
@@ -746,45 +843,83 @@ function ScopedQuoteForm({
                   </Field>
                   {fieldReview("amount", form.amount)}
                 </div>
-                <div className="min-w-0">
-                  <Field
-                    label="Valable jusqu’au"
-                    htmlFor="expires_at"
-                    error={fieldErrors.expires_at}
-                    hint="À compléter si votre devis indique une date limite."
-                  >
-                    <Input
-                      id="expires_at"
-                      type="date"
-                      value={form.expires_at}
-                      onChange={(event) => change("expires_at", event.target.value)}
-                    />
-                  </Field>
-                  {fieldReview("expiresAt", form.expires_at)}
-                </div>
               </div>
 
-              {mode === "edit" ? (
-                <Field label="Statut" htmlFor="status" required>
-                  <Select
-                    id="status"
-                    value={form.status}
-                    onChange={(event) => {
-                      const status = event.target.value as QuoteStatus
-                      change("status", status)
-                      if (status !== "draft" && !form.sent_at)
-                        change("sent_at", todayISO())
-                    }}
+              <details
+                open={extrasOpen}
+                onToggle={(event) => setExtrasOpen(event.currentTarget.open)}
+                className="rounded-lg border border-line"
+              >
+                <summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-medium text-ink">
+                  Validité et notes internes
+                  {form.expires_at || form.notes.trim()
+                    ? " · renseignées"
+                    : " · facultatif"}
+                </summary>
+                <div className="space-y-5 border-t border-line p-4">
+                  <div>
+                    <Field
+                      label="Valable jusqu’au"
+                      htmlFor="expires_at"
+                      error={fieldErrors.expires_at}
+                      hint="Seulement si le devis indique une date limite."
+                    >
+                      <Input
+                        id="expires_at"
+                        type="date"
+                        value={form.expires_at}
+                        onChange={(event) => change("expires_at", event.target.value)}
+                      />
+                    </Field>
+                    {fieldReview("expiresAt", form.expires_at)}
+                  </div>
+                  <Field
+                    label="Notes"
+                    htmlFor="notes"
+                    hint="Ces notes restent dans votre entreprise. Le client ne les voit pas."
                   >
-                    {statuses.map((status) => (
-                      <option key={status} value={status}>
-                        {statusLabel[status]}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
+                    <Textarea
+                      id="notes"
+                      value={form.notes}
+                      maxLength={5000}
+                      onChange={(event) => change("notes", event.target.value)}
+                    />
+                  </Field>
+                </div>
+              </details>
+
+              {mode === "edit" ? (
+                <div className="space-y-3">
+                  {markAlreadySent && initialStatus.current === "draft" && (
+                    <p className="rounded-lg bg-primary-soft p-3 text-sm leading-6 text-primary">
+                      Vous l’avez envoyé depuis votre messagerie ? Confirmez la date
+                      ci-dessous. Cadova enregistrera cet envoi sans envoyer d’email.
+                    </p>
+                  )}
+                  <Field label="Statut" htmlFor="status" required>
+                    <Select
+                      id="status"
+                      value={form.status}
+                      onChange={(event) => {
+                        const status = event.target.value as QuoteStatus
+                        change("status", status)
+                        if (status !== "draft" && !form.sent_at)
+                          change("sent_at", todayISO())
+                      }}
+                    >
+                      {statuses.map((status) => (
+                        <option key={status} value={status}>
+                          {statusLabel[status]}
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
+                </div>
               ) : (
-                <div className="rounded-lg border border-line p-4">
+                <div className="rounded-lg border border-line bg-background p-4">
+                  <h2 className="mb-2 text-sm font-semibold text-ink">
+                    Ce devis a-t-il déjà été envoyé ?
+                  </h2>
                   <Button
                     type="button"
                     variant={alreadySent ? "secondary" : "ghost"}
@@ -798,7 +933,7 @@ function ScopedQuoteForm({
                   <p className="mt-2 text-sm leading-6 text-muted">
                     {alreadySent
                       ? "Indiquez la date de votre envoi pour organiser le suivi. Aucun email ne sera envoyé à cette étape."
-                      : "Vous avez déjà transmis ce devis au client ? Enregistrez son envoi pour commencer le suivi."}
+                      : "Gardez-le en brouillon pour préparer son envoi depuis le dossier. Si vous l’avez déjà transmis, indiquez-le ici."}
                   </p>
                 </div>
               )}
@@ -820,7 +955,12 @@ function ScopedQuoteForm({
                       id="sent_at"
                       type="date"
                       required={dateRequired}
-                      max={mode === "new" ? todayISO() : undefined}
+                      max={
+                        mode === "new" ||
+                        (initialStatus.current === "draft" && form.status === "sent")
+                          ? todayISO()
+                          : undefined
+                      }
                       value={form.sent_at}
                       onChange={(event) => change("sent_at", event.target.value)}
                     />
@@ -828,22 +968,14 @@ function ScopedQuoteForm({
                 </div>
               )}
 
-              <Field
-                label="Notes"
-                htmlFor="notes"
-                hint="Ces notes restent dans votre espace et ne sont pas incluses dans l’email."
-              >
-                <Textarea
-                  id="notes"
-                  value={form.notes}
-                  maxLength={5000}
-                  onChange={(event) => change("notes", event.target.value)}
-                />
-              </Field>
               <div className="flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:flex-wrap">
                 <Button type="submit" loading={submitting} disabled={importBusy}>
                   {mode === "edit"
-                    ? "Enregistrer"
+                    ? markAlreadySent &&
+                      initialStatus.current === "draft" &&
+                      form.status === "sent"
+                      ? "Enregistrer l’envoi déjà effectué"
+                      : "Enregistrer"
                     : alreadySent
                       ? "Enregistrer le devis envoyé"
                       : "Enregistrer le brouillon"}

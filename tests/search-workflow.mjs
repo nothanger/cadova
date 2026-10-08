@@ -89,7 +89,7 @@ try {
     page.getByRole("dialog", { name: "Rechercher", exact: true })
   async function openSearch(page, width) {
     const trigger = page.getByRole("button", {
-      name: width >= 768 ? "Rechercher" : "Rechercher un client ou un devis",
+      name: width >= 768 ? "Client ou devis" : "Rechercher un client ou un devis",
       exact: true,
     })
     await trigger.click()
@@ -334,10 +334,10 @@ try {
     .getByRole("button", { name: "Ouvrir l’entreprise Autre entreprise", exact: true })
     .click()
   await switching.waitForURL("**/app")
+  await switching.getByRole("heading", { name: "Aujourd’hui", exact: true }).waitFor()
   await switching
-    .getByRole("heading", { name: "Tableau de bord", exact: true })
+    .getByRole("button", { name: "Client ou devis", exact: true })
     .waitFor()
-  await switching.getByRole("button", { name: "Rechercher", exact: true }).waitFor()
   await switching.keyboard.press("Control+k")
   await dialogFor(switching).getByRole("searchbox").fill("client")
   await dialogFor(switching)

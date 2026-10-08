@@ -90,7 +90,7 @@ function CompanyEmailForm({
   }
 
   return (
-    <Card className="p-5 sm:p-7">
+    <Card id="company-email" className="scroll-mt-24 p-5 sm:p-7">
       <div className="flex items-start gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
           <Mail size={18} aria-hidden="true" />
@@ -98,8 +98,8 @@ function CompanyEmailForm({
         <div>
           <h2 className="text-sm font-semibold text-ink">Emails aux clients</h2>
           <p className="mt-1 text-xs leading-5 text-muted">
-            Les relances portent le nom de votre entreprise. Les réponses des clients
-            arrivent à l’adresse que vous enregistrez ici.
+            Cadova utilise le nom de votre entreprise pour envoyer vos devis et vos
+            relances. Cette adresse permet aux clients de vous répondre.
           </p>
         </div>
       </div>
@@ -142,7 +142,7 @@ function CompanyEmailForm({
               required={canEdit}
               hint={
                 canEdit
-                  ? "L’adresse proposée n’est utilisée qu’après votre enregistrement. Chaque devis doit ensuite être activé séparément."
+                  ? "Enregistrez une adresse que vous consultez. Aucun devis ni aucune relance n’est envoyé par ce réglage."
                   : "Seul le propriétaire de l’entreprise peut modifier cette adresse."
               }
             >

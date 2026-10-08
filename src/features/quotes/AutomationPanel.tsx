@@ -179,10 +179,16 @@ function AutomationContent({
   quote,
   onChanged,
   showHistory = true,
+  showResponseAction = true,
+  compact = false,
+  revision = 0,
 }: {
   quote: QuoteWithClient
   onChanged: () => Promise<void>
   showHistory?: boolean
+  showResponseAction?: boolean
+  compact?: boolean
+  revision?: number
 }) {
   const navigate = useNavigate()
   const { isAdmin } = useAdmin()
@@ -194,7 +200,7 @@ function AutomationContent({
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
   const [busy, setBusy] = useState(false)
-  const [showEditor, setShowEditor] = useState(true)
+  const [showEditor, setShowEditor] = useState(!compact)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [responseOpen, setResponseOpen] = useState(false)
   const [jobs, setJobs] = useState<FollowupJob[]>([])
@@ -220,7 +226,7 @@ function AutomationContent({
       setData(result)
       if (!initialized.current) {
         setEditor(editorFrom(result.automation))
-        setShowEditor(!result.automation?.enabled)
+        setShowEditor(!compact && !result.automation?.enabled)
         initialized.current = true
       }
     } catch (err) {
@@ -231,7 +237,7 @@ function AutomationContent({
     } finally {
       if (active.current && ticket === request.current) setLoading(false)
     }
-  }, [contextInput])
+  }, [contextInput, compact])
   const loadJobs = useCallback(async () => {
     const ticket = ++jobRequest.current
     setJobsLoading(true)
@@ -260,13 +266,13 @@ function AutomationContent({
   }, [])
   useEffect(() => {
     void load()
-  }, [load, quote.status, quote.expires_at])
+  }, [load, quote.status, quote.expires_at, revision])
   useEffect(() => {
     void loadJobs()
     return () => {
       jobRequest.current++
     }
-  }, [loadJobs])
+  }, [loadJobs, revision])
   useEffect(() => {
     const refresh = () => {
       if (!document.hidden && !locked.current) {
@@ -399,6 +405,7 @@ function AutomationContent({
           : "Les relances de ce devis ont repris.",
       )
       await loadJobs()
+      await onChanged()
     })
   }
   async function stop() {
@@ -531,36 +538,45 @@ function AutomationContent({
               Les envois automatiques de cette entreprise sont en pause.
             </p>
           )}
-          <dl className="mt-5 grid gap-4 rounded-lg border border-line bg-background p-4 sm:grid-cols-2">
-            <div>
-              <dt className="text-xs text-muted">Destinataire</dt>
-              <dd className="mt-1 break-all text-sm font-medium text-ink">
-                {data.client.email ?? "Adresse manquante"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted">Adresse de réponse</dt>
-              <dd className="mt-1 break-all text-sm font-medium text-ink">
-                {data.settings?.reply_to ?? "À configurer"}
-              </dd>
-            </div>
-            <div className="sm:col-span-2">
-              <dt className="flex items-center gap-1.5 text-xs text-muted">
-                <CalendarClock size={14} aria-hidden="true" /> Prochaine relance
-                automatique
-              </dt>
-              <dd className="mt-1 text-sm font-medium text-ink">
-                {config?.next_send_at && config.enabled
-                  ? dateLabel(config.next_send_at)
-                  : "Aucune date programmée"}
-              </dd>
-              {config?.enabled && config.paused && (
-                <p className="mt-1 text-xs text-muted">
-                  Cette échéance est conservée pendant la pause.
-                </p>
-              )}
-            </div>
-          </dl>
+          <div className="mt-5 rounded-lg border border-line bg-background p-4">
+            <p className="flex items-center gap-1.5 text-xs text-muted">
+              <CalendarClock size={14} aria-hidden="true" /> Prochaine relance
+              automatique
+            </p>
+            <p className="mt-1 text-sm font-medium text-ink">
+              {config?.next_send_at && config.enabled
+                ? dateLabel(config.next_send_at)
+                : "Aucune date programmée"}
+            </p>
+            {config?.enabled && (config.paused || data.settings?.automation_paused) && (
+              <p className="mt-1 text-xs leading-5 text-muted">
+                La date est conservée pendant la pause. Aucun email ne part tant que la
+                pause reste active.
+              </p>
+            )}
+            <details
+              open={!compact || undefined}
+              className="mt-3 border-t border-line pt-3"
+            >
+              <summary className="min-h-11 cursor-pointer text-xs font-medium text-muted focus-visible:outline-2 focus-visible:outline-primary">
+                Vérifier les adresses utilisées
+              </summary>
+              <dl className="mt-2 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs text-muted">Destinataire</dt>
+                  <dd className="mt-1 break-all text-sm font-medium text-ink">
+                    {data.client.email ?? "Adresse manquante"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted">Adresse de réponse</dt>
+                  <dd className="mt-1 break-all text-sm font-medium text-ink">
+                    {data.settings?.reply_to ?? "À configurer"}
+                  </dd>
+                </div>
+              </dl>
+            </details>
+          </div>
           <div className="mt-5 flex flex-wrap gap-2">
             <Button
               variant="secondary"
@@ -601,16 +617,18 @@ function AutomationContent({
                 </Button>
               </>
             )}
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setError("")
-                setResponseOpen(true)
-              }}
-              disabled={busy}
-            >
-              <MessageSquare size={16} aria-hidden="true" /> Marquer une réponse reçue
-            </Button>
+            {showResponseAction && (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setError("")
+                  setResponseOpen(true)
+                }}
+                disabled={busy}
+              >
+                <MessageSquare size={16} aria-hidden="true" /> Marquer une réponse reçue
+              </Button>
+            )}
           </div>
           {uncertain && (
             <p className="mt-4 rounded-lg bg-warning-soft p-3 text-sm leading-6 text-warning">
@@ -998,6 +1016,9 @@ export function AutomationPanel(props: {
   quote: QuoteWithClient
   onChanged: () => Promise<void>
   showHistory?: boolean
+  showResponseAction?: boolean
+  compact?: boolean
+  revision?: number
 }) {
   const { user } = useAuth()
   return (

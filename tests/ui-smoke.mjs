@@ -1,19 +1,33 @@
 import assert from "node:assert/strict"
-import { readFile, mkdir } from "node:fs/promises"
+import { readFile, mkdir, writeFile } from "node:fs/promises"
 import { spawn } from "node:child_process"
 import { chromium } from "playwright-core"
 import AxeBuilder from "@axe-core/playwright"
 
-const base = process.env.TEST_BASE_URL || "http://127.0.0.1:8446"
+const port = process.env.TEST_UI_PORT || "8446"
+const base = process.env.TEST_BASE_URL || `http://127.0.0.1:${port}`
+const artifacts = new URL("../.cache/ui/", import.meta.url).pathname
+await mkdir(artifacts, { recursive: true })
+const config = `${artifacts}vite.ux.config.mjs`
+await writeFile(
+  config,
+  `import {mergeConfig} from 'vite';import original from '../../vite.config.ts';export default mergeConfig(original,{cacheDir:'.cache/vite/ui-smoke',server:{hmr:false}});`,
+)
 const server = process.env.TEST_BASE_URL
   ? null
-  : spawn("pnpm", ["dev", "--port", "8446"], { stdio: "ignore", detached: true })
+  : spawn("pnpm", ["dev", "--port", port, "--config", config], {
+      stdio: "ignore",
+      detached: true,
+      env: {
+        ...process.env,
+        VITE_SUPABASE_URL: "https://ui-fixture.example.test",
+        VITE_SUPABASE_ANON_KEY: "fixture-public-anon",
+      },
+    })
 const fixture = await readFile(
   new URL("./fixtures/supabase.mjs", import.meta.url),
   "utf8",
 )
-const artifacts = new URL("../.cache/ui/", import.meta.url).pathname
-await mkdir(artifacts, { recursive: true })
 let browser
 let checks = 0
 const errors = []
@@ -43,7 +57,42 @@ try {
     await context.route("**/src/lib/supabase.ts", (route) =>
       route.fulfill({ contentType: "application/javascript", body: fixture }),
     )
+    // Every request to a real backend is blocked. The portal read is explicitly simulated.
+    await context.route("**/*.supabase.co/**", (route) => route.abort())
+    await context.route("**/functions/v1/quote-client-portal", async (route) => {
+      const body = route.request().postDataJSON()
+      if (body.action !== "inspect") {
+        await route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ errorCode: "portal_unavailable" }),
+        })
+        return
+      }
+      const messages = await route
+        .request()
+        .frame()
+        .page()
+        .evaluate(
+          (quoteId) =>
+            (window.__testStore?.quote_client_messages ?? [])
+              .filter((message) => message.quote_id === quoteId)
+              .map(({ id, author, kind, content, created_at }) => ({
+                id,
+                author,
+                kind,
+                content,
+                created_at,
+              })),
+          body.quoteId,
+        )
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ link: null, messages }),
+      })
+    })
     const page = await context.newPage()
+    page.setDefaultTimeout(12000)
     page.on("pageerror", (error) => {
       errors.push(error.message)
     })
@@ -70,6 +119,60 @@ try {
       [],
     )
     checks++
+  }
+  async function openDisclosure(page, label) {
+    const summary = page
+      .locator("summary")
+      .filter({ hasText: label })
+      .filter({ visible: true })
+    await summary.waitFor()
+    assert.equal(await summary.count(), 1, `One disclosure for ${label}`)
+    if (!(await summary.evaluate((element) => element.parentElement.open))) {
+      await summary.click()
+    }
+  }
+  async function recordDecision(page, status, { wait = true } = {}) {
+    const direct = page.getByRole("button", {
+      name: "Enregistrer la réponse du client",
+      exact: true,
+    })
+    if (await direct.count()) await direct.click()
+    else {
+      await page.getByRole("button", { name: "Options du devis", exact: true }).click()
+      await page
+        .getByRole("button", { name: "Enregistrer une décision reçue", exact: true })
+        .click()
+    }
+    const response = page.getByRole("dialog", {
+      name: "Enregistrer la réponse du client",
+      exact: true,
+    })
+    await response
+      .getByRole("radio", {
+        name: status === "accepted" ? "Il accepte le devis" : "Il refuse le devis",
+        exact: true,
+      })
+      .check()
+    const confirm = response.getByRole("button", {
+      name: "Confirmer la réponse",
+      exact: true,
+    })
+    assert.ok(await confirm.isDisabled(), "A received decision requires confirmation")
+    await response
+      .getByRole("checkbox", {
+        name: "Je confirme avoir reçu cette réponse du client.",
+        exact: true,
+      })
+      .check()
+    await confirm.click()
+    if (wait) await response.waitFor({ state: "detached" })
+  }
+  async function openAutomationEditor(page) {
+    const editor = page.getByLabel("Objet de la relance", { exact: true })
+    if (!(await editor.isVisible()))
+      await page
+        .getByRole("button", { name: "Modifier les réglages", exact: true })
+        .click()
   }
   // All public routes, with no invented values in the public product preview.
   const publicPages = [
@@ -116,18 +219,18 @@ try {
     .waitFor()
   await landing.getByLabel(/^Mot de passe/).fill("valid-password")
   await landing.getByRole("button", { name: "Se connecter" }).click()
-  await landing.getByRole("heading", { name: "Tableau de bord", exact: true }).waitFor()
+  await landing.getByRole("heading", { name: "Aujourd’hui", exact: true }).waitFor()
   checks++
   await landing.context().close()
 
   const appPages = [
-    ["/app", "Tableau de bord"],
+    ["/app", "Aujourd’hui"],
     ["/app/clients", "Clients"],
-    ["/app/clients/new", "Nouveau client"],
+    ["/app/clients/new", "Ajouter un client"],
     ["/app/clients/client-test", "Client de test"],
     ["/app/clients/client-test/edit", "Modifier le client"],
     ["/app/quotes", "Devis"],
-    ["/app/quotes/new", "Nouveau devis"],
+    ["/app/quotes/new", "Ajouter un devis"],
     ["/app/quotes/quote-test", "TEST-001"],
     ["/app/quotes/quote-test/edit", "Modifier le devis"],
     ["/app/settings", "Paramètres"],
@@ -141,8 +244,119 @@ try {
     await page.context().close()
     console.log(`PASS: responsive ${width}px`)
   }
+  for (const width of [320, 390, 768, 1280]) {
+    for (const [name, scenario] of [
+      ["draft", { quoteStatus: "draft" }],
+      ["automatic", { automation: true, automationState: "enabled" }],
+      ["accepted", { quoteStatus: "accepted" }],
+      ["question", { clientQuestion: true }],
+    ]) {
+      const dossier = await pageFor({ session: true, ...scenario }, width)
+      await visit(dossier, "/app/quotes/quote-test", "TEST-001")
+      const primary = {
+        draft: "Préparer l’envoi",
+        automatic: "Relance automatique prévue",
+        accepted: "Intervention à planifier",
+        question: "Répondre au client",
+      }[name]
+      await dossier.getByRole("heading", { name: primary, exact: true }).waitFor()
+      if (name === "draft" || name === "accepted") {
+        assert.equal(
+          await dossier
+            .getByRole("button", { name: "Préparer la relance", exact: true })
+            .count(),
+          0,
+        )
+        assert.equal(
+          await dossier
+            .getByRole("button", {
+              name: "Activer les relances automatiques",
+              exact: true,
+            })
+            .count(),
+          0,
+        )
+      }
+      if (name === "accepted")
+        await dossier
+          .getByRole("heading", { name: "Intervention", exact: true })
+          .waitFor()
+      if (name === "automatic") {
+        await dossier.getByText("Cadova s’en charge", { exact: true }).waitFor()
+        assert.equal(
+          await dossier
+            .getByRole("button", { name: "Préparer la relance", exact: true })
+            .isVisible(),
+          false,
+        )
+        assert.equal(
+          await dossier.getByLabel("Objet de la relance", { exact: true }).isVisible(),
+          false,
+        )
+        const ready = await dossier.evaluate(
+          () =>
+            window.__testStore.quote_followup_jobs.filter(
+              (job) => job.status === "queued",
+            ).length,
+        )
+        assert.equal(
+          ready,
+          2,
+          "Showing an automatic dossier cannot change its schedule",
+        )
+      }
+      if (name === "question") {
+        await dossier
+          .getByRole("list", { name: "Échanges au sujet du devis", exact: true })
+          .getByText("Pouvez-vous préciser la date de début ?", { exact: true })
+          .waitFor()
+        await dossier.getByLabel("Votre réponse").waitFor()
+      }
+      await accessible(dossier)
+      assert.equal(
+        await dossier.evaluate(
+          () => document.documentElement.scrollWidth > window.innerWidth,
+        ),
+        false,
+      )
+      if (width === 390 || width === 1280)
+        await dossier.screenshot({
+          path: `${artifacts}ux-${name}-${width}.png`,
+          fullPage: true,
+        })
+      await dossier.context().close()
+      checks += 4
+    }
+    const morning = await pageFor(
+      { session: true, automation: true, automationState: "enabled" },
+      width,
+    )
+    await visit(morning, "/app", "Aujourd’hui")
+    await morning
+      .getByRole("heading", { name: "À faire aujourd’hui", exact: true })
+      .waitFor()
+    await morning.getByRole("heading", { name: "Cadova envoie", exact: true }).waitFor()
+    await morning.getByRole("heading", { name: "Vos rappels", exact: true }).waitFor()
+    const automaticGroup = morning.getByRole("region", {
+      name: "Cadova envoie",
+      exact: true,
+    })
+    await automaticGroup.getByText(/TEST-001/).waitFor()
+    await accessible(morning)
+    if (width === 390 || width === 1280)
+      await morning.screenshot({
+        path: `${artifacts}ux-today-${width}.png`,
+        fullPage: true,
+      })
+    await morning.context().close()
+    checks += 4
+  }
+  console.log(
+    "PASS: draft, question, automatic and accepted dossiers guide the next step at four widths",
+  )
+
   const app = await pageFor({ session: true })
-  await visit(app, "/app", "Tableau de bord")
+  await visit(app, "/app", "Aujourd’hui")
   await app.screenshot({ path: `${artifacts}dashboard-mobile.png`, fullPage: true })
   await app.getByRole("button", { name: "Ouvrir le menu" }).click()
   await app.keyboard.press("Escape")
@@ -163,17 +377,18 @@ try {
   await app.keyboard.press("Escape")
   await visit(app, "/app/quotes", "Devis")
   await app.getByLabel("Rechercher un devis par client ou référence").fill("TEST-002")
-  await app.getByRole("link", { name: "TEST-002", exact: true }).waitFor()
-  assert.equal(
-    await app.getByRole("link", { name: "TEST-001", exact: true }).count(),
-    0,
-  )
+  await app.getByRole("link").filter({ hasText: "TEST-002" }).waitFor()
+  assert.equal(await app.getByRole("link").filter({ hasText: "TEST-001" }).count(), 0)
   await app.getByLabel("Rechercher un devis par client ou référence").fill("")
+  await openDisclosure(app, "Affichage et tri")
   await app.getByLabel("Trier les devis").selectOption("waiting")
-  await app.getByRole("button", { name: "Pipeline", exact: true }).click()
-  await app.getByRole("heading", { name: "À relancer", exact: true }).waitFor()
-  await app.getByRole("button", { name: "À relancer", exact: true }).click()
-  assert.equal(await app.getByRole("link").filter({ hasText: "TEST-002" }).count(), 0)
+  await app.getByLabel("Affichage des devis").selectOption("stages")
+  await app.getByRole("heading", { name: "En attente", exact: true }).waitFor()
+  await app.getByRole("button", { name: /^À traiter/ }).click()
+  assert.ok(
+    (await app.getByRole("link").filter({ hasText: "TEST-002" }).count()) > 0,
+    "An unfinished draft needs attention too",
+  )
   await visit(app, "/app/quotes/quote-test", "TEST-001")
   await app.getByRole("button", { name: "Préparer la relance" }).click()
   const dialog = app.getByRole("dialog", { name: "Préparer la relance" })
@@ -197,28 +412,35 @@ try {
     /^mailto:/,
   )
 
-  await app.getByRole("button", { name: "Enregistrer", exact: true }).click()
+  await dialog
+    .getByRole("button", { name: "J’ai envoyé cette relance", exact: true })
+    .click()
   await app.getByText("Relance enregistrée", { exact: true }).waitFor()
+  await openDisclosure(app, "Ajouter une note interne")
   await app.getByLabel("Note de suivi").fill("Réponse de test")
   await app.getByRole("button", { name: "Ajouter", exact: true }).click()
   await app.getByText("Réponse de test", { exact: true }).waitFor()
+  await openDisclosure(app, "Relancer moi-même")
   await app.getByLabel("Date de la prochaine relance").fill("2027-01-01")
-  await app.getByRole("button", { name: "Planifier" }).click()
+  await app.getByRole("button", { name: "Enregistrer le rappel" }).click()
   await app.getByText("Rappel de relance fixé", { exact: true }).waitFor()
-  await app.getByRole("button", { name: "Marquer accepté" }).click()
-  await app.getByRole("button", { name: "Marquer accepté" }).waitFor()
+  await recordDecision(app, "accepted")
+  await app.getByText("Accepté", { exact: true }).first().waitFor()
   assert.equal(
     await app.evaluate(() => window.__testStore.quotes[0].status),
     "accepted",
   )
   checks += 7
-  await visit(app, "/app/clients/new", "Nouveau client")
-  await app.getByLabel("Nom / raison sociale").fill("Nouveau client de test")
-  await app.getByLabel("Email").fill("new@example.test")
-  await app.getByRole("button", { name: "Créer le client" }).click()
+  await visit(app, "/app/clients/new", "Ajouter un client")
+  await app
+    .getByLabel("Nom du client ou de l’entreprise")
+    .fill("Nouveau client de test")
+  await app.getByLabel("Adresse email").fill("new@example.test")
+  await app.getByRole("button", { name: "Ajouter le client" }).click()
   await app.getByRole("heading", { name: "Nouveau client de test" }).waitFor()
   assert.equal(await app.evaluate(() => window.__testStore.clients.length), 2)
-  await visit(app, "/app/quotes/new", "Nouveau devis")
+  await visit(app, "/app/quotes/new", "Ajouter un devis")
+  await app.getByRole("button", { name: "Saisir sans document", exact: true }).click()
   await app.getByLabel(/^Client/).selectOption("client-test")
   await app.getByLabel("Référence").fill("TEST-CREATE")
   await app.getByLabel("Montant TTC (€)").fill("123,45")
@@ -233,6 +455,8 @@ try {
     12345,
   )
   await visit(app, "/app/settings", "Paramètres")
+  await app.getByRole("link", { name: "Mon suivi", exact: true }).click()
+  await openDisclosure(app, "Résumé quotidien : préférences avancées")
   await app.getByRole("switch").click()
   assert.equal(await app.getByRole("switch").getAttribute("aria-checked"), "false")
   await app.getByLabel("Délai avant relance").selectOption("7")
@@ -243,7 +467,8 @@ try {
     7,
   )
   checks += 4
-  await app.getByLabel("Nom de l'entreprise").fill("Entreprise renommée")
+  await app.getByRole("link", { name: "Entreprise", exact: true }).click()
+  await app.getByLabel("Nom de l’entreprise").fill("Entreprise renommée")
   await app.getByRole("button", { name: "Renommer" }).click()
   await app.getByText("Nom mis à jour").waitFor()
   assert.equal(
@@ -251,15 +476,18 @@ try {
     "Entreprise renommée",
   )
   await visit(app, "/app/clients/client-test/edit", "Modifier le client")
-  await app.getByLabel("Nom / raison sociale").fill("Client modifié")
-  await app.getByRole("button", { name: "Enregistrer", exact: true }).click()
+  await app.getByLabel("Nom du client ou de l’entreprise").fill("Client modifié")
+  await app
+    .getByRole("button", { name: "Enregistrer les coordonnées", exact: true })
+    .click()
   await app.getByRole("heading", { name: "Client modifié", exact: true }).waitFor()
   await visit(app, "/app/quotes/quote-test/edit", "Modifier le devis")
   await app.getByLabel("Référence").fill("TEST-EDIT")
   await app.getByRole("button", { name: "Enregistrer", exact: true }).click()
   await app.getByRole("heading", { name: "TEST-EDIT", exact: true }).waitFor()
-  await app.getByRole("button", { name: "Marquer refusé" }).click()
+  await recordDecision(app, "refused")
   await app.getByText("Refusé", { exact: true }).waitFor()
+  await app.getByRole("button", { name: "Options du devis" }).click()
   await app.getByRole("button", { name: "Dupliquer" }).click()
   await app.getByRole("heading", { name: "Modifier le devis", exact: true }).waitFor()
   assert.equal(await app.getByLabel("Statut").inputValue(), "draft")
@@ -389,10 +617,54 @@ try {
   await directSignup.context().close()
   checks += 2
 
+  for (const width of [320, 390, 768, 1280]) {
+    const unavailable = await pageFor(
+      { session: true, companyReadFailure: true },
+      width,
+    )
+    await visit(unavailable, "/app/quotes", "Votre espace est indisponible")
+    await unavailable
+      .getByRole("alert")
+      .filter({ hasText: "Votre espace n’a pas pu être chargé" })
+      .waitFor()
+    assert.equal(
+      new URL(unavailable.url()).pathname,
+      "/app/quotes",
+      "Failed membership reads must not redirect to onboarding",
+    )
+    assert.equal(
+      await unavailable
+        .getByRole("heading", { name: "Votre espace entreprise", exact: true })
+        .count(),
+      0,
+    )
+    assert.equal(
+      await unavailable
+        .getByRole("button", { name: "Créer mon espace", exact: true })
+        .count(),
+      0,
+    )
+    await accessible(unavailable)
+    await unavailable.evaluate(() => {
+      window.__scenario.companyReadFailure = false
+    })
+    await unavailable.getByRole("button", { name: "Réessayer", exact: true }).click()
+    await unavailable.getByRole("heading", { name: "Devis", exact: true }).waitFor()
+    await unavailable.getByRole("link").filter({ hasText: "TEST-001" }).waitFor()
+    assert.equal(new URL(unavailable.url()).pathname, "/app/quotes")
+    await unavailable.context().close()
+    checks += 5
+  }
+  console.log(
+    "PASS: membership outages retain the current route and recover without company creation",
+  )
+
   const empty = await pageFor({ session: true, empty: true })
-  await visit(empty, "/app", "Tableau de bord")
-  await empty.getByRole("heading", { name: "Rien à suivre pour l’instant" }).waitFor()
-  await visit(empty, "/app/quotes/new", "Nouveau devis")
+  await visit(empty, "/app", "Aujourd’hui")
+  await empty
+    .getByRole("heading", { name: "Vos premières étapes", exact: true })
+    .waitFor()
+  await visit(empty, "/app/quotes/new", "Ajouter un devis")
   await empty.getByLabel("Nom / raison sociale").waitFor()
   await empty.getByRole("button", { name: "Enregistrer le brouillon" }).waitFor()
   await empty.context().close()
@@ -400,9 +672,7 @@ try {
   await visit(onboarding, "/app", "Votre espace entreprise")
   await onboarding.getByLabel("Nom de votre entreprise").fill("Espace de test")
   await onboarding.getByRole("button", { name: "Créer mon espace" }).click()
-  await onboarding
-    .getByRole("heading", { name: "Tableau de bord", exact: true })
-    .waitFor()
+  await onboarding.getByRole("heading", { name: "Aujourd’hui", exact: true }).waitFor()
   await onboarding.context().close()
   const failed = await pageFor({ session: true, fail: true })
   await failed.goto(`${base}/app/quotes`)
@@ -426,7 +696,7 @@ try {
   )
   await regularAdmin.getByRole("link", { name: "Retour à mon espace" }).click()
   await regularAdmin
-    .getByRole("heading", { name: "Tableau de bord", exact: true })
+    .getByRole("heading", { name: "Aujourd’hui", exact: true })
     .waitFor()
   await regularAdmin.context().close()
   checks += 2
@@ -687,7 +957,7 @@ try {
   await admin
     .getByRole("button", { name: "Ouvrir l’entreprise Autre entreprise", exact: true })
     .click()
-  await admin.getByRole("heading", { name: "Tableau de bord", exact: true }).waitFor()
+  await admin.getByRole("heading", { name: "Aujourd’hui", exact: true }).waitFor()
   await admin.getByRole("link", { name: "Clients", exact: true }).click()
   await admin.getByRole("heading", { name: "Clients", exact: true }).waitFor()
   await admin
@@ -699,11 +969,8 @@ try {
   )
   await admin.getByRole("link", { name: "Devis", exact: true }).click()
   await admin.getByRole("heading", { name: "Devis", exact: true }).waitFor()
-  await admin.getByRole("link", { name: "OTHER-001", exact: true }).waitFor()
-  assert.equal(
-    await admin.getByRole("link", { name: "TEST-001", exact: true }).count(),
-    0,
-  )
+  await admin.getByRole("link").filter({ hasText: "OTHER-001" }).waitFor()
+  assert.equal(await admin.getByRole("link").filter({ hasText: "TEST-001" }).count(), 0)
   await admin.getByRole("link", { name: "Changer d’entreprise", exact: true }).click()
   await admin.getByRole("heading", { name: "Administration", exact: true }).waitFor()
   assert.equal(new URL(admin.url()).pathname, "/admin")
@@ -760,9 +1027,9 @@ try {
     messagingEmpty: true,
     messagingDelay: 150,
   })
-  await visit(firstContact, "/notifications?view=messages", "Notifications et messages")
+  await visit(firstContact, "/notifications?view=messages", "Aide Cadova")
   await firstContact
-    .getByRole("heading", { name: "Contacter Cadova", exact: true })
+    .getByRole("heading", { name: "Votre conversation", exact: true })
     .waitFor()
   assert.equal(
     await firstContact
@@ -825,7 +1092,7 @@ try {
   checks += 8
 
   const ownMessages = await pageFor({ session: true, messaging: true }, 1280)
-  await visit(ownMessages, "/app", "Tableau de bord")
+  await visit(ownMessages, "/app", "Aujourd’hui")
   await ownMessages
     .getByRole("button", { name: "Notifications (3 non lues)", exact: true })
     .waitFor()
@@ -839,9 +1106,7 @@ try {
   await messagePanel
     .getByRole("link", { name: "Réponse de Cadova", exact: true })
     .click()
-  await ownMessages
-    .getByRole("heading", { name: "Notifications et messages", exact: true })
-    .waitFor()
+  await ownMessages.getByRole("heading", { name: "Aide Cadova", exact: true }).waitFor()
   assert.equal(new URL(ownMessages.url()).searchParams.get("thread"), "thread-test")
   await ownMessages.getByText("Réponse de l’équipe de test", { exact: true }).waitFor()
   assert.equal(
@@ -918,7 +1183,7 @@ try {
   await visit(
     ownMessages,
     "/notifications?view=messages&thread=thread-other",
-    "Notifications et messages",
+    "Aide Cadova",
   )
   assert.equal(
     await ownMessages.getByText("Question de l’autre compte", { exact: true }).count(),
@@ -940,7 +1205,7 @@ try {
     messaging: true,
     messagingPages: true,
   })
-  await visit(messagePages, "/notifications", "Notifications et messages")
+  await visit(messagePages, "/notifications", "Notifications")
   const historyPagination = messagePages.getByRole("navigation", {
     name: "Pagination des notifications",
     exact: true,
@@ -967,7 +1232,7 @@ try {
     .getByRole("button", { name: "Page précédente", exact: true })
     .click()
   await messagePages.getByText("Informations de test", { exact: true }).waitFor()
-  await messagePages.getByRole("button", { name: "Messages", exact: true }).click()
+  await messagePages.getByRole("button", { name: "Aide Cadova", exact: true }).click()
   await messagePages.getByText("Réponse de l’équipe de test", { exact: true }).waitFor()
   assert.equal(
     await messagePages.getByText("Ancien message 26", { exact: true }).count(),
@@ -1005,11 +1270,7 @@ try {
     messaging: true,
     messagingFailure: "send_support_message",
   })
-  await visit(
-    failedMessage,
-    "/notifications?view=messages",
-    "Notifications et messages",
-  )
+  await visit(failedMessage, "/notifications?view=messages", "Aide Cadova")
   const retryMessage = failedMessage.getByLabel("Votre message")
   await retryMessage.fill("Message conservé après erreur")
   await failedMessage
@@ -1058,7 +1319,7 @@ try {
     messaging: true,
     messagingFailure: "read_notifications",
   })
-  await visit(failedRead, "/notifications", "Notifications et messages")
+  await visit(failedRead, "/notifications", "Notifications")
   await failedRead.getByText("Informations de test", { exact: true }).waitFor()
   await failedRead
     .getByRole("button", { name: "Tout marquer comme lu", exact: true })
@@ -1102,11 +1363,7 @@ try {
     messaging: true,
     messagingFailure: "list_support_threads",
   })
-  await visit(
-    failedThreads,
-    "/notifications?view=messages",
-    "Notifications et messages",
-  )
+  await visit(failedThreads, "/notifications?view=messages", "Aide Cadova")
   await failedThreads
     .getByRole("alert")
     .filter({ hasText: "La connexion a été interrompue. Réessayez." })
@@ -1128,10 +1385,10 @@ try {
   await visit(
     adminMessages,
     "/notifications?view=messages",
-    "Notifications et messages",
+    "Messages des utilisateurs",
   )
   await adminMessages
-    .getByRole("heading", { name: "Messages reçus", exact: true })
+    .getByRole("heading", { name: "Demandes reçues", exact: true })
     .waitFor()
   const conversationPagination = adminMessages.getByRole("navigation", {
     name: "Pagination des conversations",
@@ -1341,7 +1598,7 @@ try {
     messaging: true,
     messagingFailure: "send_admin_notification",
   })
-  await visit(failedBroadcast, "/notifications", "Notifications et messages")
+  await visit(failedBroadcast, "/notifications", "Notifications")
   await failedBroadcast
     .getByRole("button", { name: "Envoyer une notification", exact: true })
     .first()
@@ -1399,14 +1656,14 @@ try {
       { session: true, member: false, messaging: true },
       width,
     )
-    await visit(messages, "/notifications", "Notifications et messages")
+    await visit(messages, "/notifications", "Notifications")
     await messages.getByText("Informations de test", { exact: true }).waitFor()
     await accessible(messages)
     await messages.screenshot({
       path: `${artifacts}notifications-${width}.png`,
       fullPage: true,
     })
-    await messages.getByRole("button", { name: "Messages", exact: true }).click()
+    await messages.getByRole("button", { name: "Aide Cadova", exact: true }).click()
     await messages.getByText("Réponse de l’équipe de test", { exact: true }).waitFor()
     assert.equal(
       await messages.evaluate(
@@ -1424,7 +1681,7 @@ try {
       { session: true, admin: true, member: false, messaging: true },
       width,
     )
-    await visit(inbox, "/notifications?view=messages", "Notifications et messages")
+    await visit(inbox, "/notifications?view=messages", "Messages des utilisateurs")
     await inbox
       .getByRole("button", {
         name: "Ouvrir la conversation avec owner-other@example.test",
@@ -1629,7 +1886,7 @@ try {
     .getByRole("button", { name: "Ouvrir l’entreprise Autre entreprise", exact: true })
     .click()
   await companyAdmin
-    .getByRole("heading", { name: "Tableau de bord", exact: true })
+    .getByRole("heading", { name: "Aujourd’hui", exact: true })
     .waitFor()
   await companyAdmin
     .getByRole("link", { name: "Changer d’entreprise", exact: true })
@@ -1753,7 +2010,7 @@ try {
     })
     .click()
   await companyAdmin
-    .getByRole("heading", { name: "Tableau de bord", exact: true })
+    .getByRole("heading", { name: "Aujourd’hui", exact: true })
     .waitFor()
   await companyAdmin.context().close()
   checks += 13
@@ -1919,8 +2176,9 @@ try {
     const page = await pageFor({ session: true, quoteMutationDelay: 350 })
     await visit(page, "/app/quotes/quote-test", "TEST-001")
     if (action === "status") {
-      await page.getByRole("button", { name: "Marquer accepté" }).click()
+      await recordDecision(page, "accepted", { wait: false })
     } else {
+      await openDisclosure(page, "Ajouter une note interne")
       await page.getByLabel("Note de suivi").fill("Note réservée au premier devis")
       await page.getByRole("button", { name: "Ajouter", exact: true }).click()
     }
@@ -1950,6 +2208,7 @@ try {
       await page.getByText("Note réservée au premier devis", { exact: true }).count(),
       0,
     )
+    await openDisclosure(page, "Ajouter une note interne")
     assert.equal(await page.getByLabel("Note de suivi").inputValue(), "")
     await page.context().close()
     checks += 5
@@ -2125,6 +2384,23 @@ try {
   ]) {
     const page = await pageFor({ session: true, automation: true, ...scenario })
     await visit(page, "/app/quotes/quote-test", "TEST-001")
+    if (scenario.quoteStatus === "accepted") {
+      await page.getByRole("heading", { name: "Intervention", exact: true }).waitFor()
+      assert.equal(
+        await page
+          .getByRole("button", { name: "Activer les relances automatiques" })
+          .count(),
+        0,
+      )
+      assert.equal(
+        await page.evaluate(() => window.__testStore.quote_followup_jobs.length),
+        0,
+      )
+      await page.context().close()
+      checks += 3
+      continue
+    }
+    await openAutomationEditor(page)
     await page.getByText(scenario.warning, { exact: false }).waitFor()
     assert.equal(
       await page
@@ -2172,6 +2448,7 @@ try {
     automationDelay: 180,
   })
   await visit(automatic, "/app/quotes/quote-test", "TEST-001")
+  await openAutomationEditor(automatic)
   await automatic
     .getByRole("button", { name: "Activer les relances automatiques" })
     .waitFor()
@@ -2313,7 +2590,7 @@ try {
     ),
     originalDates,
   )
-  await automatic.getByText("Cette échéance est conservée pendant la pause.").waitFor()
+  await automatic.getByText(/La date est conservée pendant la pause/).waitFor()
   await automatic.getByRole("button", { name: "Modifier les réglages" }).click()
   await automatic.getByRole("button", { name: "Enregistrer les réglages" }).click()
   await automatic
@@ -2341,6 +2618,7 @@ try {
     ),
     originalDates,
   )
+  await openDisclosure(automatic, "Ajouter une note interne")
   await automatic
     .getByLabel("Note de suivi")
     .fill("Note interne sans réponse du client")
@@ -2397,32 +2675,35 @@ try {
   await automatic.reload({ waitUntil: "networkidle" })
   await automatic.getByText("Actives", { exact: true }).waitFor()
   assert.equal(await automatic.getByText("Programmé", { exact: true }).count(), 2)
-  await automatic.getByRole("button", { name: "Marquer une réponse reçue" }).click()
+  await automatic
+    .getByRole("button", { name: "Enregistrer la réponse du client" })
+    .click()
   const responseDialog = automatic.getByRole("dialog", {
-    name: "Marquer une réponse reçue",
+    name: "Enregistrer la réponse du client",
   })
   await responseDialog
-    .getByLabel("Réponse du client")
+    .getByLabel("Réponse du client", { exact: true })
     .fill("Le client demande de revoir le délai.")
   assert.equal(
-    await responseDialog.getByLabel("Réponse du client").getAttribute("maxlength"),
+    await responseDialog
+      .getByLabel("Réponse du client", { exact: true })
+      .getAttribute("maxlength"),
     "4000",
   )
   await responseDialog
-    .getByRole("button", { name: "Enregistrer la réponse" })
+    .getByRole("checkbox", { name: "Je confirme avoir reçu cette réponse du client." })
+    .check()
+  await responseDialog
+    .getByRole("button", { name: "Confirmer la réponse" })
     .evaluate((button) => {
       button.click()
       button.click()
     })
-  await automatic
-    .getByRole("status")
-    .filter({
-      hasText: "La réponse a été enregistrée. Les relances suivantes sont arrêtées.",
-    })
-    .waitFor()
+  await responseDialog.waitFor({ state: "detached" })
   await automatic
     .getByText("Le client demande de revoir le délai.", { exact: true })
     .waitFor()
+  await automatic.getByText("Arrêtées", { exact: true }).waitFor()
   assert.equal(
     await automatic.evaluate(
       () =>
@@ -2470,26 +2751,20 @@ try {
     })
     await visit(page, "/app/quotes/quote-test", "TEST-001")
     await page.getByText("Actives", { exact: true }).waitFor()
-    await page
-      .getByRole("button", {
-        name:
-          action === "stop"
-            ? "Arrêter les relances"
-            : action === "accepted"
-              ? "Marquer accepté"
-              : "Marquer refusé",
-      })
-      .click()
-    await page
-      .getByText(
-        action === "stop"
-          ? "Les prochaines relances automatiques sont arrêtées."
-          : action === "accepted"
-            ? "Le devis a été accepté."
-            : "Le devis a été refusé.",
-        { exact: true },
-      )
-      .waitFor()
+    if (action === "stop") {
+      await page.getByRole("button", { name: "Arrêter les relances" }).click()
+      await page
+        .getByText("Les prochaines relances automatiques sont arrêtées.", {
+          exact: true,
+        })
+        .waitFor()
+    } else {
+      await recordDecision(page, action)
+      await page
+        .getByText(action === "accepted" ? "Accepté" : "Refusé", { exact: true })
+        .first()
+        .waitFor()
+    }
     assert.equal(
       await page.evaluate(
         () =>
@@ -2515,6 +2790,7 @@ try {
     automationFailure: "save_quote_followup_automation",
   })
   await visit(automationFailure, "/app/quotes/quote-test", "TEST-001")
+  await openAutomationEditor(automationFailure)
   await automationFailure
     .getByLabel("Objet de la relance")
     .fill("Message conservé en cas d’erreur")
@@ -2598,9 +2874,9 @@ try {
       automationHistory: state === "sent",
     })
     await visit(page, "/app/quotes/quote-test", "TEST-001")
-    const history = page.locator("details").filter({
-      has: page.locator("summary", { hasText: "Historique des envois automatiques" }),
-    })
+    const history = page
+      .locator("summary", { hasText: "Historique des envois automatiques" })
+      .locator("..")
     assert.equal(await history.evaluate((element) => element.open), false)
     await history.locator("summary").click()
     await history.getByRole("heading", { name: "Envois enregistrés" }).waitFor()
@@ -2616,8 +2892,7 @@ try {
       const settingsButton = page.getByRole("button", {
         name: /^(Modifier|Masquer) les réglages$/,
       })
-      if (state === "processing") assert.equal(await settingsButton.isDisabled(), true)
-      else assert.equal(await page.getByLabel("Objet de la relance").isDisabled(), true)
+      assert.equal(await settingsButton.isDisabled(), true)
       await page
         .getByText("Un envoi est en cours ou son résultat reste à vérifier.", {
           exact: false,
@@ -2734,6 +3009,7 @@ try {
   for (const width of [320, 390, 1280]) {
     const page = await pageFor({ session: true, automation: true }, width)
     await visit(page, "/app/quotes/quote-test", "TEST-001")
+    await openAutomationEditor(page)
     await page.getByRole("button", { name: "Voir l’aperçu" }).waitFor()
     await accessible(page)
     await page.screenshot({
@@ -2752,9 +3028,13 @@ try {
     await accessible(page)
     await page.screenshot({ path: `${artifacts}automation-preview-${width}.png` })
     await page.keyboard.press("Escape")
-    await page.getByRole("button", { name: "Marquer une réponse reçue" }).click()
-    const response = page.getByRole("dialog", { name: "Marquer une réponse reçue" })
-    await response.getByLabel("Réponse du client").fill("Réponse à conserver")
+    await page.getByRole("button", { name: "Enregistrer la réponse du client" }).click()
+    const response = page.getByRole("dialog", {
+      name: "Enregistrer la réponse du client",
+    })
+    await response
+      .getByLabel("Réponse du client", { exact: true })
+      .fill("Réponse à conserver")
     await accessible(page)
     await page.screenshot({ path: `${artifacts}automation-response-${width}.png` })
     await response.getByRole("button", { name: "Annuler" }).click()

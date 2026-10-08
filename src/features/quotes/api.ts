@@ -1,5 +1,11 @@
 import { supabase } from "@/lib/supabase"
-import type { Quote, QuoteEvent, QuoteEventType, QuoteStatus, QuoteWithClient } from "@/types"
+import type {
+  Quote,
+  QuoteEvent,
+  QuoteEventType,
+  QuoteStatus,
+  QuoteWithClient,
+} from "@/types"
 
 export interface QuoteInput {
   client_id: string
@@ -13,9 +19,7 @@ export interface QuoteInput {
 
 const SELECT_WITH_CLIENT = "*, client:clients (id, name)"
 
-export async function listQuotes(
-  companyId: string,
-): Promise<QuoteWithClient[]> {
+export async function listQuotes(companyId: string): Promise<QuoteWithClient[]> {
   const { data, error } = await supabase
     .from("quotes")
     .select(SELECT_WITH_CLIENT)
@@ -25,22 +29,24 @@ export async function listQuotes(
   return (data ?? []) as unknown as QuoteWithClient[]
 }
 
-export async function listQuotesForClient(clientId: string): Promise<Quote[]> {
-  const { data, error } = await supabase
-    .from("quotes")
-    .select("*")
-    .eq("client_id", clientId)
-    .order("created_at", { ascending: false })
+export async function listQuotesForClient(
+  clientId: string,
+  companyId?: string,
+): Promise<Quote[]> {
+  let query = supabase.from("quotes").select("*").eq("client_id", clientId)
+  if (companyId) query = query.eq("company_id", companyId)
+  const { data, error } = await query.order("created_at", { ascending: false })
   if (error) throw error
   return data ?? []
 }
 
-export async function getQuote(id: string): Promise<QuoteWithClient> {
-  const { data, error } = await supabase
-    .from("quotes")
-    .select(SELECT_WITH_CLIENT)
-    .eq("id", id)
-    .single()
+export async function getQuote(
+  id: string,
+  companyId?: string,
+): Promise<QuoteWithClient> {
+  let query = supabase.from("quotes").select(SELECT_WITH_CLIENT).eq("id", id)
+  if (companyId) query = query.eq("company_id", companyId)
+  const { data, error } = await query.single()
   if (error) throw error
   return data as unknown as QuoteWithClient
 }
@@ -58,10 +64,7 @@ export async function createQuote(
   return data
 }
 
-export async function updateQuote(
-  id: string,
-  input: QuoteInput,
-): Promise<Quote> {
+export async function updateQuote(id: string, input: QuoteInput): Promise<Quote> {
   const { data, error } = await supabase
     .from("quotes")
     .update(normalize(input))
@@ -73,10 +76,7 @@ export async function updateQuote(
 }
 
 /** Update only the status (used by "Marquer accepté/refusé"). */
-export async function setQuoteStatus(
-  id: string,
-  status: QuoteStatus,
-): Promise<Quote> {
+export async function setQuoteStatus(id: string, status: QuoteStatus): Promise<Quote> {
   const { data, error } = await supabase
     .from("quotes")
     .update({ status })

@@ -26,7 +26,7 @@ const server = process.env.TEST_BASE_URL
 const fixture = (
   await readFile(new URL("./fixtures/supabase.mjs", import.meta.url), "utf8")
 ).replace(
-  "let session = options.session ? { user } : null",
+  'let session = options.session ? { user, access_token: "ui-fixture-session" } : null',
   "let session = options.session ? { user, access_token: 'fixture-jwt' } : null",
 )
 const token = "A".repeat(43)
@@ -197,7 +197,13 @@ try {
   }
   async function visit(page) {
     await page.goto(`${base}/devis/suivi#token=${token}`, { waitUntil: "networkidle" })
-    await page.getByRole("heading", { name: "Votre devis TEST-001" }).waitFor()
+    try {
+      await page.getByRole("heading", { name: "Votre devis TEST-001" }).waitFor()
+    } catch (error) {
+      await page.screenshot({ path: `${artifacts}failure.png`, fullPage: true })
+      console.log("Portal diagnostic:", await page.locator("body").innerText(), errors)
+      throw error
+    }
   }
   async function overflow(page) {
     check(
@@ -227,6 +233,14 @@ try {
       "Exact quote amount shown",
     )
     await overflow(page)
+    const exchanges = page.getByRole("region", {
+      name: "Échanges avec Entreprise de test",
+    })
+    check(
+      await exchanges.getByLabel("Votre question", { exact: false }).count(),
+      1,
+      "Question composer belongs to the client conversation",
+    )
     check(
       await page
         .getByRole("link", { name: "Contacter l’entreprise" })
@@ -256,6 +270,12 @@ try {
     .filter({ hasText: "Votre question a été transmise" })
     .waitFor()
   check(publicFlow.messages.length, 1, "Question appears in the conversation")
+  await publicFlow.page
+    .getByRole("region", { name: "Échanges avec Entreprise de test" })
+    .getByRole("list", { name: "Échanges au sujet du devis" })
+    .getByText("Pouvez-vous préciser le délai ?", { exact: true })
+    .waitFor()
+  checks++
   await publicFlow.page
     .getByRole("button", { name: "Accepter le devis", exact: true })
     .click()
@@ -339,6 +359,7 @@ try {
 
   const owner = await createPage({ session: true, ownerLink: true })
   await owner.page.goto(`${base}/app/quotes/quote-test`, { waitUntil: "networkidle" })
+  await owner.page.getByText("Partager le suivi du devis", { exact: true }).click()
   try {
     await owner.page.getByText("Lien de suivi actif", { exact: true }).waitFor()
   } catch (error) {
@@ -376,6 +397,9 @@ try {
     `${base}/devis/suivi#token=${newToken}`,
     "New link is shared via fragment",
   )
+  await owner.page
+    .getByText("Afficher les échanges et répondre", { exact: true })
+    .click()
   await owner.page
     .getByLabel("Votre réponse", { exact: true })
     .fill("La prestation est prévue la semaine prochaine.")

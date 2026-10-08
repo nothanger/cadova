@@ -23,7 +23,9 @@ Pour les icônes du site et de l’application installée, utiliser le symbole s
 
 ## Navigation et interaction
 
-Même vocabulaire sur toutes les pages : Tableau de bord, Clients, Devis, Paramètres. Menu mobile refermable au clavier ; focus visible ; modales avec focus contenu et restauré. Les champs associent labels, aides et erreurs.
+Même vocabulaire sur toutes les pages : Aujourd’hui, Devis, Clients, Paramètres. « Ajouter un devis » désigne l’import ou l’enregistrement d’un document existant. Le logo dans l’application revient à l’espace de travail. Sur mobile, Aujourd’hui, Devis et Clients restent accessibles directement ; les destinations secondaires utilisent le menu. Menu mobile refermable au clavier ; focus visible ; modales avec focus contenu et restauré. Les champs associent labels, aides et erreurs.
+
+L’interface suit le cycle du devis. Montrer d’abord la situation et la prochaine action, puis les outils utiles dans ce contexte : document pour le brouillon, échanges pour une question, résultat d’envoi pour un incident, intervention après acceptation. Distinguer les actions de l’utilisateur, les rappels manuels et les emails réellement programmés. Les informations rares, les modèles détaillés et le bilan se développent à la demande. Les mêmes sources alimentent les situations sur l’accueil, les listes et les fiches ; ne jamais déduire une absence de réponse ou zéro action d’un chargement échoué. Voir UX.md pour les décisions et les parcours à préserver.
 
 Transitions de couleur et de bordure uniquement. Respecter prefers-reduced-motion. Ne jamais masquer les barres de défilement.
 

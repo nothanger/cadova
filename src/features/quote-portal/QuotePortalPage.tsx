@@ -245,8 +245,14 @@ function PortalContent({ token }: { token: string }) {
           Votre devis {quote.reference}
         </h1>
         <p className="mt-3 break-words text-sm leading-6 text-muted">
-          Pour {quote.client_name}. Consultez le document et échangez directement avec
-          l’entreprise.
+          Pour {quote.client_name}.{" "}
+          {quote.status === "sent" && view.can_respond
+            ? "Consultez le document, puis posez une question ou indiquez votre décision."
+            : quote.status === "accepted"
+              ? "Votre accord est enregistré. Retrouvez ici le document et vos échanges avec l’entreprise."
+              : quote.status === "refused"
+                ? "Votre refus est enregistré. Retrouvez ici le document et vos échanges avec l’entreprise."
+                : "Retrouvez ici le document et vos échanges avec l’entreprise."}
         </p>
       </div>
       {error && (
@@ -265,7 +271,7 @@ function PortalContent({ token }: { token: string }) {
           {notice}
         </p>
       )}
-      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         <Card className="min-w-0 p-5 sm:p-7">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -289,8 +295,7 @@ function PortalContent({ token }: { token: string }) {
             </p>
             {quote.document_available ? (
               <Button
-                className="mt-4"
-                variant="secondary"
+                className="mt-4 w-full sm:w-auto"
                 loading={busy === "download"}
                 disabled={Boolean(busy) || loading}
                 onClick={download}
@@ -311,7 +316,7 @@ function PortalContent({ token }: { token: string }) {
                 Après lecture du devis, indiquez votre décision à l’entreprise. Vous
                 pourrez la vérifier avant de confirmer.
               </p>
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Button
                   disabled={Boolean(busy) || loading}
                   onClick={() => {
@@ -340,44 +345,70 @@ function PortalContent({ token }: { token: string }) {
           ) : (
             <p className="mt-6 rounded-lg bg-background p-4 text-sm leading-6 text-muted">
               {quote.status === "accepted"
-                ? `Votre accord est enregistré.${view.can_respond ? " Vous pouvez encore poser une question ci-dessous." : ""}`
+                ? `Votre accord est enregistré.${view.can_respond ? " Vous pouvez encore échanger avec l’entreprise." : ""}`
                 : quote.status === "refused"
                   ? "Le refus de ce devis est enregistré."
                   : "Ce devis n’est plus ouvert aux réponses. Contactez l’entreprise pour poursuivre."}
             </p>
           )}
         </Card>
-        <Card className="min-w-0 p-5 sm:p-7">
-          <h2 className="flex items-center gap-2 font-semibold">
-            <MessageSquare size={18} aria-hidden="true" /> Poser une question
-          </h2>
+        <Card
+          className="min-w-0 p-5 sm:p-7"
+          role="region"
+          aria-labelledby="portal-exchanges-title"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <h2
+              id="portal-exchanges-title"
+              className="flex min-w-0 items-start gap-2 font-semibold"
+            >
+              <MessageSquare size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <span className="break-words">Échanges avec {quote.company_name}</span>
+            </h2>
+            <Button
+              variant="ghost"
+              loading={loading}
+              disabled={Boolean(busy) || loading}
+              onClick={load}
+            >
+              <RefreshCw size={16} aria-hidden="true" /> Actualiser
+            </Button>
+          </div>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Votre message apparaît dans le dossier du devis. L’entreprise pourra vous
-            répondre ici.
+            Vos questions et les réponses de l’entreprise restent au même endroit.
+            Revenez sur ce lien pour suivre la conversation.
           </p>
+          <div className="mt-5">
+            <PortalConversation
+              messages={view.messages}
+              companyName={quote.company_name}
+            />
+          </div>
           {view.can_respond ? (
-            <form className="mt-5 space-y-4" onSubmit={ask}>
+            <form className="mt-6 space-y-4 border-t border-line pt-5" onSubmit={ask}>
               <Field label="Votre question" htmlFor="portal-question" required>
                 <Textarea
                   id="portal-question"
                   required
-                  rows={5}
+                  rows={4}
                   maxLength={2000}
                   value={question}
                   disabled={Boolean(busy) || loading}
                   onChange={(event) => setQuestion(event.target.value)}
+                  placeholder="Un délai, une prestation ou un point à préciser ?"
                 />
               </Field>
               <Button
                 type="submit"
+                className="w-full sm:w-auto"
                 loading={busy === "question"}
                 disabled={Boolean(busy) || loading || !question.trim()}
               >
-                <Send size={16} /> Envoyer ma question
+                <Send size={16} aria-hidden="true" /> Envoyer ma question
               </Button>
             </form>
           ) : (
-            <p className="mt-4 text-sm leading-6 text-muted">
+            <p className="mt-5 border-t border-line pt-5 text-sm leading-6 text-muted">
               Les réponses sont fermées pour ce devis. Contactez directement
               l’entreprise.
             </p>
@@ -385,31 +416,17 @@ function PortalContent({ token }: { token: string }) {
           {quote.company_email && (
             <a
               href={`mailto:${encodeURIComponent(quote.company_email)}`}
-              className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary underline underline-offset-4"
+              className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-primary underline underline-offset-4"
             >
               <Mail size={16} aria-hidden="true" /> Contacter l’entreprise
             </a>
           )}
-          <p className="mt-5 border-t border-line pt-4 text-xs leading-5 text-muted">
-            Ce lien est réservé au suivi de ce devis. Toute personne qui le possède peut
-            y accéder : évitez de le partager.
-          </p>
         </Card>
       </div>
-      <Card className="mt-6 min-w-0 p-5 sm:p-7">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-semibold">Vos échanges</h2>
-          <Button
-            variant="ghost"
-            loading={loading}
-            disabled={Boolean(busy) || loading}
-            onClick={load}
-          >
-            <RefreshCw size={16} /> Actualiser
-          </Button>
-        </div>
-        <PortalConversation messages={view.messages} companyName={quote.company_name} />
-      </Card>
+      <p className="mt-6 text-xs leading-5 text-muted">
+        Ce lien est réservé au suivi de ce devis. Toute personne qui le possède peut y
+        accéder : évitez de le partager.
+      </p>
       {decision && (
         <Dialog
           titleId="portal-decision-title"

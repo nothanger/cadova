@@ -30,7 +30,9 @@
     "typecheck:portal": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/quote-client-portal/handler.ts tests/quote-client-portal.test.ts",
     "typecheck:email-events": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler --allowImportingTsExtensions --lib ES2022,DOM --types node supabase/functions/resend-events/handler.ts tests/quote-email-events.test.ts",
     "test:templates": "node tests/company-messages-workflow.mjs",
-    "test:timeline": "node tests/timeline-workflow.mjs"
+    "test:timeline": "node tests/timeline-workflow.mjs",
+    "test:clients": "node tests/clients-workflow.mjs",
+    "test:notification-navigation": "node tests/notification-navigation-workflow.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",

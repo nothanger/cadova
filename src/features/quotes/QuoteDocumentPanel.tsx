@@ -310,6 +310,18 @@ export function QuoteDocumentPanel({
                 </p>
               )}
 
+              {!frozen && context && (
+                <p className="mt-4 text-sm leading-6 text-muted">
+                  Vous l’avez envoyé depuis votre messagerie ?{" "}
+                  <Link
+                    to={`/app/quotes/${quote.id}/edit?alreadySent=1`}
+                    className="font-medium text-primary underline underline-offset-2"
+                  >
+                    Je l’ai déjà envoyé
+                  </Link>
+                </p>
+              )}
+
               {!sent && context.document && (
                 <>
                   {!context.settings?.reply_to && (

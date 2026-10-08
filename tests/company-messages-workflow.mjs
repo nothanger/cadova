@@ -86,19 +86,102 @@ try {
       }),
     )
     await context.route("**/src/lib/supabase.ts", (route) =>
-      route.fulfill({ contentType: "application/javascript", body: extension }),
+      route.fulfill({
+        contentType: "application/javascript",
+        body: `${extension}
+
+window.__settingsPreferenceReadFailure = Boolean(window.__scenario.settingsPreferenceReadFailure)
+window.__settingsPreferenceWrites = []
+const settingsOriginalFrom = supabase.from
+supabase.from = (table) => {
+  const query = settingsOriginalFrom(table)
+  if (table !== "company_members") return query
+  const then = query.then
+  query.then = function (resolve, reject) {
+    if (this.mode === "read" && ["email_followup_reminders", "followup_delay_days, reminder_hour"].includes(this.columns) && window.__settingsPreferenceReadFailure)
+      return Promise.resolve({ data: null, error: { message: "Preferences unavailable" } }).then(resolve, reject)
+    if (this.mode === "update" && ("followup_delay_days" in this.payload || "email_followup_reminders" in this.payload))
+      window.__settingsPreferenceWrites.push(this.payload)
+    return then.call(this, resolve, reject)
+  }
+  return query
+}
+`,
+      }),
     )
     const page = await context.newPage()
     page.on("pageerror", (error) => pageErrors.push(error.message))
     return page
   }
   async function settings(page) {
-    await page.goto(`${base}/app/settings`, { waitUntil: "networkidle" })
+    await page.goto(`${base}/app/settings#messages`, { waitUntil: "networkidle" })
     await page
       .getByRole("heading", { name: "Messages de l’entreprise", exact: true })
       .waitFor()
+    await page.getByText("Personnaliser les messages", { exact: true }).click()
+    await page.getByText("Aperçu sur un devis", { exact: true }).click()
     await page.locator("#company-message-subject").waitFor()
   }
+  const unknownPreferences = await pageFor({ settingsPreferenceReadFailure: true })
+  await unknownPreferences.goto(`${base}/app/settings#mon-suivi`, {
+    waitUntil: "networkidle",
+  })
+  await unknownPreferences
+    .getByText(
+      "Impossible de charger vos préférences de suivi. Aucune valeur n’a été modifiée.",
+      { exact: true },
+    )
+    .waitFor()
+  check(
+    await unknownPreferences.getByLabel("Délai avant relance").count(),
+    0,
+    "Failed preference read never exposes a guessed delay",
+  )
+  check(
+    await unknownPreferences
+      .getByRole("button", { name: "Enregistrer", exact: true })
+      .count(),
+    0,
+    "Unknown preferences cannot be saved",
+  )
+  await unknownPreferences
+    .getByText("Résumé quotidien : préférences avancées", { exact: true })
+    .click()
+  await unknownPreferences
+    .getByText("Impossible de lire votre préférence de résumé quotidien. Réessayez.", {
+      exact: true,
+    })
+    .waitFor()
+  check(
+    await unknownPreferences.getByRole("switch").count(),
+    0,
+    "Unknown email preference cannot be toggled",
+  )
+  check(
+    await unknownPreferences.evaluate(() => window.__settingsPreferenceWrites.length),
+    0,
+    "Read failures do not cause writes",
+  )
+  await unknownPreferences.evaluate(() => {
+    window.__settingsPreferenceReadFailure = false
+  })
+  await unknownPreferences
+    .getByRole("button", { name: "Réessayer", exact: true })
+    .first()
+    .click()
+  await unknownPreferences.getByLabel("Délai avant relance").waitFor()
+  await unknownPreferences.getByLabel("Délai avant relance").selectOption("7")
+  await unknownPreferences
+    .getByRole("button", { name: "Enregistrer", exact: true })
+    .click()
+  check(
+    await unknownPreferences.evaluate(
+      () => window.__settingsPreferenceWrites[0].followup_delay_days,
+    ),
+    7,
+    "Successful retry enables confirmed preference update",
+  )
+  await unknownPreferences.context().close()
   for (const width of [320, 390, 768, 1440]) {
     const page = await pageFor({}, width)
     await settings(page)
@@ -147,6 +230,34 @@ try {
   })
   await settings(owner)
   await owner.locator("#company-message-subject").fill("Mon devis {{quote_reference}}")
+  await owner
+    .locator("#company-message-body")
+    .fill("Bonjour {{client_name}}, voici le devis.")
+  await owner.getByRole("link", { name: "Entreprise", exact: true }).click()
+  await owner.getByLabel("Adresse de réponse").waitFor()
+  check(
+    await owner.locator("#company-message-subject").isVisible(),
+    false,
+    "Company section keeps model editor out of the way",
+  )
+  await owner.getByRole("link", { name: "Messages", exact: true }).click()
+  check(
+    await owner.locator("#company-message-subject").inputValue(),
+    "Mon devis {{quote_reference}}",
+    "Changing settings section preserves unsaved template",
+  )
+  await owner.locator("#company-message-body").fill("Bonjour ")
+  await owner.getByRole("button", { name: "Nom du client", exact: true }).click()
+  check(
+    await owner.locator("#company-message-body").inputValue(),
+    "Bonjour {{client_name}}",
+    "French variable button inserts in the focused field",
+  )
+  check(
+    await owner.evaluate(() => window.__companyMessageCalls.length),
+    0,
+    "Inserting variable and changing section never saves or sends",
+  )
   await owner
     .locator("#company-message-body")
     .fill("Bonjour {{client_name}}, voici le devis.")
@@ -338,7 +449,7 @@ try {
   await failedSave.context().close()
 
   const unavailable = await pageFor({ companyMessagesFailure: true })
-  await unavailable.goto(`${base}/app/settings`, { waitUntil: "networkidle" })
+  await unavailable.goto(`${base}/app/settings#messages`, { waitUntil: "networkidle" })
   await unavailable
     .getByText(
       "Les modèles et la signature ne sont pas disponibles. Votre message reste inchangé.",
@@ -356,6 +467,7 @@ try {
     window.__companyMessageReadFailure = false
   })
   await unavailable.getByRole("button", { name: "Réessayer", exact: true }).click()
+  await unavailable.getByText("Personnaliser les messages", { exact: true }).click()
   await unavailable.locator("#company-message-subject").waitFor()
   check(
     await unavailable.locator("#company-message-subject").inputValue(),
@@ -365,7 +477,7 @@ try {
   await unavailable.context().close()
 
   const wrong = await pageFor({ wrongCompanyTemplate: true })
-  await wrong.goto(`${base}/app/settings`, { waitUntil: "networkidle" })
+  await wrong.goto(`${base}/app/settings#messages`, { waitUntil: "networkidle" })
   await wrong
     .getByText("Le modèle de cette entreprise n’a pas pu être confirmé.", {
       exact: true,

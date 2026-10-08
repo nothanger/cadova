@@ -79,10 +79,17 @@ const dateTime = new Intl.DateTimeFormat("fr-FR", {
 const day = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" })
 
 /** Calendar-only values have no time: never fabricate midnight or convert through UTC. */
-export function formatTimelineDate(value: string) {
+export function formatTimelineDate(value: string, timeZone?: string) {
   const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T12:00:00` : value)
   if (!Number.isFinite(date.getTime())) return "Date indisponible"
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? day.format(date) : dateTime.format(date)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return day.format(date)
+  return timeZone
+    ? new Intl.DateTimeFormat("fr-FR", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone,
+      }).format(date)
+    : dateTime.format(date)
 }
 
 function portalItem(message: PortalMessage): Pick<TimelineItem, "title" | "category"> {

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react"
-import { Link, NavLink, Outlet } from "react-router-dom"
+import { useEffect, useRef, useState, type ReactNode } from "react"
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom"
 import {
   LayoutDashboard,
   Users,
@@ -9,25 +9,26 @@ import {
   X,
   Settings,
   ShieldCheck,
-  Bell,
   Search,
+  Plus,
+  CircleHelp,
 } from "lucide-react"
 import { CadovaLogo } from "@/components/CadovaLogo"
 import { useAuth } from "@/features/auth/AuthContext"
 import { useCompany } from "@/features/company/CompanyContext"
-import { cx } from "@/components/ui"
+import { cx, LinkButton } from "@/components/ui"
 import { NotificationBell } from "@/features/notifications/NotificationBell"
 import { useAdmin } from "@/features/admin/AdminContext"
 import { SearchDialog } from "@/features/search/SearchDialog"
 
-const nav = [{ to: "/app", label: "Tableau de bord", icon: LayoutDashboard, end: true }]
-const followup = [
-  { to: "/app/clients", label: "Clients", icon: Users },
+const primaryNavigation = [
+  { to: "/app", label: "Aujourd’hui", icon: LayoutDashboard, end: true },
   { to: "/app/quotes", label: "Devis", icon: FileText },
+  { to: "/app/clients", label: "Clients", icon: Users },
 ]
 const bottom = [
-  { to: "/notifications", label: "Notifications", icon: Bell },
   { to: "/app/settings", label: "Paramètres", icon: Settings },
+  { to: "/notifications?view=messages", label: "Aide Cadova", icon: CircleHelp },
 ]
 
 function NavItem({
@@ -43,15 +44,21 @@ function NavItem({
   end?: boolean
   onNavigate: () => void
 }) {
+  const location = useLocation()
+  const queryMatches =
+    !to.includes("?") ||
+    new URLSearchParams(location.search).get("view") ===
+      new URLSearchParams(to.split("?")[1]).get("view")
   return (
     <NavLink
       to={to}
       end={end}
       onClick={onNavigate}
+      aria-current={queryMatches ? undefined : false}
       className={({ isActive }) =>
         cx(
           "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
-          isActive
+          isActive && queryMatches
             ? "bg-primary-soft text-primary"
             : "text-ink-soft hover:bg-background",
         )
@@ -63,7 +70,7 @@ function NavItem({
   )
 }
 
-export function AppLayout() {
+export function AppLayout({ children }: { children?: ReactNode } = {}) {
   const { user, signOut } = useAuth()
   const { isAdmin } = useAdmin()
   const { company } = useCompany()
@@ -136,7 +143,7 @@ export function AppLayout() {
       </a>
       {/* Mobile top bar */}
       <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-surface px-4 md:hidden">
-        <Link to="/" aria-label="Retour à l'accueil">
+        <Link to="/app" aria-label="Cadova, aujourd’hui">
           <CadovaLogo variant="full" className="h-6" />
         </Link>
         <div className="flex items-center gap-1">
@@ -156,7 +163,7 @@ export function AppLayout() {
             aria-controls="app-navigation"
             aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
             onClick={() => setOpen((v) => !v)}
-            className="rounded-lg p-2 text-ink hover:bg-background"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-ink hover:bg-background"
           >
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -182,7 +189,7 @@ export function AppLayout() {
         )}
       >
         <div className="px-2">
-          <Link to="/" aria-label="Retour à l'accueil" onClick={close}>
+          <Link to="/app" aria-label="Cadova, aujourd’hui" onClick={close}>
             <CadovaLogo variant="full" className="h-7" />
           </Link>
         </div>
@@ -195,7 +202,7 @@ export function AppLayout() {
           className="mt-6 hidden w-full items-center gap-2 rounded-lg border border-line px-3 py-2.5 text-sm text-ink-soft transition-colors hover:bg-background md:flex"
         >
           <Search size={17} aria-hidden="true" />
-          Rechercher
+          Client ou devis
           <kbd
             aria-hidden="true"
             className="ml-auto whitespace-nowrap rounded border border-line bg-background px-1 text-xs text-muted"
@@ -204,20 +211,34 @@ export function AppLayout() {
           </kbd>
         </button>
 
+        <LinkButton
+          variant="secondary"
+          to="/app/quotes/new"
+          onClick={close}
+          className="mt-5 w-full"
+        >
+          <Plus size={17} aria-hidden="true" /> Ajouter un devis
+        </LinkButton>
+
         <nav
           aria-label="Navigation de votre espace"
-          className="mt-8 flex min-h-0 flex-1 flex-col gap-1"
+          className="mt-5 flex min-h-0 flex-1 flex-col gap-1"
         >
-          {nav.map((item) => (
-            <NavItem key={item.to} {...item} onNavigate={close} />
-          ))}
-
-          <p className="mt-6 px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-muted">
-            Suivi commercial
+          <div className="hidden space-y-1 md:block">
+            {primaryNavigation.map((item) => (
+              <NavItem key={item.to} {...item} onNavigate={close} />
+            ))}
+          </div>
+          <p className="px-3 py-2 text-sm font-semibold text-ink md:hidden">
+            Votre espace
           </p>
-          {followup.map((item) => (
-            <NavItem key={item.to} {...item} onNavigate={close} />
-          ))}
+          <Link
+            to="/notifications"
+            onClick={close}
+            className="rounded-lg px-3 py-3 text-sm font-medium text-ink-soft hover:bg-background md:hidden"
+          >
+            Toutes les notifications
+          </Link>
 
           <div className="mt-auto pt-4">
             {isAdmin && (
@@ -229,7 +250,16 @@ export function AppLayout() {
               />
             )}
             {bottom.map((item) => (
-              <NavItem key={item.to} {...item} onNavigate={close} />
+              <NavItem
+                key={item.to}
+                {...item}
+                label={
+                  isAdmin && item.to.includes("view=messages")
+                    ? "Messages des utilisateurs"
+                    : item.label
+                }
+                onNavigate={close}
+              />
             ))}
           </div>
         </nav>
@@ -262,7 +292,7 @@ export function AppLayout() {
       <main
         id="app-content"
         tabIndex={-1}
-        className="min-w-0 flex-1 px-5 pb-16 pt-24 md:px-8 md:pt-9 lg:px-10"
+        className="min-w-0 flex-1 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-22 sm:px-5 md:px-8 md:pb-16 md:pt-9 lg:px-10"
       >
         <div className="mx-auto w-full max-w-[1120px]">
           {isAdmin && (
@@ -273,9 +303,33 @@ export function AppLayout() {
               </Link>
             </div>
           )}
-          <Outlet />
+          {children ?? <Outlet key={`${user?.id}:${company?.id}`} />}
         </div>
       </main>
+      <nav
+        aria-label="Navigation principale mobile"
+        className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-3 border-t border-line bg-surface px-2 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] md:hidden"
+      >
+        {primaryNavigation.map(({ to, label, icon: Icon, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            onClick={close}
+            className={({ isActive }) =>
+              cx(
+                "flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium transition-colors",
+                isActive
+                  ? "bg-primary-soft text-primary"
+                  : "text-ink-soft hover:bg-background",
+              )
+            }
+          >
+            <Icon size={20} aria-hidden="true" />
+            {label}
+          </NavLink>
+        ))}
+      </nav>
       {searchOpen && company && (
         <SearchDialog
           key={`${user?.id}:${company.id}`}

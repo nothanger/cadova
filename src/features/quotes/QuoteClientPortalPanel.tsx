@@ -33,10 +33,12 @@ export function QuoteClientPortalPanel({
   quote,
   onChanged,
   showConversation = true,
+  compact = false,
 }: {
   quote: QuoteWithClient
   onChanged: () => Promise<void>
   showConversation?: boolean
+  compact?: boolean
 }) {
   const [data, setData] = useState<PortalInspection | null>(null)
   const [loading, setLoading] = useState(true)
@@ -47,11 +49,16 @@ export function QuoteClientPortalPanel({
   const [copied, setCopied] = useState(false)
   const [reply, setReply] = useState("")
   const [confirm, setConfirm] = useState<"create" | "revoke" | null>(null)
+  const [sharingOpen, setSharingOpen] = useState(!compact)
+  const [conversationOpen, setConversationOpen] = useState(showConversation || !compact)
   const active = useRef(true)
   const locked = useRef(false)
   const requests = useRef(0)
   const controllers = useRef(new Set<AbortController>())
   const pendingReply = useRef<{ message: string; nonce: string } | null>(null)
+  useEffect(() => {
+    if (showConversation) setConversationOpen(true)
+  }, [showConversation])
   const load = useCallback(async () => {
     if (quote.status === "draft") {
       setLoading(false)
@@ -171,7 +178,8 @@ export function QuoteClientPortalPanel({
     <Card className="min-w-0 p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 font-semibold">
-          <Link2 size={19} aria-hidden="true" /> Suivi client
+          <MessageSquare size={19} aria-hidden="true" />{" "}
+          {compact ? "Échanges avec le client" : "Suivi client"}
         </h2>
         <Button
           variant="ghost"
@@ -186,8 +194,9 @@ export function QuoteClientPortalPanel({
         </Button>
       </div>
       <p className="mt-2 text-sm leading-6 text-muted">
-        Le client peut consulter son devis, poser une question et transmettre sa
-        décision depuis un lien privé, sans créer de compte.
+        {compact
+          ? "Retrouvez les questions du client et vos réponses dans son suivi."
+          : "Le client peut consulter son devis, poser une question et transmettre sa décision depuis un lien privé, sans créer de compte."}
       </p>
       {!available ? (
         <p className="mt-4 rounded-lg bg-background p-3 text-sm leading-6 text-muted">
@@ -214,65 +223,75 @@ export function QuoteClientPortalPanel({
                 </p>
               )}
               {data && (
-                <div className="mt-4 rounded-lg border border-line p-4">
-                  <p className="text-sm font-medium">
-                    {linkActive
-                      ? "Lien de suivi actif"
-                      : data.link
-                        ? "Lien de suivi inactif"
-                        : "Aucun lien de suivi"}
-                  </p>
-                  {linkActive && data.link && (
-                    <p className="mt-1 text-xs leading-5 text-muted">
-                      Accès jusqu’au {expiryDate.format(new Date(data.link.expires_at))}
-                      . Le lien envoyé par email est inclus automatiquement lors d’un
-                      nouvel envoi depuis Cadova.
+                <details
+                  open={sharingOpen}
+                  onToggle={(event) => setSharingOpen(event.currentTarget.open)}
+                  className="mt-4 rounded-lg border border-line p-4"
+                >
+                  <summary className="min-h-11 cursor-pointer text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary">
+                    Partager le suivi du devis
+                  </summary>
+                  <div className="mt-3">
+                    <p className="text-sm font-medium">
+                      {linkActive
+                        ? "Lien de suivi actif"
+                        : data.link
+                          ? "Lien de suivi inactif"
+                          : "Aucun lien de suivi"}
                     </p>
-                  )}
-                  {!shareUrl && linkActive && (
-                    <p className="mt-2 text-xs leading-5 text-muted">
-                      Les liens existants ne sont pas affichés après leur création.
-                      Créez un nouveau lien pour le partager manuellement.
-                    </p>
-                  )}
-                  {shareUrl && (
-                    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                      <Input
-                        aria-label="Lien privé du suivi client"
-                        readOnly
-                        value={shareUrl}
-                        onFocus={(event) => event.target.select()}
-                        className="min-w-0 text-sm"
-                      />
-                      <Button variant="secondary" onClick={copy}>
-                        {copied ? <Check size={16} /> : <Copy size={16} />}
-                        {copied ? "Copié" : "Copier le lien"}
-                      </Button>
-                    </div>
-                  )}
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Button
-                      variant="secondary"
-                      disabled={Boolean(busy) || !data}
-                      loading={busy === "create"}
-                      onClick={() =>
-                        linkActive ? setConfirm("create") : void perform("create")
-                      }
-                    >
-                      <Link2 size={16} />
-                      {linkActive ? "Créer un nouveau lien" : "Créer un lien"}
-                    </Button>
-                    {linkActive && (
-                      <Button
-                        variant="ghost"
-                        disabled={Boolean(busy) || loading}
-                        onClick={() => setConfirm("revoke")}
-                      >
-                        <ShieldOff size={16} /> Désactiver les liens
-                      </Button>
+                    {linkActive && data.link && (
+                      <p className="mt-1 text-xs leading-5 text-muted">
+                        Accès jusqu’au{" "}
+                        {expiryDate.format(new Date(data.link.expires_at))}. Le lien
+                        envoyé par email est inclus automatiquement lors d’un nouvel
+                        envoi depuis Cadova.
+                      </p>
                     )}
+                    {!shareUrl && linkActive && (
+                      <p className="mt-2 text-xs leading-5 text-muted">
+                        Les liens existants ne sont pas affichés après leur création.
+                        Créez un nouveau lien pour le partager manuellement.
+                      </p>
+                    )}
+                    {shareUrl && (
+                      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                        <Input
+                          aria-label="Lien privé du suivi client"
+                          readOnly
+                          value={shareUrl}
+                          onFocus={(event) => event.target.select()}
+                          className="min-w-0 text-sm"
+                        />
+                        <Button variant="secondary" onClick={copy}>
+                          {copied ? <Check size={16} /> : <Copy size={16} />}
+                          {copied ? "Copié" : "Copier le lien"}
+                        </Button>
+                      </div>
+                    )}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        variant="secondary"
+                        disabled={Boolean(busy) || !data}
+                        loading={busy === "create"}
+                        onClick={() =>
+                          linkActive ? setConfirm("create") : void perform("create")
+                        }
+                      >
+                        <Link2 size={16} />
+                        {linkActive ? "Créer un nouveau lien" : "Créer un lien"}
+                      </Button>
+                      {linkActive && (
+                        <Button
+                          variant="ghost"
+                          disabled={Boolean(busy) || loading}
+                          onClick={() => setConfirm("revoke")}
+                        >
+                          <ShieldOff size={16} /> Désactiver les liens
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </details>
               )}
               {!data && (
                 <Button className="mt-4" variant="secondary" onClick={load}>
@@ -284,55 +303,66 @@ export function QuoteClientPortalPanel({
         </>
       )}
       {data && (
-        <div className="mt-6 border-t border-line pt-5">
-          <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold">
-            <MessageSquare size={17} aria-hidden="true" /> Échanges avec le client
-          </h3>
-          {showConversation ? (
-            <PortalConversation
-              messages={data.messages}
-              companyName="Votre entreprise"
-            />
-          ) : (
-            <details>
-              <summary className="cursor-pointer rounded-lg text-sm leading-6 text-muted focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
-                Consulter les échanges du suivi client
-              </summary>
-              <div className="mt-4">
-                <PortalConversation
-                  messages={data.messages}
-                  companyName="Votre entreprise"
-                />
-              </div>
-            </details>
-          )}
-          {available && (
-            <form className="mt-5 space-y-3" onSubmit={sendReply}>
-              <Field
-                label="Votre réponse"
-                htmlFor="portal-owner-reply"
-                hint="La réponse apparaît dans les échanges accessibles par les liens de suivi actifs."
-              >
-                <Textarea
-                  id="portal-owner-reply"
-                  rows={3}
-                  maxLength={2000}
-                  required
-                  value={reply}
-                  disabled={Boolean(busy) || loading}
-                  onChange={(event) => setReply(event.target.value)}
-                />
-              </Field>
-              <Button
-                type="submit"
-                loading={busy === "reply"}
-                disabled={Boolean(busy) || loading || !reply.trim()}
-              >
-                <Send size={16} /> Publier la réponse
-              </Button>
-            </form>
-          )}
-        </div>
+        <details
+          open={conversationOpen}
+          onToggle={(event) => setConversationOpen(event.currentTarget.open)}
+          className="mt-6 border-t border-line pt-5"
+        >
+          <summary className="min-h-11 cursor-pointer text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary">
+            Afficher les échanges et répondre
+          </summary>
+          <div className="mt-4">
+            {!compact && (
+              <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold">
+                <MessageSquare size={17} aria-hidden="true" /> Échanges avec le client
+              </h3>
+            )}
+            {showConversation || compact ? (
+              <PortalConversation
+                messages={data.messages}
+                companyName="Votre entreprise"
+              />
+            ) : (
+              <details>
+                <summary className="cursor-pointer rounded-lg text-sm leading-6 text-muted focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+                  Consulter les échanges du suivi client
+                </summary>
+                <div className="mt-4">
+                  <PortalConversation
+                    messages={data.messages}
+                    companyName="Votre entreprise"
+                  />
+                </div>
+              </details>
+            )}
+            {available && (
+              <form className="mt-5 space-y-3" onSubmit={sendReply}>
+                <Field
+                  label="Votre réponse"
+                  htmlFor="portal-owner-reply"
+                  hint="La réponse apparaît dans le suivi client. Aucun email supplémentaire n’est envoyé."
+                >
+                  <Textarea
+                    id="portal-owner-reply"
+                    rows={3}
+                    maxLength={2000}
+                    required
+                    value={reply}
+                    disabled={Boolean(busy) || loading}
+                    onChange={(event) => setReply(event.target.value)}
+                  />
+                </Field>
+                <Button
+                  type="submit"
+                  loading={busy === "reply"}
+                  disabled={Boolean(busy) || loading || !reply.trim()}
+                >
+                  <Send size={16} /> Publier la réponse
+                </Button>
+              </form>
+            )}
+          </div>
+        </details>
       )}
       {confirm && (
         <Dialog

@@ -243,7 +243,11 @@ export function QuoteTimeline({
             </p>
             <p className="mt-1 text-sm font-medium">
               {automaticDate ? "Prochaine relance automatique" : "Rappel de relance"} :{" "}
-              {formatTimelineDate((automaticDate || reminderDate)!)}{" "}
+              {formatTimelineDate(
+                (automaticDate || reminderDate)!,
+                automaticDate ? "Europe/Paris" : undefined,
+              )}{" "}
+              {automaticDate && <span className="font-normal">(heure de Paris)</span>}
             </p>
             <p className="mt-1 text-xs leading-5 text-muted">
               {automaticDate

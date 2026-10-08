@@ -846,13 +846,18 @@ export function AdminPage() {
     <div className="min-h-dvh bg-background">
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
-          <Link to="/" aria-label="Cadova, accueil" className="shrink-0">
+          <Link to="/admin" aria-label="Cadova, administration" className="shrink-0">
             <CadovaLogo className="h-8 w-auto sm:h-9" />
           </Link>
           <div className="flex flex-wrap items-center gap-2">
             <NotificationBell />
-            <LinkButton to="/notifications" variant="secondary">
-              Notifications
+            {selectedCompany && (
+              <LinkButton to="/app" variant="secondary">
+                Revenir aux devis
+              </LinkButton>
+            )}
+            <LinkButton to="/notifications?view=messages" variant="secondary">
+              Messages des utilisateurs
             </LinkButton>
             <Button variant="secondary" onClick={logout} loading={loggingOut}>
               <LogOut size={16} aria-hidden="true" /> Se déconnecter
@@ -974,9 +979,9 @@ export function AdminPage() {
                     />
                   ) : (
                     <TableScroll>
-                      <table className="w-full min-w-[860px] text-left text-sm">
+                      <table className="block w-full text-left text-sm md:table md:min-w-[860px]">
                         <caption className="sr-only">Comptes Cadova</caption>
-                        <thead className="border-b border-line bg-background text-xs text-muted">
+                        <thead className="hidden border-b border-line bg-background text-xs text-muted md:table-header-group">
                           <tr>
                             <th scope="col" className="px-5 py-3 font-medium">
                               Compte
@@ -995,7 +1000,7 @@ export function AdminPage() {
                             </th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="block md:table-row-group">
                           {filteredUsers.map((account) => {
                             const protectedAccount =
                               account.is_admin || account.id === user?.id
@@ -1003,11 +1008,11 @@ export function AdminPage() {
                             return (
                               <tr
                                 key={account.id}
-                                className="border-b border-line last:border-0"
+                                className="grid min-w-0 grid-cols-2 gap-x-3 border-b border-line p-4 last:border-0 md:table-row md:p-0"
                               >
                                 <th
                                   scope="row"
-                                  className="min-w-64 max-w-80 px-5 py-4 font-normal"
+                                  className="col-span-2 min-w-0 py-1 font-normal md:min-w-64 md:max-w-80 md:px-5 md:py-4"
                                 >
                                   <p className="break-all font-medium text-ink">
                                     {account.email ?? "Compte sans adresse email"}
@@ -1016,10 +1021,13 @@ export function AdminPage() {
                                     Créé le {displayDate(account.created_at)}
                                   </p>
                                 </th>
-                                <td className="px-5 py-4">
+                                <td className="col-span-2 py-2 md:px-5 md:py-4">
                                   <AccountStatus user={account} />
                                 </td>
-                                <td className="max-w-56 px-5 py-4 text-ink-soft">
+                                <td className="col-span-2 min-w-0 py-2 text-ink-soft md:max-w-56 md:px-5 md:py-4">
+                                  <p className="mb-1 text-xs font-medium text-muted md:hidden">
+                                    Entreprises
+                                  </p>
                                   {account.companies.length === 0 ? (
                                     "Aucune entreprise"
                                   ) : (
@@ -1039,12 +1047,15 @@ export function AdminPage() {
                                     </ul>
                                   )}
                                 </td>
-                                <td className="whitespace-nowrap px-5 py-4 text-muted">
+                                <td className="col-span-2 py-2 text-muted md:whitespace-nowrap md:px-5 md:py-4">
+                                  <span className="mr-2 text-xs font-medium md:hidden">
+                                    Dernière connexion
+                                  </span>
                                   {account.last_sign_in_at
                                     ? displayDate(account.last_sign_in_at)
                                     : "Jamais"}
                                 </td>
-                                <td className="px-5 py-4">
+                                <td className="col-span-2 mt-2 border-t border-line pt-3 md:mt-0 md:border-0 md:px-5 md:py-4">
                                   <div className="mb-2">
                                     <AdminNotificationComposer recipient={account} />
                                   </div>
@@ -1054,7 +1065,7 @@ export function AdminPage() {
                                       Compte protégé
                                     </p>
                                   ) : (
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-wrap gap-2">
                                       <Button
                                         variant="secondary"
                                         aria-label={`${suspended ? "Réactiver" : "Suspendre"} ${account.email}`}
@@ -1105,9 +1116,9 @@ export function AdminPage() {
                   />
                 ) : (
                   <TableScroll>
-                    <table className="w-full min-w-[720px] text-left text-sm">
+                    <table className="block w-full text-left text-sm md:table md:min-w-[720px]">
                       <caption className="sr-only">Entreprises Cadova</caption>
-                      <thead className="border-b border-line bg-background text-xs text-muted">
+                      <thead className="hidden border-b border-line bg-background text-xs text-muted md:table-header-group">
                         <tr>
                           <th scope="col" className="px-5 py-3 font-medium">
                             Entreprise
@@ -1120,13 +1131,16 @@ export function AdminPage() {
                           </th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="block md:table-row-group">
                         {filteredCompanies.map((company) => (
                           <tr
                             key={company.id}
-                            className="border-b border-line last:border-0"
+                            className="grid min-w-0 grid-cols-2 gap-x-3 border-b border-line p-4 last:border-0 md:table-row md:p-0"
                           >
-                            <th scope="row" className="max-w-64 px-5 py-4 font-normal">
+                            <th
+                              scope="row"
+                              className="col-span-2 min-w-0 py-1 font-normal md:max-w-64 md:px-5 md:py-4"
+                            >
                               <p className="break-words font-medium text-ink">
                                 {company.name}
                               </p>
@@ -1134,7 +1148,10 @@ export function AdminPage() {
                                 Créée le {displayDate(company.created_at)}
                               </p>
                             </th>
-                            <td className="max-w-72 px-5 py-4 text-ink-soft">
+                            <td className="col-span-2 min-w-0 py-2 text-ink-soft md:max-w-72 md:px-5 md:py-4">
+                              <p className="mb-1 text-xs font-medium text-muted md:hidden">
+                                Propriétaires
+                              </p>
                               {company.owners.length === 0 ? (
                                 <span className="text-warning">Aucun propriétaire</span>
                               ) : (
@@ -1147,7 +1164,7 @@ export function AdminPage() {
                                 </ul>
                               )}
                             </td>
-                            <td className="px-5 py-4">
+                            <td className="col-span-2 mt-2 border-t border-line pt-3 md:mt-0 md:border-0 md:px-5 md:py-4">
                               <div className="flex flex-wrap gap-2">
                                 <Button
                                   variant="secondary"

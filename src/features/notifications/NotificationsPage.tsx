@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import {
   ArrowLeft,
@@ -14,6 +21,8 @@ import {
   X,
 } from "lucide-react"
 import { CadovaLogo } from "@/components/CadovaLogo"
+import { AppLayout } from "@/components/layout/AppLayout"
+import { useCompany } from "@/features/company/CompanyContext"
 import { PageHeader } from "@/components/layout/PageHeader"
 import {
   Button,
@@ -32,6 +41,7 @@ import { useAdmin } from "@/features/admin/AdminContext"
 import { AdminNotificationComposer } from "@/features/admin/AdminNotificationComposer"
 import { useNotifications } from "./NotificationsContext"
 import { NotificationBell } from "./NotificationBell"
+import { NotificationDestinationLink } from "./NotificationDestinationLink"
 import {
   getNotification,
   listNotificationHistory,
@@ -300,9 +310,9 @@ function NotificationHistory() {
     <>
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Votre historique</h2>
+          <h2 className="text-lg font-semibold text-ink">Votre activité récente</h2>
           <p className="mt-1 text-sm text-muted">
-            Les notifications restent disponibles après leur lecture.
+            Ouvrez le devis pour répondre à un client ou poursuivre son suivi.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -343,7 +353,7 @@ function NotificationHistory() {
           {history.items.length === 0 ? (
             <EmptyState
               title="Aucune notification"
-              description="Les nouvelles de votre compte et de vos échanges apparaîtront ici."
+              description="Les réponses de vos clients et les informations de Cadova apparaîtront ici."
             />
           ) : (
             <ul className="divide-y divide-line">
@@ -353,11 +363,6 @@ function NotificationHistory() {
                   : item.type === "admin_announcement"
                     ? Megaphone
                     : FileText
-                const target = item.support_thread_id
-                  ? `/notifications?view=messages&thread=${encodeURIComponent(item.support_thread_id)}`
-                  : item.related_quote_id
-                    ? `/app/quotes/${item.related_quote_id}`
-                    : `/notifications?notification=${encodeURIComponent(item.id)}`
                 return (
                   <li
                     key={item.id}
@@ -370,6 +375,13 @@ function NotificationHistory() {
                       <Icon size={18} aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
+                      <p className="mb-1 text-xs font-medium text-muted">
+                        {item.support_thread_id
+                          ? "Aide Cadova"
+                          : item.related_quote_id
+                            ? "Suivi d’un devis"
+                            : "Information Cadova"}
+                      </p>
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="break-words text-sm font-semibold text-ink">
                           {item.title}
@@ -387,16 +399,16 @@ function NotificationHistory() {
                         {displayDate(item.created_at)}
                       </p>
                       <div className="mt-3 flex flex-wrap items-center gap-3">
-                        <Link
-                          to={target}
+                        <NotificationDestinationLink
+                          item={item}
                           className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
                         >
                           {item.support_thread_id
-                            ? "Voir la conversation"
+                            ? "Ouvrir l’aide Cadova"
                             : item.related_quote_id
                               ? "Voir le devis"
                               : "Lire le message"}
-                        </Link>
+                        </NotificationDestinationLink>
                         {!item.read_at && (
                           <Button
                             variant="ghost"
@@ -561,15 +573,29 @@ function Conversation({
   }
   return (
     <Card className="min-w-0 overflow-hidden">
-      <div className="border-b border-line p-4 sm:p-6">
-        <h2 className="break-all text-lg font-semibold text-ink">
-          {isAdmin ? (email ?? "Conversation") : "Contacter Cadova"}
-        </h2>
-        <p className="mt-1 text-sm leading-6 text-muted">
-          {isAdmin
-            ? "Vos réponses sont visibles dans l’espace de ce compte."
-            : "Posez une question ou signalez un problème. Vos échanges sont conservés ici."}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line p-4 sm:p-6">
+        <div className="min-w-0">
+          <h2 className="break-all text-lg font-semibold text-ink">
+            {isAdmin ? (email ?? "Conversation") : "Votre conversation"}
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-muted">
+            {isAdmin
+              ? "Vos réponses sont visibles dans l’espace de ce compte."
+              : "La réponse de Cadova apparaîtra ici."}
+          </p>
+        </div>
+        {!isAdmin && (
+          <Button
+            variant="ghost"
+            loading={history.loading}
+            onClick={() => {
+              void history.refresh()
+              void onViewed()
+            }}
+          >
+            <RefreshCw size={16} aria-hidden="true" /> Actualiser
+          </Button>
+        )}
       </div>
       {history.initialLoading ? (
         <Spinner />
@@ -722,21 +748,23 @@ function Messages({ isAdmin }: { isAdmin: boolean }) {
   }
   return (
     <>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-ink">
-            {isAdmin ? "Messages reçus" : "Votre conversation"}
-          </h2>
-          <p className="mt-1 text-sm leading-6 text-muted">
-            {isAdmin
-              ? "Consultez les demandes des comptes Cadova et répondez directement."
-              : "Un échange direct avec l’équipe Cadova."}
-          </p>
+      {isAdmin && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-ink">Demandes reçues</h2>
+            <p className="mt-1 text-sm leading-6 text-muted">
+              Consultez les demandes des comptes Cadova et répondez directement.
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            loading={threads.loading}
+            onClick={threads.refresh}
+          >
+            <RefreshCw size={16} aria-hidden="true" /> Actualiser
+          </Button>
         </div>
-        <Button variant="secondary" loading={threads.loading} onClick={threads.refresh}>
-          <RefreshCw size={16} aria-hidden="true" /> Actualiser
-        </Button>
-      </div>
+      )}
       {threads.initialLoading ? (
         <Spinner />
       ) : threads.error ? (
@@ -852,17 +880,91 @@ function Messages({ isAdmin }: { isAdmin: boolean }) {
   )
 }
 
-function NotificationsContent({ isAdmin }: { isAdmin: boolean }) {
+function NotificationsContent({
+  isAdmin,
+  companyAvailable,
+}: {
+  isAdmin: boolean
+  companyAvailable: boolean
+}) {
   const [params, setParams] = useSearchParams()
   const view = params.get("view") === "messages" ? "messages" : "notifications"
   const { refresh } = useNotifications()
   const [revision, setRevision] = useState(0)
+  const helpLabel = isAdmin ? "Messages des utilisateurs" : "Aide Cadova"
   function changeView(nextView: string) {
     const next = new URLSearchParams(params)
     next.set("view", nextView)
     next.delete("notification")
     setParams(next)
   }
+  return (
+    <>
+      <PageHeader
+        title={view === "messages" ? helpLabel : "Notifications"}
+        subtitle={
+          view === "messages"
+            ? isAdmin
+              ? "Les questions et problèmes signalés par les comptes Cadova."
+              : "Posez une question sur Cadova ou signalez un problème."
+            : "Les réponses de vos clients et les informations de Cadova."
+        }
+      />
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+        <nav aria-label="Notifications et aide" className="flex flex-wrap gap-2">
+          <Button
+            variant={view === "notifications" ? "primary" : "secondary"}
+            aria-pressed={view === "notifications"}
+            onClick={() => changeView("notifications")}
+          >
+            <Bell size={16} aria-hidden="true" /> Notifications
+          </Button>
+          <Button
+            variant={view === "messages" ? "primary" : "secondary"}
+            aria-pressed={view === "messages"}
+            onClick={() => changeView("messages")}
+          >
+            <MessageSquare size={16} aria-hidden="true" /> {helpLabel}
+          </Button>
+        </nav>
+        {isAdmin && (
+          <AdminNotificationComposer
+            onSent={() => {
+              void refresh()
+              setRevision((current) => current + 1)
+            }}
+          />
+        )}
+      </div>
+      {view === "notifications" ? (
+        <NotificationHistory key={revision} />
+      ) : (
+        <>
+          {!isAdmin && companyAvailable && (
+            <p className="mb-5 text-sm leading-6 text-muted">
+              Une question de votre client ?{" "}
+              <Link
+                to="/app/quotes"
+                className="font-medium text-primary underline underline-offset-4"
+              >
+                Répondez depuis son devis.
+              </Link>
+            </p>
+          )}
+          <Messages isAdmin={isAdmin} />
+        </>
+      )}
+    </>
+  )
+}
+
+function StandaloneNotifications({
+  isAdmin,
+  children,
+}: {
+  isAdmin: boolean
+  children: ReactNode
+}) {
   return (
     <div className="min-h-dvh bg-background">
       <header className="border-b border-line bg-surface">
@@ -885,43 +987,7 @@ function NotificationsContent({ isAdmin }: { isAdmin: boolean }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-7 sm:px-6 sm:py-10">
-        <PageHeader
-          title="Notifications et messages"
-          subtitle="Les nouvelles de votre compte et vos échanges avec Cadova."
-        />
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={view === "notifications" ? "primary" : "secondary"}
-              aria-pressed={view === "notifications"}
-              onClick={() => changeView("notifications")}
-            >
-              <Bell size={16} aria-hidden="true" /> Notifications
-            </Button>
-            <Button
-              variant={view === "messages" ? "primary" : "secondary"}
-              aria-pressed={view === "messages"}
-              onClick={() => changeView("messages")}
-            >
-              <MessageSquare size={16} aria-hidden="true" /> Messages
-            </Button>
-          </div>
-          {isAdmin && (
-            <AdminNotificationComposer
-              onSent={() => {
-                void refresh()
-                setRevision((current) => current + 1)
-              }}
-            />
-          )}
-        </div>
-        {view === "notifications" ? (
-          <NotificationHistory key={revision} />
-        ) : (
-          <Messages isAdmin={isAdmin} />
-        )}
-      </main>
+      <main className="mx-auto max-w-6xl px-4 py-7 sm:px-6 sm:py-10">{children}</main>
     </div>
   )
 }
@@ -929,11 +995,23 @@ function NotificationsContent({ isAdmin }: { isAdmin: boolean }) {
 export function NotificationsPage() {
   const { user, loading } = useAuth()
   const { isAdmin, loading: adminLoading, error, refresh } = useAdmin()
-  if (loading || adminLoading) return <Spinner />
+  const { company, loading: companyLoading } = useCompany()
+  if (loading || adminLoading || companyLoading) return <Spinner />
   if (error) return <ErrorState message={error} onRetry={refresh} />
   if (!user)
     return (
       <ErrorState message="Connectez-vous pour consulter vos notifications et messages." />
     )
-  return <NotificationsContent key={`${user.id}:${isAdmin}`} isAdmin={isAdmin} />
+  const content = (
+    <NotificationsContent
+      key={`${user.id}:${isAdmin}:${company?.id ?? "account"}`}
+      isAdmin={isAdmin}
+      companyAvailable={Boolean(company)}
+    />
+  )
+  return company ? (
+    <AppLayout>{content}</AppLayout>
+  ) : (
+    <StandaloneNotifications isAdmin={isAdmin}>{content}</StandaloneNotifications>
+  )
 }

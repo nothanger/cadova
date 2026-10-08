@@ -303,6 +303,11 @@ test("calendar dates display without fabricated hours; timestamp dates include t
   assert.match(formatTimelineDate("2026-10-04T13:15:00Z"), /\d{2}:15/)
   assert.equal(formatTimelineDate("broken"), "Date indisponible")
 })
+test("automatic reminders keep their Paris business time in the dossier", () => {
+  assert.match(formatTimelineDate("2026-10-04T07:00:00Z", "Europe/Paris"), /09:00/)
+  assert.match(formatTimelineDate("2026-12-04T08:00:00Z", "Europe/Paris"), /09:00/)
+  assert.equal(formatTimelineDate("2026-10-04", "Europe/Paris").includes(":"), false)
+})
 
 test("current accepted status alone never fabricates a client acceptance", () => {
   const timeline = mergeQuoteTimeline(

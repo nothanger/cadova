@@ -220,6 +220,29 @@ test("un devis expiré ou décidé ne déclenche aucune relance", () => {
   }
 })
 
+test("la relance cesse à la date de validité selon le jour de Paris, comme sur le serveur", () => {
+  const rows = context({
+    quotes: [quote("quote-one", { expires_at: "2026-10-05" })],
+    automations: [automation],
+    serviceReady: true,
+  })
+  // It is still October 4 in UTC, but already October 5 in Paris.
+  const atParisExpiry = buildWorkspaceActions(rows, 3, new Date("2026-10-04T22:00:00Z"))
+  assert.deepEqual(
+    atParisExpiry.actions.map((action) => action.kind),
+    ["expired"],
+  )
+  assert.equal(atParisExpiry.scheduled.length, 0)
+  assert.equal(atParisExpiry.manualDue.length, 0)
+  const beforeParisExpiry = buildWorkspaceActions(
+    rows,
+    3,
+    new Date("2026-10-04T21:59:59Z"),
+  )
+  assert.equal(beforeParisExpiry.actions.length, 0)
+  assert.equal(beforeParisExpiry.scheduled[0].automatic, true)
+})
+
 test("les brouillons et adresses manquantes ouvrent les bonnes pages", () => {
   const result = build({
     quotes: [
@@ -235,7 +258,7 @@ test("les brouillons et adresses manquantes ouvrent les bonnes pages", () => {
     ["missing_email", "draft"],
   )
   assert.equal(result.actions[0].to, "/app/clients/client-one/edit")
-  assert.equal(result.actions[1].to, "/app/quotes/quote-one")
+  assert.equal(result.actions[1].to, "/app/quotes/quote-one?focus=document")
 })
 
 test("une lecture des relances échouée ne prétend pas avoir trouvé zéro relance", () => {
@@ -245,6 +268,7 @@ test("une lecture des relances échouée ne prétend pas avoir trouvé zéro rel
     "messages",
     "deliveries",
     "sendJobs",
+    "settings",
   ] as const) {
     const result = build({ reads: { ...context().reads, [table]: "unavailable" } })
     assert.equal(result.followupsKnown, false, table)
@@ -299,7 +323,7 @@ test("un envoi initial incertain ne propose pas de renvoyer le brouillon", () =>
     )
     assert.equal(result.manualDue.length, 0)
     assert.match(result.actions[0].title, /Vérifier l’envoi/)
-    assert.equal(result.actions[0].to, "/app/quotes/quote-one")
+    assert.equal(result.actions[0].to, "/app/quotes/quote-one?focus=document")
   }
 })
 
@@ -319,6 +343,7 @@ test("une relance automatique incertaine ne devient pas une nouvelle relance man
     ["delivery"],
   )
   assert.equal(result.manualDue.length, 0)
+  assert.equal(result.actions[0].to, "/app/quotes/quote-one?focus=followups")
 })
 
 test("un brouillon dont l’état d’envoi est inaccessible demande une vérification", () => {
@@ -331,6 +356,7 @@ test("un brouillon dont l’état d’envoi est inaccessible demande une vérifi
     ["delivery"],
   )
   assert.match(result.actions[0].detail, /n’a pas pu être vérifié/)
+  assert.equal(result.actions[0].to, "/app/quotes/quote-one?focus=document")
   assert.equal(result.followupsKnown, false)
 })
 
@@ -383,4 +409,81 @@ test("aucune donnée provenant d’une autre entreprise n’influence la liste",
     result.manualDue.map((entry) => entry.id),
     ["quote-one"],
   )
+})
+
+test("les liens d’action ouvrent directement la partie utile du dossier", () => {
+  const result = build({
+    messages: [
+      {
+        id: "question-focus",
+        company_id: "company-one",
+        quote_id: "quote-one",
+        author: "client",
+        kind: "question",
+        created_at: "2026-10-05T10:00:00Z",
+      },
+    ],
+  })
+  assert.equal(result.actions[0].to, "/app/quotes/quote-one?focus=conversation")
+  assert.equal(build().actions[0].to, "/app/quotes/quote-one?focus=followups")
+})
+
+test("un service indisponible ou inconnu ne promet pas un envoi automatique", () => {
+  for (const serviceReady of [false, null]) {
+    const result = build({ automations: [automation], serviceReady })
+    assert.equal(result.scheduled.length, 0)
+    assert.equal(result.manualDue.length, 0)
+    assert.equal(result.actions[0].kind, "automation_paused")
+  }
+  assert.equal(
+    build({ automations: [automation], serviceReady: true }).scheduled.length,
+    1,
+  )
+})
+
+test("un délai personnel inaccessible ne devient pas une relance à préparer", () => {
+  const result = build({ preferencesUnavailable: true })
+  assert.equal(result.followupsKnown, false)
+  assert.equal(result.manualDue.length, 0)
+  assert.equal(
+    result.actions.some((action) => action.kind === "followup"),
+    false,
+  )
+})
+
+test("le suivi accepté n’invente pas d’intervention lorsque sa lecture est inconnue", () => {
+  const quotes = [quote("quote-one", { status: "accepted" })]
+  assert.equal(build({ quotes, workOrdersRead: "unavailable" }).actions.length, 0)
+  const known = build({ quotes, workOrders: [], workOrdersRead: "available" })
+  assert.equal(known.actions[0].kind, "work")
+  assert.equal(known.actions[0].to, "/app/quotes/quote-one?focus=work")
+})
+
+test("une intervention future est un rappel utilisateur et une intervention terminée est close", () => {
+  const quotes = [quote("quote-one", { status: "accepted" })]
+  const work = {
+    quote_id: "quote-one",
+    company_id: "company-one",
+    status: "scheduled" as const,
+    scheduled_for: "2026-10-08",
+    created_at: "2026-10-04T10:00:00Z",
+    updated_at: "2026-10-04T10:00:00Z",
+  }
+  const planned = build({ quotes, workOrdersRead: "available", workOrders: [work] })
+  assert.equal(planned.actions.length, 0)
+  assert.equal(planned.scheduled[0].automatic, false)
+  assert.equal(planned.scheduled[0].kind, "work")
+  const completed = build({
+    quotes,
+    workOrdersRead: "available",
+    workOrders: [{ ...work, status: "completed" }],
+  })
+  assert.equal(completed.actions.length, 0)
+  assert.equal(completed.scheduled.length, 0)
+  const other = build({
+    quotes,
+    workOrdersRead: "available",
+    workOrders: [{ ...work, company_id: "company-other" }],
+  })
+  assert.equal(other.actions[0].title, "Planifier l’intervention")
 })

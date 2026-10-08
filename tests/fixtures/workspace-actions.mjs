@@ -11,11 +11,18 @@ db.quote_email_deliveries = []
 const workspaceQueries = []
 window.__workspaceQueries = workspaceQueries
 window.__workspaceFailure = options.workspaceFailure ?? null
+window.__workspacePreferencesFailure = options.workspacePreferencesFailure ?? false
 const originalWorkspaceFrom = supabase.from
 supabase.from = (table) => {
   const query = originalWorkspaceFrom(table)
   const filters = []
   const originalEq = query.eq
+  let columns = ""
+  const originalSelect = query.select
+  query.select = function (value, ...rest) {
+    columns = value
+    return originalSelect.call(this, value, ...rest)
+  }
   query.eq = function (key, value) {
     filters.push([key, value])
     return originalEq.call(this, key, value)
@@ -23,7 +30,12 @@ supabase.from = (table) => {
   const originalThen = query.then
   query.then = function (resolve, reject) {
     workspaceQueries.push({ table, filters })
-    if (window.__workspaceFailure === table)
+    if (
+      window.__workspaceFailure === table ||
+      (window.__workspacePreferencesFailure &&
+        table === "company_members" &&
+        columns.includes("followup_delay_days"))
+    )
       return Promise.resolve({ data: null, error: { message: "Read failure" } }).then(
         resolve,
         reject,
@@ -101,4 +113,30 @@ if (options.workspace === "send-unresolved") {
     status: options.workspaceSendStatus,
     created_at: today.toISOString(),
   })
+}
+if (options.workspace === "scheduled-only") {
+  const quote = db.quotes.find((entry) => entry.id === "quote-test")
+  const upcoming = new Date(today.getTime() + 86400000 * 2)
+  quote.next_followup_at = upcoming.toISOString().slice(0, 10)
+  const automaticQuote = {
+    ...quote,
+    id: "auto-quote",
+    reference: "AUTO-QUOTE",
+    next_followup_at: null,
+  }
+  db.quotes = [quote, automaticQuote]
+  db.quote_followup_automations = [
+    {
+      quote_id: automaticQuote.id,
+      company_id: company.id,
+      enabled: true,
+      paused: false,
+      next_send_at: upcoming.toISOString(),
+      stop_reason: null,
+    },
+  ]
+}
+if (options.workspace === "manual-only") {
+  db.quotes = [db.quotes.find((entry) => entry.id === "quote-test")]
+  db.quote_followup_automations = []
 }

@@ -37,12 +37,10 @@ export async function listClientsWithCounts(
   })
 }
 
-export async function getClient(id: string): Promise<Client> {
-  const { data, error } = await supabase
-    .from("clients")
-    .select("*")
-    .eq("id", id)
-    .single()
+export async function getClient(id: string, companyId?: string): Promise<Client> {
+  let query = supabase.from("clients").select("*").eq("id", id)
+  if (companyId) query = query.eq("company_id", companyId)
+  const { data, error } = await query.single()
   if (error) throw error
   return data
 }
@@ -63,13 +61,11 @@ export async function createClient(
 export async function updateClient(
   id: string,
   input: ClientInput,
+  companyId?: string,
 ): Promise<Client> {
-  const { data, error } = await supabase
-    .from("clients")
-    .update(normalize(input))
-    .eq("id", id)
-    .select("*")
-    .single()
+  let query = supabase.from("clients").update(normalize(input)).eq("id", id)
+  if (companyId) query = query.eq("company_id", companyId)
+  const { data, error } = await query.select("*").single()
   if (error) throw error
   return data
 }
