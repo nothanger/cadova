@@ -1,10 +1,11 @@
 import assert from "node:assert/strict"
 import { readFile, mkdir, writeFile } from "node:fs/promises"
 import { spawn } from "node:child_process"
+import { fileURLToPath } from "node:url"
 import { chromium } from "playwright-core"
 import AxeBuilder from "@axe-core/playwright"
 
-const artifacts = new URL("../.cache/portal-workflow/", import.meta.url).pathname
+const artifacts = fileURLToPath(new URL("../.cache/portal-workflow/", import.meta.url))
 await mkdir(artifacts, { recursive: true })
 const base = process.env.TEST_BASE_URL || "http://127.0.0.1:8462"
 const config = `${artifacts}vite.stable.config.mjs`
@@ -131,11 +132,20 @@ try {
         check(/^[0-9a-f-]{36}$/.test(body.nonce), true, "Client send has a UUID nonce")
         if (!nonces.has(body.nonce)) {
           nonces.add(body.nonce)
+          const decision =
+            body.kind === "accepted"
+              ? "Le client a indiqué accepter le devis."
+              : "Le client a indiqué refuser le devis."
           messages.push({
             id: body.nonce,
             author: "client",
             kind: body.kind,
-            content: body.message,
+            content:
+              body.kind === "question"
+                ? body.message
+                : body.message
+                  ? `${decision}\n\nCommentaire du client : ${body.message}`
+                  : decision,
             created_at: new Date().toISOString(),
           })
           if (body.kind !== "question") status = body.kind
@@ -303,6 +313,14 @@ try {
     "Decided quote cannot be decided again",
   )
   check(publicFlow.messages.length, 2, "Question and decision remain visible")
+  const decisionCall = publicFlow.calls.find(
+    (call) => call.action === "respond" && call.kind === "accepted",
+  )
+  check(
+    Object.hasOwn(decisionCall, "message"),
+    false,
+    "An empty optional decision comment is omitted from the frontend request",
+  )
   await publicFlow.context.close()
 
   const retry = await createPage({ ambiguous: true })

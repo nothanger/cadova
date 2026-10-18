@@ -12,6 +12,7 @@ import {
   createPortalToken,
   hashPortalToken,
 } from "../supabase/functions/quote-client-portal/validation.ts"
+import { portalResponseBody } from "../src/features/quote-portal/request.ts"
 
 const actor = "11111111-1111-4111-8111-111111111111"
 const quoteId = "22222222-2222-4222-8222-222222222222"
@@ -289,6 +290,25 @@ test("confirmed responses forward trimmed content and the original idempotency n
     nonce,
     confirmed: true,
   })
+})
+test("the frontend decision body works through the handler without an optional comment", async () => {
+  for (const kind of ["accepted", "refused"] as const) {
+    const { backend, request } = setup()
+    const response = await request(portalResponseBody(token, kind, "   ", nonce))
+    assert.equal(response.status, 200)
+    assert.deepEqual(backend.accessInput, {
+      action: "respond",
+      kind,
+      message: undefined,
+      nonce,
+      confirmed: true,
+    })
+  }
+
+  const { backend, request } = setup()
+  const response = await request(portalResponseBody(token, "question", "   ", nonce))
+  assert.equal(response.status, 400)
+  assert.equal(backend.calls.length, 0)
 })
 test("concurrent decisions, invalid nonce reuse and rate limits return actionable codes", async () => {
   for (const [code, status] of [

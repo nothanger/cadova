@@ -63,9 +63,13 @@ do $$ declare v jsonb; n uuid:='a6000000-0000-4000-8000-000000000001'; begin
  perform pg_temp.assert(public.use_quote_client_link(repeat('a',64),'respond','question','Different question',n,true)->>'errorCode'='nonce_conflict','Changed nonce reused');
  v:=public.use_quote_client_link(repeat('b',64),'respond','accepted',null,'a6000000-0000-4000-8000-000000000002',true);
  perform pg_temp.assert(v->'quote'->>'status'='accepted','Acceptance failed');
+ perform pg_temp.assert((select content='Le client a indiqué accepter le devis.' from public.quote_client_messages where quote_id='a4000000-0000-4000-8000-000000000002'),'Acceptance without comment lost its business wording');
  v:=public.use_quote_client_link(repeat('b',64),'respond','accepted',null,'a6000000-0000-4000-8000-000000000002',true);
  perform pg_temp.assert(jsonb_array_length(v->'messages')=1,'Acceptance retry duplicated decision');
  perform pg_temp.assert(public.use_quote_client_link(repeat('b',64),'respond','refused',null,gen_random_uuid(),true)->>'errorCode'='decision_not_allowed','Contradictory decision accepted');
+ v:=public.use_quote_client_link(repeat('c',64),'respond','refused','Le budget est reporté.','a6000000-0000-4000-8000-000000000004',true);
+ perform pg_temp.assert(v->'quote'->>'status'='refused','Refusal failed');
+ perform pg_temp.assert((select content=E'Le client a indiqué refuser le devis.\n\nCommentaire du client : Le budget est reporté.' from public.quote_client_messages where quote_id='a4000000-0000-4000-8000-000000000003'),'Refusal comment was lost');
  perform pg_temp.assert(public.consume_quote_client_rate('test:counter',1,60),'First rate hit refused');
  perform pg_temp.assert(not public.consume_quote_client_rate('test:counter',1,60),'Second rate hit allowed');
 end $$;
@@ -73,8 +77,8 @@ reset role;
 select pg_temp.assert((select not enabled and stop_reason='response_received' from public.quote_followup_automations where quote_id='a4000000-0000-4000-8000-000000000001'),'Question did not stop automation');
 select pg_temp.assert((select status='cancelled' from public.quote_followup_jobs where quote_id='a4000000-0000-4000-8000-000000000001'),'Question did not cancel queued followup');
 select pg_temp.assert((select next_followup_at is null from public.quotes where id='a4000000-0000-4000-8000-000000000001'),'Response left pending manual reminder');
-select pg_temp.assert((select count(*)=2 from public.quote_events where portal_message_id is not null),'Repeated requests duplicated timeline events');
-select pg_temp.assert((select count(*)=4 from public.notifications where portal_message_id is not null),'Members did not receive exactly one notification per message');
+select pg_temp.assert((select count(*)=3 from public.quote_events where portal_message_id is not null),'Repeated requests duplicated timeline events');
+select pg_temp.assert((select count(*)=6 from public.notifications where portal_message_id is not null),'Members did not receive exactly one notification per message');
 update public.quote_client_links set expires_at=clock_timestamp()-interval '1 second' where token_hash=repeat('c',64);
 set local role service_role;
 select pg_temp.assert(public.use_quote_client_link(repeat('c',64),'view')->>'errorCode'='link_unavailable','Expired link remained valid');
@@ -83,7 +87,7 @@ select set_config('request.jwt.claim.sub','a1000000-0000-4000-8000-000000000003'
 select public.reply_quote_client_message('a4000000-0000-4000-8000-000000000001','Bonjour, voici la réponse.','a6000000-0000-4000-8000-000000000003');
 select public.reply_quote_client_message('a4000000-0000-4000-8000-000000000001','Bonjour, voici la réponse.','a6000000-0000-4000-8000-000000000003');
 do $$ declare affected integer; begin
- perform pg_temp.assert((select count(*)=3 from public.quote_client_messages),'Member reply retry duplicated conversation');
+ perform pg_temp.assert((select count(*)=4 from public.quote_client_messages),'Member reply retry duplicated conversation');
  update public.quote_events set content='Forged' where portal_message_id is not null; get diagnostics affected=row_count;
  perform pg_temp.assert(affected=0,'Member overwrote client response history');
  delete from public.quote_events where portal_message_id is not null; get diagnostics affected=row_count;
@@ -102,6 +106,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub','a1000000-0000-4000-8000-000000000001',true);
 select public.set_company_email_settings('a2000000-0000-4000-8000-000000000001','contact@example.test');
 select public.request_quote_initial_send('a4000000-0000-4000-8000-000000000004','client@example.test','Votre devis','Bonjour');
+select pg_temp.assert((select email='client@example.test' from public.clients where id='a3000000-0000-4000-8000-000000000001'),'Confirmed initial recipient did not become the followup client email');
 set local role service_role;
 do $$ declare j jsonb; l jsonb; again jsonb; begin
  select public.claim_quote_initial_send(id,'a1000000-0000-4000-8000-000000000001') into j from public.quote_initial_send_jobs where quote_id='a4000000-0000-4000-8000-000000000004';
@@ -118,5 +123,18 @@ set local role service_role;
 do $$ declare j public.quote_initial_send_jobs%rowtype; begin
  select * into j from public.quote_initial_send_jobs where quote_id='a4000000-0000-4000-8000-000000000004';
  begin perform public.issue_quote_client_send_link('initial',j.id,j.lease_token,repeat('d',64),clock_timestamp()+interval '1 day'); raise exception 'Retry revived revoked send token'; exception when check_violation then null; end;
+end $$;
+update public.quote_initial_send_jobs set status='cancelled',lease_token=null,lease_until=null where quote_id='a4000000-0000-4000-8000-000000000004';
+update public.quotes set status='sent',sent_at=current_date where id='a4000000-0000-4000-8000-000000000004';
+select public.set_quote_followup_service_status(true,true,'ready');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','a1000000-0000-4000-8000-000000000001',true);
+select public.save_quote_followup_automation('a4000000-0000-4000-8000-000000000004',true,1,2,'Suivi {{quote_reference}}','Bonjour {{client_name}}');
+set local role service_role;
+update public.quote_followup_jobs set scheduled_at=clock_timestamp(),next_attempt_at=clock_timestamp() where quote_id='a4000000-0000-4000-8000-000000000004' and step=1;
+do $$ declare claimed record; prepared jsonb; begin
+ select c.* into claimed from public.claim_quote_followup_jobs() c join public.quote_followup_jobs j on j.id=c.id where j.quote_id='a4000000-0000-4000-8000-000000000004';
+ prepared:=public.prepare_quote_followup_send(claimed.id,claimed.lease_token,'Cadova <relances@cadova.fr>');
+ perform pg_temp.assert(prepared->>'recipient_email'='client@example.test','Automatic followup did not reuse the confirmed initial recipient');
 end $$;
 rollback;

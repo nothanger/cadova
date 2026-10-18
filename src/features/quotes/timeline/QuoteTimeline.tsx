@@ -36,10 +36,12 @@ const icons = { messages: MessageSquare, sending: Mail, tracking: FileText }
 export function QuoteTimeline({
   quote,
   revision = 0,
+  onRefresh,
   children,
 }: {
   quote: QuoteWithClient
   revision?: number
+  onRefresh?: () => Promise<void>
   children?: ReactNode
 }) {
   const { user } = useAuth()
@@ -203,7 +205,7 @@ export function QuoteTimeline({
           variant="ghost"
           loading={loading}
           aria-label="Actualiser l’activité du devis"
-          onClick={() => void load()}
+          onClick={() => void (onRefresh ? onRefresh() : load())}
         >
           <RefreshCw size={16} aria-hidden="true" /> Actualiser
         </Button>

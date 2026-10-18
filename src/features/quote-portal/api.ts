@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase"
 import type { QuoteStatus } from "@/types"
+import { portalResponseBody, type PortalResponseKind } from "./request"
 
 export interface PortalMessage {
   id: string
@@ -139,16 +140,13 @@ export async function viewPortal(
 }
 export async function respondToPortal(
   token: string,
-  kind: "question" | "accepted" | "refused",
+  kind: PortalResponseKind,
   message: string,
   nonce: string,
   signal: AbortSignal,
 ): Promise<PortalView> {
   return (
-    await request(
-      { action: "respond", token, kind, message, nonce, confirmed: true },
-      signal,
-    )
+    await request(portalResponseBody(token, kind, message, nonce), signal)
   ).json()
 }
 export async function downloadPortalDocument(

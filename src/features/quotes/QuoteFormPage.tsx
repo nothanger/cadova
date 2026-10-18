@@ -16,7 +16,13 @@ import {
 import { useAuth } from "@/features/auth/AuthContext"
 import { useCompany } from "@/features/company/CompanyContext"
 import { listClients } from "@/features/clients/api"
-import { getQuote, listQuotes, updateQuote, type QuoteInput } from "./api"
+import {
+  getQuote,
+  listQuotes,
+  QuoteConflictError,
+  updateQuote,
+  type QuoteInput,
+} from "./api"
 import {
   DocumentApiError,
   documentError,
@@ -100,6 +106,7 @@ function ScopedQuoteForm({
   const touched = useRef(new Set<string>())
   const inferred = useRef<Record<string, string>>({})
   const initialStatus = useRef<QuoteStatus>("draft")
+  const initialUpdatedAt = useRef("")
   const [clients, setClients] = useState<Client[]>([])
   const [quotes, setQuotes] = useState<QuoteWithClient[]>([])
   const [clientMode, setClientMode] = useState<"existing" | "new">("existing")
@@ -133,6 +140,7 @@ function ScopedQuoteForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [phoneOpen, setPhoneOpen] = useState(false)
   const [extrasOpen, setExtrasOpen] = useState(false)
+  const [commercialFieldsLocked, setCommercialFieldsLocked] = useState(false)
 
   useEffect(() => {
     mounted.current = true
@@ -162,6 +170,8 @@ function ScopedQuoteForm({
         setQuotes(loadedQuotes)
         if (quote) {
           initialStatus.current = quote.status
+          initialUpdatedAt.current = quote.updated_at
+          setCommercialFieldsLocked(quote.status !== "draft" || Boolean(quote.sent_at))
           let proposeSent = false
           if (markAlreadySent && quote.status === "draft" && !quote.sent_at) {
             const job = await getInitialSendJob(quote.id)
@@ -485,7 +495,7 @@ function ScopedQuoteForm({
           expires_at: form.expires_at || null,
           notes: form.notes,
         }
-        await updateQuote(quoteId, payload)
+        await updateQuote(quoteId, payload, initialUpdatedAt.current)
         if (mounted.current) navigate(`/app/quotes/${quoteId}`, { replace: true })
       } else {
         const created = await saveImportedQuote(
@@ -513,13 +523,42 @@ function ScopedQuoteForm({
         if (mounted.current) navigate(`/app/quotes/${created.id}`, { replace: true })
       }
     } catch (err) {
-      if (mounted.current) {
+      if (mounted.current && err instanceof QuoteConflictError && quoteId) {
+        try {
+          const current = await getQuote(quoteId, companyId)
+          if (!mounted.current || controller.signal.aborted) return
+          initialStatus.current = current.status
+          initialUpdatedAt.current = current.updated_at
+          setCommercialFieldsLocked(
+            current.status !== "draft" || Boolean(current.sent_at),
+          )
+          setForm({
+            client_id: current.client_id,
+            reference: current.reference,
+            amount: centsToInput(current.amount_cents),
+            status: current.status,
+            sent_at: current.sent_at ?? "",
+            expires_at: current.expires_at ?? "",
+            notes: current.notes ?? "",
+          })
+          setError(
+            "Le dossier a changé entre-temps. Les informations actuelles ont été rechargées ; vérifiez-les avant de recommencer.",
+          )
+        } catch {
+          if (mounted.current)
+            setError(
+              "Le dossier a changé entre-temps et n’a pas pu être rechargé. Revenez au devis avant de continuer.",
+            )
+        }
+      } else if (mounted.current) {
         setError(
           documentError(
             err,
             "Le devis n’a pas pu être enregistré. Vos informations sont conservées, vous pouvez réessayer.",
           ),
         )
+      }
+      if (mounted.current) {
         setSubmitting(false)
         submitLocked.current = false
       }
@@ -608,6 +647,15 @@ function ScopedQuoteForm({
                 </div>
               )}
 
+              {commercialFieldsLocked && (
+                <p className="rounded-lg bg-background p-3 text-sm leading-6 text-muted">
+                  Le client, la référence et le montant correspondent au devis déjà
+                  communiqué. Ils sont verrouillés pour éviter une contradiction avec
+                  le document reçu par le client. Les autres informations du dossier
+                  restent modifiables.
+                </p>
+              )}
+
               <div className="space-y-4">
                 <h2 className="text-sm font-semibold text-ink">Client concerné</h2>
                 {mode === "new" && (
@@ -663,6 +711,7 @@ function ScopedQuoteForm({
                         id="client_id"
                         value={form.client_id}
                         required
+                        disabled={commercialFieldsLocked}
                         onChange={(event) => {
                           change("client_id", event.target.value)
                           setClientNotice("")
@@ -803,6 +852,7 @@ function ScopedQuoteForm({
                     value={form.reference}
                     required
                     maxLength={120}
+                    disabled={commercialFieldsLocked}
                     onChange={(event) => change("reference", event.target.value)}
                   />
                 </Field>
@@ -838,6 +888,7 @@ function ScopedQuoteForm({
                       placeholder="1250,50"
                       value={form.amount}
                       required
+                      disabled={commercialFieldsLocked}
                       onChange={(event) => change("amount", event.target.value)}
                     />
                   </Field>
@@ -907,11 +958,15 @@ function ScopedQuoteForm({
                           change("sent_at", todayISO())
                       }}
                     >
-                      {statuses.map((status) => (
+                      {statuses
+                        .filter(
+                          (status) => !commercialFieldsLocked || status !== "draft",
+                        )
+                        .map((status) => (
                         <option key={status} value={status}>
                           {statusLabel[status]}
                         </option>
-                      ))}
+                        ))}
                     </Select>
                   </Field>
                 </div>

@@ -42,10 +42,11 @@ export function DashboardPage() {
     error: string
   }>({ scope: "", data: null, loading: true, error: "" })
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { silent?: boolean }) => {
     if (!company || !user) return
     const request = ++requestId.current
-    setResult({ scope, data: null, loading: true, error: "" })
+    if (!options?.silent)
+      setResult({ scope, data: null, loading: true, error: "" })
     try {
       const prefs = isAdmin
         ? { followupDelayDays: 3 }
@@ -58,21 +59,35 @@ export function DashboardPage() {
       if (request === requestId.current && scopeRef.current === scope)
         setResult({ scope, data, loading: false, error: "" })
     } catch (err) {
-      if (request === requestId.current && scopeRef.current === scope)
-        setResult({
-          scope,
-          data: null,
-          loading: false,
-          error: humanizeError(err, "Impossible de charger vos dossiers."),
-        })
+      if (request === requestId.current && scopeRef.current === scope) {
+        const message = humanizeError(err, "Impossible de charger vos dossiers.")
+        setResult((current) =>
+          options?.silent && current.scope === scope && current.data
+            ? current
+            : { scope, data: null, loading: false, error: message },
+        )
+      }
     }
   }, [company?.id, user?.id, scope, isAdmin])
 
   useEffect(() => {
-    load()
+    void load()
     return () => {
       requestId.current++
     }
+  }, [load])
+  useEffect(() => {
+    let wasHidden = document.hidden
+    const refreshWhenVisible = () => {
+      if (document.hidden) {
+        wasHidden = true
+      } else if (wasHidden) {
+        wasHidden = false
+        void load({ silent: true })
+      }
+    }
+    document.addEventListener("visibilitychange", refreshWhenVisible)
+    return () => document.removeEventListener("visibilitychange", refreshWhenVisible)
   }, [load])
   if (result.loading || result.scope !== scope) return <Spinner />
   const { data, error } = result
@@ -102,7 +117,7 @@ export function DashboardPage() {
             Votre délai de rappel personnel n’a pas pu être chargé. Les relances
             manuelles à préparer ne peuvent pas être confirmées.
           </p>
-          <Button variant="ghost" onClick={load} className="mt-1">
+          <Button variant="ghost" onClick={() => void load()} className="mt-1">
             Réessayer
           </Button>
         </Card>

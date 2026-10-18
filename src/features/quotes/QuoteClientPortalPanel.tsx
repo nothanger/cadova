@@ -34,11 +34,13 @@ export function QuoteClientPortalPanel({
   onChanged,
   showConversation = true,
   compact = false,
+  revision = 0,
 }: {
   quote: QuoteWithClient
   onChanged: () => Promise<void>
   showConversation?: boolean
   compact?: boolean
+  revision?: number
 }) {
   const [data, setData] = useState<PortalInspection | null>(null)
   const [loading, setLoading] = useState(true)
@@ -90,7 +92,7 @@ export function QuoteClientPortalPanel({
       pending.forEach((entry) => entry.abort())
       pending.clear()
     }
-  }, [load])
+  }, [load, revision])
   const available = quote.status !== "draft"
   const linkActive = Boolean(
     data?.link &&

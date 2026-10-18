@@ -14,9 +14,11 @@ type Tracking = Awaited<ReturnType<typeof getQuoteEmailTracking>>
 export function QuoteEmailTrackingPanel({
   quote,
   showHistory = true,
+  onRefresh,
 }: {
   quote: QuoteWithClient
   showHistory?: boolean
+  onRefresh?: () => Promise<void>
 }) {
   const [data, setData] = useState<Tracking | null>(null)
   const [loading, setLoading] = useState(true)
@@ -61,7 +63,11 @@ export function QuoteEmailTrackingPanel({
         <h2 className="flex items-center gap-2 font-semibold">
           <MailCheck size={19} aria-hidden="true" /> Suivi des emails
         </h2>
-        <Button variant="ghost" loading={loading} onClick={load}>
+        <Button
+          variant="ghost"
+          loading={loading}
+          onClick={() => void Promise.all([load(), onRefresh?.()])}
+        >
           <RefreshCw size={16} /> Actualiser
         </Button>
       </div>

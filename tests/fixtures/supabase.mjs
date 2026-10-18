@@ -1372,6 +1372,97 @@ export const supabase = {
   from: (table) => new Query(table),
   rpc: (name, args) => {
     const request = (async () => {
+      if (
+        options.quoteMutationDelay &&
+        ["update_quote_if_current", "set_quote_status_if_current"].includes(name)
+      ) {
+        const mutation = {
+          table: "quotes",
+          payload: window.structuredClone(args),
+          completed: false,
+        }
+        quoteMutationCalls.push(mutation)
+        await new Promise((resolve) => setTimeout(resolve, options.quoteMutationDelay))
+        mutation.completed = true
+      }
+      if (name === "update_quote_if_current") {
+        const quote = db.quotes.find(
+          (entry) => entry.id === args.p_quote_id && hasCompany(entry.company_id),
+        )
+        if (!quote)
+          return { data: null, error: { code: "42501", message: "Accès refusé." } }
+        if (quote.updated_at !== args.p_expected_updated_at)
+          return {
+            data: null,
+            error: { code: "40001", message: "Le dossier a changé." },
+          }
+        const commercialChange =
+          quote.client_id !== args.p_client_id ||
+          quote.reference !== args.p_reference.trim() ||
+          quote.amount_cents !== args.p_amount_cents
+        if ((quote.status !== "draft" || quote.sent_at) && commercialChange)
+          return {
+            data: null,
+            error: { code: "23514", message: "Informations déjà communiquées." },
+          }
+        const previousStatus = quote.status
+        Object.assign(quote, {
+          client_id: args.p_client_id,
+          reference: args.p_reference.trim(),
+          amount_cents: args.p_amount_cents,
+          status: args.p_status,
+          sent_at: args.p_sent_at,
+          expires_at: args.p_expires_at,
+          notes: args.p_notes?.trim() || null,
+          updated_at: new Date(Date.now() + 1).toISOString(),
+        })
+        if (previousStatus !== quote.status)
+          db.quote_events.push({
+            id: globalThis.crypto.randomUUID(),
+            company_id: quote.company_id,
+            quote_id: quote.id,
+            event_type: "status_change",
+            content: `Devis marqué comme ${quote.status}.`,
+            created_by: user.id,
+            occurred_at: new Date().toISOString(),
+          })
+        return { data: { ...quote }, error: null }
+      }
+      if (name === "set_quote_status_if_current") {
+        const quote = db.quotes.find(
+          (entry) => entry.id === args.p_quote_id && hasCompany(entry.company_id),
+        )
+        if (!quote)
+          return { data: null, error: { code: "42501", message: "Accès refusé." } }
+        if (quote.updated_at !== args.p_expected_updated_at)
+          return {
+            data: null,
+            error: { code: "40001", message: "Le dossier a changé." },
+          }
+        if (options.quoteStatusConflict && !window.__quoteStatusConflictUsed) {
+          window.__quoteStatusConflictUsed = true
+          quote.status = "accepted"
+          quote.updated_at = new Date(Date.now() + 1).toISOString()
+          return {
+            data: null,
+            error: { code: "40001", message: "Le dossier a changé." },
+          }
+        }
+        quote.status = args.p_status
+        quote.next_followup_at = null
+        quote.updated_at = new Date(Date.now() + 1).toISOString()
+        db.quote_events.push({
+          id: globalThis.crypto.randomUUID(),
+          company_id: quote.company_id,
+          quote_id: quote.id,
+          event_type: "status_change",
+          content: args.p_content,
+          created_by: user.id,
+          occurred_at: new Date().toISOString(),
+        })
+        stopAutomation(quote.id, quote.status)
+        return { data: { ...quote }, error: null }
+      }
       if (name === "save_imported_quote") {
         if (!session || args.p_company_id !== company.id)
           return { data: null, error: { code: "42501", message: "Accès refusé." } }

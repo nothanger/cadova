@@ -209,6 +209,10 @@ export const supabase = {
         last_error_code: null,
       }
       if (!previous) db.quote_initial_send_jobs.push(job)
+      const client = db.clients.find(
+        (entry) => entry.id === quote.client_id && entry.company_id === quote.company_id,
+      )
+      if (client) client.email = body.recipientEmail.trim().toLowerCase()
       job.attempts++
       job.updated_at = now
       const mode = !previous ? options.documentSendMode : null

@@ -179,7 +179,7 @@ function WorkOrderPanel({ quote, onChanged }: Props) {
           variant="ghost"
           loading={loading}
           disabled={loading || busy}
-          onClick={() => void load()}
+          onClick={() => void Promise.all([load(), onChanged?.()])}
         >
           <RefreshCw size={16} aria-hidden="true" /> Actualiser
         </Button>

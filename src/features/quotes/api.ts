@@ -17,6 +17,19 @@ export interface QuoteInput {
   notes?: string | null
 }
 
+export class QuoteConflictError extends Error {
+  constructor() {
+    super("Le dossier a changé depuis son ouverture.")
+    this.name = "QuoteConflictError"
+  }
+}
+
+function throwQuoteError(error: { code?: string } | null) {
+  if (!error) return
+  if (error.code === "40001") throw new QuoteConflictError()
+  throw error
+}
+
 const SELECT_WITH_CLIENT = "*, client:clients (id, name)"
 
 export async function listQuotes(companyId: string): Promise<QuoteWithClient[]> {
@@ -64,27 +77,42 @@ export async function createQuote(
   return data
 }
 
-export async function updateQuote(id: string, input: QuoteInput): Promise<Quote> {
-  const { data, error } = await supabase
-    .from("quotes")
-    .update(normalize(input))
-    .eq("id", id)
-    .select("*")
-    .single()
-  if (error) throw error
-  return data
+export async function updateQuote(
+  id: string,
+  input: QuoteInput,
+  expectedUpdatedAt: string,
+): Promise<Quote> {
+  const normalized = normalize(input)
+  const { data, error } = await supabase.rpc("update_quote_if_current", {
+    p_quote_id: id,
+    p_expected_updated_at: expectedUpdatedAt,
+    p_client_id: normalized.client_id,
+    p_reference: normalized.reference,
+    p_amount_cents: normalized.amount_cents,
+    p_status: normalized.status,
+    p_sent_at: normalized.sent_at,
+    p_expires_at: normalized.expires_at ?? null,
+    p_notes: normalized.notes,
+  })
+  throwQuoteError(error)
+  return data as Quote
 }
 
 /** Update only the status (used by "Marquer accepté/refusé"). */
-export async function setQuoteStatus(id: string, status: QuoteStatus): Promise<Quote> {
-  const { data, error } = await supabase
-    .from("quotes")
-    .update({ status })
-    .eq("id", id)
-    .select("*")
-    .single()
-  if (error) throw error
-  return data
+export async function setQuoteStatus(
+  id: string,
+  status: Extract<QuoteStatus, "accepted" | "refused">,
+  expectedUpdatedAt: string,
+  content: string,
+): Promise<Quote> {
+  const { data, error } = await supabase.rpc("set_quote_status_if_current", {
+    p_quote_id: id,
+    p_expected_updated_at: expectedUpdatedAt,
+    p_status: status,
+    p_content: content,
+  })
+  throwQuoteError(error)
+  return data as Quote
 }
 
 export async function duplicateQuote(quote: Quote): Promise<Quote> {

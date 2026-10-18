@@ -273,21 +273,6 @@ function AutomationContent({
       jobRequest.current++
     }
   }, [loadJobs, revision])
-  useEffect(() => {
-    const refresh = () => {
-      if (!document.hidden && !locked.current) {
-        void load()
-        void loadJobs()
-      }
-    }
-    const timer = window.setInterval(refresh, 30_000)
-    window.addEventListener("focus", refresh)
-    return () => {
-      window.clearInterval(timer)
-      window.removeEventListener("focus", refresh)
-    }
-  }, [load, loadJobs])
-
   const config = data?.automation ?? null
   const firstDays = Number(editor.firstDays)
   const secondDays = Number(editor.secondDays)
@@ -852,10 +837,7 @@ function AutomationContent({
                 <Button
                   variant="ghost"
                   aria-label="Actualiser les envois automatiques"
-                  onClick={() => {
-                    void load()
-                    void loadJobs()
-                  }}
+                  onClick={() => void onChanged()}
                   disabled={busy || jobsLoading}
                 >
                   <RefreshCw size={16} aria-hidden="true" />

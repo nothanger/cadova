@@ -2,11 +2,14 @@ import assert from "node:assert/strict"
 import { readFile, mkdir, writeFile } from "node:fs/promises"
 import { spawn } from "node:child_process"
 import { Buffer } from "node:buffer"
+import { fileURLToPath } from "node:url"
 import { chromium } from "playwright-core"
 import AxeBuilder from "@axe-core/playwright"
 
 const fixtures = new URL("./fixtures/", import.meta.url)
-const artifacts = new URL("../.cache/document-workflow/", import.meta.url).pathname
+const artifacts = fileURLToPath(
+  new URL("../.cache/document-workflow/", import.meta.url),
+)
 await mkdir(artifacts, { recursive: true })
 const base = process.env.TEST_BASE_URL || "http://127.0.0.1:8460"
 const config = `${artifacts}vite.stable.config.mjs`
@@ -590,6 +593,41 @@ try {
     await sending.context().close()
     console.log(`PASS: preview and send ${width}px`)
   }
+
+  const correctedRecipient = await pageFor()
+  await draftFor(correctedRecipient)
+  await correctedRecipient
+    .locator("#quote-recipient")
+    .fill("suivi-corrige@example.test")
+  await correctedRecipient
+    .getByText(/Les prochaines relances de ce devis utiliseront cette même adresse/)
+    .waitFor()
+  await correctedRecipient
+    .getByRole("button", { name: "Vérifier avant d’envoyer", exact: true })
+    .click()
+  await correctedRecipient
+    .getByRole("dialog")
+    .getByText("suivi-corrige@example.test", { exact: true })
+    .waitFor()
+  await correctedRecipient
+    .getByRole("button", { name: "Envoyer le devis", exact: true })
+    .click()
+  await correctedRecipient
+    .getByRole("status")
+    .filter({ hasText: "Le service email a accepté" })
+    .waitFor()
+  const correctedRecipientState = await ownState(correctedRecipient)
+  check(
+    correctedRecipientState.clients[0].email,
+    "suivi-corrige@example.test",
+    "A corrected confirmed recipient becomes the client followup address",
+  )
+  check(
+    correctedRecipientState.initialJobs[0].recipient_email,
+    correctedRecipientState.clients[0].email,
+    "Initial send and following automation share one recipient source",
+  )
+  await correctedRecipient.context().close()
 
   // Known provider rejection remains a draft; an explicit retry reuses the same job.
   const rejected = await pageFor({ documentSendMode: "failed" })

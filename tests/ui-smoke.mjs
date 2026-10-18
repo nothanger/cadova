@@ -1,12 +1,13 @@
 import assert from "node:assert/strict"
 import { readFile, mkdir, writeFile } from "node:fs/promises"
 import { spawn } from "node:child_process"
+import { fileURLToPath } from "node:url"
 import { chromium } from "playwright-core"
 import AxeBuilder from "@axe-core/playwright"
 
 const port = process.env.TEST_UI_PORT || "8446"
 const base = process.env.TEST_BASE_URL || `http://127.0.0.1:${port}`
-const artifacts = new URL("../.cache/ui/", import.meta.url).pathname
+const artifacts = fileURLToPath(new URL("../.cache/ui/", import.meta.url))
 await mkdir(artifacts, { recursive: true })
 const config = `${artifacts}vite.ux.config.mjs`
 await writeFile(
@@ -482,9 +483,12 @@ try {
     .click()
   await app.getByRole("heading", { name: "Client modifié", exact: true }).waitFor()
   await visit(app, "/app/quotes/quote-test/edit", "Modifier le devis")
-  await app.getByLabel("Référence").fill("TEST-EDIT")
+  assert.equal(await app.getByLabel("Référence").isDisabled(), true)
+  assert.equal(await app.getByLabel("Montant TTC (€)").isDisabled(), true)
+  assert.equal(await app.getByLabel("Client *").isDisabled(), true)
+  await app.getByLabel("Notes").fill("Dossier actualisé")
   await app.getByRole("button", { name: "Enregistrer", exact: true }).click()
-  await app.getByRole("heading", { name: "TEST-EDIT", exact: true }).waitFor()
+  await app.getByRole("heading", { name: "TEST-001", exact: true }).waitFor()
   await recordDecision(app, "refused")
   await app.getByText("Refusé", { exact: true }).waitFor()
   await app.getByRole("button", { name: "Options du devis" }).click()
@@ -497,6 +501,44 @@ try {
   await app.getByRole("heading", { name: "Connexion", exact: true }).waitFor()
   checks += 8
   await app.context().close()
+
+  const conflict = await pageFor({ session: true, quoteStatusConflict: true })
+  await visit(conflict, "/app/quotes/quote-test", "TEST-001")
+  await recordDecision(conflict, "refused", { wait: false })
+  await conflict
+    .getByRole("dialog", { name: "Enregistrer la réponse du client" })
+    .getByRole("alert")
+    .filter({ hasText: "Le dossier a changé entre-temps" })
+    .waitFor()
+  assert.equal(
+    await conflict.evaluate(
+      () => window.__testStore.quotes.find((quote) => quote.id === "quote-test").status,
+    ),
+    "accepted",
+    "A stale refusal never overwrites a newer acceptance",
+  )
+  checks++
+  await conflict.context().close()
+
+  const visibility = await pageFor({ session: true })
+  await visit(visibility, "/app/quotes/quote-test", "TEST-001")
+  await visibility.evaluate(() => {
+    window.__testHidden = false
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      get: () => window.__testHidden,
+    })
+    window.__testHidden = true
+    document.dispatchEvent(new window.Event("visibilitychange"))
+    const quote = window.__testStore.quotes.find((entry) => entry.id === "quote-test")
+    quote.status = "accepted"
+    quote.updated_at = new Date(Date.now() + 1000).toISOString()
+    window.__testHidden = false
+    document.dispatchEvent(new window.Event("visibilitychange"))
+  })
+  await visibility.getByText("Accepté", { exact: true }).waitFor()
+  checks++
+  await visibility.context().close()
 
   const auth = await pageFor()
   await visit(auth, "/signup", "Créer un compte")

@@ -309,7 +309,13 @@ export function createQuoteClientPortalHandler(
         typeof body.nonce !== "string" ||
         !portalUuidPattern.test(body.nonce) ||
         (body.kind === "question" && !validMessage(body.message)) ||
-        (body.message !== undefined && !validMessage(body.message)))
+        (body.message !== undefined &&
+          !(
+            body.kind !== "question" &&
+            typeof body.message === "string" &&
+            !body.message.trim()
+          ) &&
+          !validMessage(body.message)))
     )
       return failure("invalid_request", 400)
     if (!config.rateSecret || config.rateSecret.length < 24)
@@ -342,8 +348,9 @@ export function createQuoteClientPortalHandler(
       }
       if (input.action === "respond") {
         input.kind = body.kind as PortalResponseKind
-        input.message =
+        const message =
           typeof body.message === "string" ? body.message.trim() : undefined
+        input.message = message || undefined
         input.nonce = body.nonce as string
         input.confirmed = true
       }

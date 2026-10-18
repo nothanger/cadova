@@ -373,6 +373,13 @@ export function QuoteDocumentPanel({
                         onChange={(e) => setRecipient(e.target.value)}
                       />
                     </Field>
+                    {recipient.trim().toLowerCase() !==
+                      (context.client.email ?? "").trim().toLowerCase() && (
+                      <p className="rounded-lg bg-primary-soft p-3 text-xs leading-5 text-primary">
+                        Cette adresse remplacera l’email de suivi du client. Les
+                        prochaines relances de ce devis utiliseront cette même adresse.
+                      </p>
+                    )}
                     <Field label="Objet" htmlFor="quote-subject" required>
                       <Input
                         id="quote-subject"
@@ -477,6 +484,13 @@ export function QuoteDocumentPanel({
               : "Le PDF sera envoyé à cette adresse. Le devis passera en « Envoyé » lorsque le service email aura accepté le message."}{" "}
             Les relances automatiques s’activent séparément dans le suivi du devis.
           </p>
+          {recipient.trim().toLowerCase() !==
+            (context.client.email ?? "").trim().toLowerCase() && (
+            <p className="mt-3 rounded-lg bg-primary-soft p-3 text-sm leading-6 text-primary">
+              En confirmant, cette adresse devient l’email de suivi du client et sera
+              utilisée pour les prochaines relances de ce devis.
+            </p>
+          )}
           <p className="mt-3 rounded-lg border border-primary/20 bg-primary-soft/40 p-3 text-sm leading-6 text-ink-soft">
             L’email inclura aussi un lien privé : le client pourra consulter le devis,
             poser une question ou vous transmettre sa décision sans créer de compte.

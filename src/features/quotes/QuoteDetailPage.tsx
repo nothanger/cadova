@@ -27,6 +27,7 @@ import {
   addQuoteEvent,
   duplicateQuote,
   getQuote,
+  QuoteConflictError,
   scheduleFollowUp,
   setQuoteStatus,
 } from "./api"
@@ -176,10 +177,23 @@ export function QuoteDetailPage() {
     } catch {
       if (active.current && identity.current === currentScope)
         setError(
-          "La modification a été enregistrée, mais l’historique n’a pas pu être actualisé. Rechargez le devis.",
+          "Le dossier n’a pas pu être actualisé. Rechargez le devis avant de continuer.",
         )
     }
   }, [quoteId, user?.id, company?.id])
+  useEffect(() => {
+    let wasHidden = document.hidden
+    const refreshWhenVisible = () => {
+      if (document.hidden) {
+        wasHidden = true
+      } else if (wasHidden) {
+        wasHidden = false
+        void refreshDetails()
+      }
+    }
+    document.addEventListener("visibilitychange", refreshWhenVisible)
+    return () => document.removeEventListener("visibilitychange", refreshWhenVisible)
+  }, [refreshDetails])
   const loadSituation = useCallback(async () => {
     if (!quote) return
     const ticket = ++contextRequest.current
@@ -283,23 +297,24 @@ export function QuoteDetailPage() {
         await recordQuoteResponse(quote.id, responseContent)
       } else {
         setUpdating(responseKind)
-        await setQuoteStatus(quote.id, responseKind)
-        await addQuoteEvent(
-          quote,
-          "status_change",
+        await setQuoteStatus(
+          quote.id,
+          responseKind,
+          quote.updated_at,
           `Devis ${responseKind === "accepted" ? "accepté" : "refusé"}${responseContent.trim() ? ` : ${responseContent.trim()}` : ""}`,
-        ).catch(() => {
-          if (active.current && identity.current === currentScope)
-            setError(
-              "La décision est enregistrée, mais son entrée dans l’historique n’a pas pu être ajoutée. Actualisez pour vérifier le dossier.",
-            )
-        })
+        )
       }
       if (!active.current || identity.current !== currentScope) return
       setResponseOpen(false)
       await refreshDetails()
     } catch (e) {
-      if (active.current && identity.current === currentScope)
+      if (e instanceof QuoteConflictError) {
+        await refreshDetails()
+        if (active.current && identity.current === currentScope)
+          setResponseError(
+            "Le dossier a changé entre-temps. Son état actuel a été rechargé ; vérifiez-le avant de recommencer.",
+          )
+      } else if (active.current && identity.current === currentScope)
         setResponseError(
           humanizeError(
             e,
@@ -594,6 +609,7 @@ export function QuoteDetailPage() {
               onChanged={refreshDetails}
               showConversation={primaryConversation || expanded === "conversation"}
               compact
+              revision={timelineRevision}
             />
           </div>
         )}
@@ -697,7 +713,12 @@ export function QuoteDetailPage() {
                 ci-dessus.
               </p>
             )}
-            <QuoteEmailTrackingPanel key={`email:${scope}`} quote={quote} showHistory />
+            <QuoteEmailTrackingPanel
+              key={`email:${scope}`}
+              quote={quote}
+              showHistory
+              onRefresh={refreshDetails}
+            />
           </div>
         </details>
         <div
@@ -705,7 +726,11 @@ export function QuoteDetailPage() {
           tabIndex={-1}
           className="scroll-mt-6 rounded-xl focus:outline-none"
         >
-          <QuoteTimeline quote={quote} revision={timelineRevision}>
+          <QuoteTimeline
+            quote={quote}
+            revision={timelineRevision}
+            onRefresh={refreshDetails}
+          >
             <details>
               <summary className="min-h-11 cursor-pointer text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary">
                 Ajouter une note interne
