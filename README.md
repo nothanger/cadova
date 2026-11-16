@@ -2,6 +2,8 @@
 
 Suivi des clients, des devis et des relances pour les artisans, indépendants et petites entreprises. React, TypeScript, Vite et Supabase. Les règles visuelles et les points à confirmer avant production sont dans [DESIGN.md](DESIGN.md).
 
+Pour reprendre avec un agent : [consignes et raccourcis](AGENTS.md), [carte du projet](docs/PROJECT_MAP.md) et [point de reprise](docs/STATUS.md). Ces repères évitent les recherches répétées tout en laissant l'agent approfondir selon la tâche.
+
 ## Développement
 
 Node 22 et pnpm 10.34.3 sont indiqués dans `.mise.toml`.
